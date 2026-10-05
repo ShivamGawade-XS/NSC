@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EarthSift — NASA Earth System Trend Detective</title>
+  <meta name="description" content="Evidence-first Earth-system trend discovery platform built for the NASA Space Apps Challenge 2026." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Leaflet CSS for Map rendering -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <!-- Chart.js for Scientific Time Series -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark-theme">
+  <!-- Top Application Bar -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-logo">
+        <span class="globe-icon">🌍</span>
+      </div>
+      <div>
+        <h1 class="brand-title">EarthSift <span class="badge-tag">NASA Space Apps 2026</span></h1>
+        <p class="brand-subtitle">Be An Earth System Trend Detective • Evidence-First Discovery Engine</p>
+      </div>
+    </div>
+    
+    <div class="header-metrics">
+      <div class="metric-pill">
+        <span class="pill-label">METHOD:</span>
+        <span class="pill-val">Mann-Kendall + Theil-Sen</span>
+      </div>
+      <div class="metric-pill">
+        <span class="pill-label">MULTIPLICITY:</span>
+        <span class="pill-val" id="fdrStatusBadge">FDR (q ≤ 0.05)</span>
+      </div>
+      <div class="status-indicator">
+        <span class="status-dot live"></span>
+        <span id="apiStatusText">Engine Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Three-Column Workspace Layout -->
+  <main class="workspace-grid">
+    
+    <!-- LEFT: Analysis & Controls Panel -->
+    <aside class="panel controls-panel">
+      <div class="panel-header">
+        <h2>🔬 Investigation Controls</h2>
+      </div>
+
+      <div class="form-group">
+        <label for="datasetSelect">Dataset Provider</label>
+        <select id="datasetSelect" class="input-control">
+          <option value="merra2_reanalysis">NASA MERRA-2 Atmospheric Reanalysis</option>
+        </select>
+        <span class="field-hint">NASA GMAO • Native 0.5° × 0.625° Resolution</span>
+      </div>
+
+      <div class="form-group">
+        <label for="variableSelect">Target Variable</label>
+        <select id="variableSelect" class="input-control">
+          <option value="T2M" selected>2-Meter Air Temperature (T2M) [°C]</option>
+          <option value="PRECTOT">Total Precipitation Rate (PRECTOT) [mm/day]</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Temporal Analysis Window</label>
+        <div class="range-inputs">
+          <input type="number" id="startYear" class="input-control mini" value="2000" min="1980" max="2023" />
+          <span class="range-divider">to</span>
+          <input type="number" id="endYear" class="input-control mini" value="2023" min="1981" max="2024" />
+        </div>
+        <span class="field-hint" id="yearCountHint">24 consecutive annual records</span>
+      </div>
+
+      <div class="form-group">
+        <label>Statistical Multiplicity Control</label>
+        <div class="toggle-control">
+          <input type="checkbox" id="fdrToggle" checked />
+          <label for="fdrToggle">Apply Benjamini-Hochberg FDR</label>
+        </div>
+        <span class="field-hint">Filters false positives across thousands of spatial cells.</span>
+      </div>
+
+      <button id="runAnalysisBtn" class="btn btn-primary">
+        <span class="btn-icon">⚡</span> Run Trend Detection
+      </button>
+
+      <!-- Quick Signals & Contrasts Summary -->
+      <div class="panel-section contrast-section">
+        <h3>⚡ Discovered Regional Divergence</h3>
+        <div id="contrastSummaryCard" class="contrast-card">
+          <div class="contrast-badge">Opposing Trends Detected</div>
+          <div class="contrast-body" id="contrastContent">
+            Analyzing spatial vectors...
+          </div>
+        </div>
+      </div>
+
+      <!-- Provenance Box -->
+      <div class="provenance-box">
+        <h4>Source Provenance</h4>
+        <div id="provenanceMeta" class="prov-text">
+          NASA Global Modeling and Assimilation Office<br/>
+          DOI: <code>10.5067/A7F0JNNUTWOB</code>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Spatial Map & Time Series -->
+    <section class="panel center-panel">
+      <!-- Map Header & Layer Toggles -->
+      <div class="map-toolbar">
+        <div class="toolbar-title">
+          <h3>Spatial Trend Field</h3>
+          <span id="mapSubtitle" class="map-sub">Sen's Robust Slope Rate with Significance Stippling</span>
+        </div>
+        <div class="toolbar-actions">
+          <label class="layer-toggle">
+            <input type="checkbox" id="maskToggle" checked />
+            <span>Highlight Significant Only</span>
+          </label>
+          <button id="resetViewBtn" class="btn btn-sm">Reset View</button>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div id="trendMap" class="map-container"></div>
+
+      <!-- Map Legend -->
+      <div class="map-legend">
+        <div class="legend-title">Trend Magnitude & Direction (<span id="legendUnit">°C / decade</span>)</div>
+        <div class="legend-scale">
+          <span class="scale-label min" id="legendMin">-0.50</span>
+          <div class="scale-bar"></div>
+          <span class="scale-label mid">0.00</span>
+          <span class="scale-label max" id="legendMax">+0.50</span>
+        </div>
+        <div class="legend-indicators">
+          <span class="legend-item"><span class="legend-dot sig"></span> Statistically Significant (q ≤ 0.05)</span>
+          <span class="legend-item"><span class="legend-dot insig"></span> Non-Significant / Noise</span>
+        </div>
+      </div>
+
+      <!-- Bottom: Time-Series Inspector -->
+      <div class="timeseries-section">
+        <div class="ts-header">
+          <div>
+            <h4>📈 Coordinate Observation Record & Sen's Trendline</h4>
+            <span id="tsCoordinateLabel" class="ts-sub">Selected Cell: 35.00°N, -95.00°W</span>
+          </div>
+          <div class="ts-stats">
+            <span class="stat-badge" id="tsSlopeBadge">Slope: +0.32 °C / decade</span>
+            <span class="stat-badge" id="tsPValBadge">p = 0.0018</span>
+            <span class="stat-badge" id="tsTauBadge">τ = 0.65</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="timeSeriesChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Scientific Evidence & Verification Panel -->
+    <aside class="panel evidence-panel">
+      <div class="panel-header">
+        <h2>📋 Scientific Evidence Inspector</h2>
+        <span class="badge-pill">Axiom 1: Inspectable Truth</span>
+      </div>
+
+      <div class="evidence-body">
+        <div class="evidence-card">
+          <div class="ev-label">EMPIRICAL OBSERVATION</div>
+          <div class="ev-value" id="evObservation">
+            Calculated increasing trend of +0.342 °C / decade.
+          </div>
+        </div>
+
+        <div class="evidence-card">
+          <div class="ev-label">ROBUST MAGNITUDE</div>
+          <div class="ev-value highlight" id="evMagnitude">
+            +0.3420 °C / decade
+          </div>
+          <div class="ev-sub">Theil-Sen estimator (Median of pairwise coordinate slopes)</div>
+        </div>
+
+        <div class="evidence-card">
+          <div class="ev-label">STATISTICAL SIGNIFICANCE</div>
+          <div class="ev-value" id="evSignificance">
+            p = 0.0018 | FDR q = 0.0032
+          </div>
+          <div class="ev-sub" id="evSigStatus">Status: Statistically Significant (Null hypothesis rejected)</div>
+        </div>
+
+        <div class="evidence-card">
+          <div class="ev-label">DATA COVERAGE & INTEGRITY</div>
+          <div class="ev-value" id="evCoverage">
+            24 / 24 annual points (100% valid coverage)
+          </div>
+          <div class="ev-sub">Missing gaps: 0 • Spatial Adjacency: Validated</div>
+        </div>
+
+        <div class="evidence-card caveat-card">
+          <div class="ev-label">SCIENTIFIC CAVEATS & LIMITATIONS</div>
+          <div class="ev-value caveat" id="evLimitations">
+            Empirical observation of monotonic trend. Does not prove underlying atmospheric or oceanic causation without physical process attribution.
+          </div>
+        </div>
+
+        <!-- Downstream AI Explainer Integration -->
+        <div class="ai-explainer-section">
+          <div class="ai-header">
+            <h3>🤖 Downstream AI Explainer</h3>
+            <span class="ai-pill">Zero Hallucination Mode</span>
+          </div>
+          <p class="ai-desc">Translates only the verified evidence record into plain scientific English.</p>
+          <button id="askAiBtn" class="btn btn-secondary">
+            <span>✨</span> Explain Finding with AI
+          </button>
+          <div id="aiOutputBox" class="ai-box hidden">
+            <div class="ai-loader" id="aiLoader">Generating deterministic interpretation...</div>
+            <div class="ai-content" id="aiContentText"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
