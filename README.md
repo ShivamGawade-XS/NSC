@@ -73,9 +73,32 @@ Downstream AI Explainer (Interpreting verified data only)
 | **Data Ingestion** | NASA Earthdata / CMR API, `earthaccess`, `xarray` |
 | **Scientific Engine** | Python, `numpy`, `scipy`, `pyMannKendall` |
 | **API & Backend** | FastAPI, Pydantic, Uvicorn |
-| **Geospatial Mapping** | MapLibre GL JS |
-| **Data Visualization** | Apache ECharts |
-| **Web Shell** | Next.js, TypeScript, Tailwind CSS |
+| **Geospatial Mapping** | Leaflet / MapLibre GL JS |
+| **Data Visualization** | Chart.js & Apache ECharts |
+| **Web Shell** | Vanilla HTML5, CSS3 (Modern Dark Instrument), ES6 Modules |
+
+---
+
+## 🚀 Quickstart & Running Locally
+
+### 1. Install Dependencies
+```bash
+pip install -r backend/requirements.txt
+```
+
+### 2. Run the Scientific Server & Web Instrument
+```bash
+# From the repository root:
+$env:PYTHONPATH="backend"
+uvicorn app.main:app --port 8000 --reload
+```
+Open your browser at **`http://localhost:8000`** to interact with the scientific dashboard.
+
+### 3. Run the Scientific Verification Test Suite
+```bash
+$env:PYTHONPATH="backend"
+pytest backend/tests/ -v
+```
 
 ---
 
