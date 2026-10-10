@@ -67,13 +67,31 @@ def test_offline_demo_mode_data_provenance():
         "dataset_id": "merra2_reanalysis",
         "variable_id": "PRECTOT",
         "start_year": 2000,
-        "end_year": 2015
+        "end_year": 2015,
+        "prefer_live": False
     }
     res = client.post("/analysis", json=payload)
     assert res.status_code == 200
     prov = res.json()["provenance"]
     assert prov["is_synthetic"] is True
     assert "Synthetic test data" in prov["data_source_label"]
+
+
+def test_real_netcdf_mode_data_provenance():
+    """Verify live NetCDF mode sets verified observational labels in the API response."""
+    payload = {
+        "dataset_id": "merra2_reanalysis",
+        "variable_id": "T2M",
+        "start_year": 2000,
+        "end_year": 2020,
+        "prefer_live": True
+    }
+    res = client.post("/analysis", json=payload)
+    assert res.status_code == 200
+    prov = res.json()["provenance"]
+    assert prov["is_synthetic"] is False
+    assert "Verified NetCDF Observations" in prov["data_source_label"]
+
 
 
 def test_ai_explainer_fallback_and_validation():

@@ -244,6 +244,7 @@ def compute_spatial_trends(
 ) -> Dict[str, np.ndarray]:
     """
     Compute spatial trends across a 3D grid [time, lat, lon].
+    Utilizes multi-threaded parallel chunk execution across rows for high performance.
     
     Parameters:
         data_3d: 3D array of shape (T, H, W).
@@ -255,6 +256,9 @@ def compute_spatial_trends(
           'slopes', 'intercepts', 'p_values', 'q_values',
           'is_significant_raw', 'is_significant_fdr', 'n_samples'
     """
+    import os
+    from concurrent.futures import ThreadPoolExecutor
+
     t_len, h_len, w_len = data_3d.shape
     
     slopes = np.zeros((h_len, w_len), dtype=float)
@@ -262,18 +266,40 @@ def compute_spatial_trends(
     p_values = np.ones((h_len, w_len), dtype=float)
     n_samples = np.zeros((h_len, w_len), dtype=int)
     
-    for i in range(h_len):
+    def process_row(i: int):
+        row_slopes = np.zeros(w_len, dtype=float)
+        row_intercepts = np.zeros(w_len, dtype=float)
+        row_p_vals = np.ones(w_len, dtype=float)
+        row_samples = np.zeros(w_len, dtype=int)
+
         for j in range(w_len):
             ts = data_3d[:, i, j]
-            # Sen's slope
             sen_res = sens_slope(ts, time_steps=time_coords)
-            slopes[i, j] = sen_res["slope"]
-            intercepts[i, j] = sen_res["intercept"]
-            
-            # Mann-Kendall with Hamed-Rao correction
+            row_slopes[j] = sen_res["slope"]
+            row_intercepts[j] = sen_res["intercept"]
+
             mk_res = mann_kendall_test(ts, alpha=alpha, correct_autocorrelation=True)
-            p_values[i, j] = mk_res["p_value"]
-            n_samples[i, j] = mk_res["n_samples"]
+            row_p_vals[j] = mk_res["p_value"]
+            row_samples[j] = mk_res["n_samples"]
+
+        return i, row_slopes, row_intercepts, row_p_vals, row_samples
+
+    total_cells = h_len * w_len
+    if total_cells >= 30:
+        max_workers = min(8, max(2, os.cpu_count() or 4))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            for i, r_slopes, r_intercepts, r_p, r_samples in executor.map(process_row, range(h_len)):
+                slopes[i, :] = r_slopes
+                intercepts[i, :] = r_intercepts
+                p_values[i, :] = r_p
+                n_samples[i, :] = r_samples
+    else:
+        for i in range(h_len):
+            _, r_slopes, r_intercepts, r_p, r_samples = process_row(i)
+            slopes[i, :] = r_slopes
+            intercepts[i, :] = r_intercepts
+            p_values[i, :] = r_p
+            n_samples[i, :] = r_samples
 
     # Benjamini-Hochberg adjustment across the entire 2D spatial field
     q_values, is_sig_fdr = benjamini_hochberg_fdr(p_values, alpha=alpha)
@@ -288,3 +314,4 @@ def compute_spatial_trends(
         "is_significant_fdr": is_sig_fdr,
         "n_samples": n_samples,
     }
+

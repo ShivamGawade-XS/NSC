@@ -18,6 +18,8 @@ class AnalysisRequest(BaseModel):
         description="[min_lon, min_lat, max_lon, max_lat] bounding box"
     )
     alpha: float = Field(default=0.05, gt=0.0, lt=0.5, description="Significance threshold")
+    prefer_live: bool = Field(default=True, description="Prefer authentic NASA NetCDF observations over synthetic fixture")
+
 
 
 class SpatialGridPoint(BaseModel):

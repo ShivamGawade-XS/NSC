@@ -34,9 +34,14 @@ yarn-error.log*
 *.tif
 *.tiff
 *.geojson
-data/
+/data/
 cache/
 *.pdf
+
+# Allow test & baseline fixtures
+!backend/data/
+!backend/data/fixtures/
+!backend/data/fixtures/**
 
 # Testing & Caches
 .pytest_cache/
