@@ -45,6 +45,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
     NATIVE_RESOLUTION = "0.5° latitude x 0.625° longitude"
     TEMPORAL_RANGE = [1980, 2024]
     DEFAULT_BBOX = [-125.0, 25.0, -65.0, 50.0]
+    COVERAGE_BBOX = [-170.0, 15.0, -50.0, 75.0]
 
     VARIABLES = {
         "T2M": {
@@ -164,6 +165,11 @@ class MERRA2Adapter(BaseDatasetAdapter):
                 raise ValueError("Latitude bounds must be within [-90, 90].")
             if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0):
                 raise ValueError("Longitude bounds must be within [-180, 180].")
+            c_min_lon, c_min_lat, c_max_lon, c_max_lat = self.COVERAGE_BBOX
+            if max_lon < c_min_lon or min_lon > c_max_lon or max_lat < c_min_lat or min_lat > c_max_lat:
+                raise ValueError(
+                    f"Requested bounding box {bbox} yields empty slice outside dataset coverage {self.COVERAGE_BBOX}."
+                )
 
     def fetch(
         self,

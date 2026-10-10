@@ -1,7 +1,7 @@
 """
 EarthSift — Scientific Trend Analysis Engine
-Implements non-parametric Mann-Kendall test, Sen's slope (Theil-Sen),
-and Benjamini-Hochberg False Discovery Rate (FDR) multiplicity correction.
+Implements non-parametric Mann-Kendall test, Hamed & Rao (1998) autocorrelation correction,
+Sen's slope (Theil-Sen robust estimator), and Benjamini-Hochberg False Discovery Rate (FDR).
 """
 
 from typing import Dict, List, Optional, Tuple, Any
@@ -9,9 +9,51 @@ import numpy as np
 from scipy import stats
 
 
+def hamed_rao_variance_correction(data: np.ndarray, var_s: float) -> float:
+    """
+    Hamed & Rao (1998) variance correction for serial autocorrelation in Mann-Kendall test.
+    Detrends the series using Sen's slope, then calculates autocorrelation on the residuals.
+    This prevents a real monotonic trend from being mistakenly penalized as serial persistence.
+    """
+    n = len(data)
+    if n < 8:
+        return var_s
+
+    # 1. Detrend series using robust Sen's slope
+    sen = sens_slope(data)
+    t = np.arange(n, dtype=float)
+    residuals = data - sen["slope"] * t
+
+    # 2. Compute ranks of the detrended residuals
+    ranks = stats.rankdata(residuals)
+    ranks_centered = ranks - np.mean(ranks)
+    denom = np.sum(ranks_centered ** 2)
+    if denom <= 0:
+        return var_s
+
+    # Significant threshold at 95% confidence interval
+    sig_limit = 1.96 / np.sqrt(n)
+    sum_terms = 0.0
+
+    max_lag = min(n - 1, 10)
+    for k in range(1, max_lag + 1):
+        rho_k = float(np.sum(ranks_centered[:-k] * ranks_centered[k:]) / denom)
+        if abs(rho_k) > sig_limit:
+            weight = (n - k) * (n - k - 1) * (n - k - 2)
+            sum_terms += weight * rho_k
+
+    if sum_terms > 0:
+        n_denom = n * (n - 1) * (n - 2)
+        if n_denom > 0:
+            correction_factor = 1.0 + (2.0 / n_denom) * sum_terms
+            return float(var_s * max(1.0, correction_factor))
+    return var_s
+
+
 def mann_kendall_test(
     y: np.ndarray,
-    alpha: float = 0.05
+    alpha: float = 0.05,
+    correct_autocorrelation: bool = True
 ) -> Dict[str, Any]:
     """
     Perform the Mann-Kendall monotonic trend test on a 1D time series.
@@ -19,6 +61,7 @@ def mann_kendall_test(
     Parameters:
         y: 1D array of temporal observations.
         alpha: Significance threshold (default: 0.05).
+        correct_autocorrelation: If True, applies Hamed & Rao (1998) variance correction.
         
     Returns:
         Dict containing S, var_s, z, p_value, tau, and boolean 'significant'.
@@ -41,7 +84,6 @@ def mann_kendall_test(
         }
 
     # Pairwise differences: sgn(y[j] - y[i]) for j > i
-    # data[None, :] is 1xN (columns j), data[:, None] is Nx1 (rows i)
     diff = data[None, :] - data[:, None]
     sgn = np.sign(diff)
     
@@ -54,8 +96,12 @@ def mann_kendall_test(
     tie_groups = counts[counts > 1]
     tie_term = np.sum(tie_groups * (tie_groups - 1) * (2 * tie_groups + 5))
 
-    # Variance of S
+    # Base variance of S
     var_s = (n * (n - 1) * (2 * n + 5) - tie_term) / 18.0
+
+    # Apply Hamed & Rao autocorrelation variance correction if requested
+    if correct_autocorrelation and var_s > 0:
+        var_s = hamed_rao_variance_correction(data, var_s)
 
     if var_s <= 0:
         z = 0.0
@@ -224,8 +270,8 @@ def compute_spatial_trends(
             slopes[i, j] = sen_res["slope"]
             intercepts[i, j] = sen_res["intercept"]
             
-            # Mann-Kendall
-            mk_res = mann_kendall_test(ts, alpha=alpha)
+            # Mann-Kendall with Hamed-Rao correction
+            mk_res = mann_kendall_test(ts, alpha=alpha, correct_autocorrelation=True)
             p_values[i, j] = mk_res["p_value"]
             n_samples[i, j] = mk_res["n_samples"]
 
