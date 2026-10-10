@@ -495,7 +495,7 @@ body.dark-theme {
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   z-index: 999;
-  width: 220px;
+  width: 260px;
   box-shadow: var(--shadow-md);
 }
 
@@ -962,29 +962,38 @@ body.dark-theme {
 /* Spatial Autocorrelation (Moran's I) Legend Bar */
 .moran-summary {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   margin-top: 8px;
   padding: 6px 10px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  font-size: 0.72rem;
+}
+
+.moran-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .moran-icon {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .moran-title {
   color: var(--text-subtle);
   font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .moran-value {
   font-family: var(--font-mono);
   color: var(--accent-cyan);
-  font-weight: 600;
+  font-size: 0.66rem;
+  line-height: 1.35;
 }
 
 /* Anselin LISA Badges */
