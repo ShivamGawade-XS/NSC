@@ -79,6 +79,68 @@ class CellDetailResponse(BaseModel):
     evidence_record: Dict[str, Any]
 
 
+class MapLayerResponse(BaseModel):
+    """Spatial map field and layer boundaries."""
+    analysis_id: str
+    variable_id: str
+    variable_name: str
+    slope_units: str
+    bounds: List[float]
+    summary: AnalysisSummary
+    grid: List[SpatialGridPoint]
+
+
+class CandidateSignal(BaseModel):
+    """Candidate trend signal surfaced by the Discovery Engine."""
+    lat: float
+    lon: float
+    slope: float
+    direction: str
+    p_value: float
+    q_value: float
+    is_significant_fdr: bool
+    is_significant_raw: bool
+    spatial_coherence: float
+    completeness: float
+    discovery_score: float
+    ranking_rationale: str
+
+
+class SignalsResponse(BaseModel):
+    """Ranked list of candidate signals worth investigating."""
+    analysis_id: str
+    variable_name: str
+    method: str
+    criteria: List[str]
+    signals: List[CandidateSignal]
+
+
+class ContrastsResponse(BaseModel):
+    """Opposing regional trend pairs."""
+    analysis_id: str
+    variable_name: str
+    contrasts_found: int
+    contrasts: List[Dict[str, Any]]
+
+
+class ProvenanceResponse(BaseModel):
+    """Dataset provenance and scientific reproducibility audit record."""
+    analysis_id: str
+    dataset_id: str
+    provenance: Dict[str, Any]
+
+
+class VariableInfo(BaseModel):
+    """Physical variable metadata."""
+    variable_id: str
+    name: str
+    source_units: str
+    display_units: str
+    slope_units: str
+    description: str
+    dataset_id: str
+
+
 class ExplainRequest(BaseModel):
     """Structured evidence record sent to the downstream AI explainer."""
     variable_name: str
