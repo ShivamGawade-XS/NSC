@@ -45,6 +45,13 @@
     </div>
   </header>
 
+  <!-- UNMISTAKABLE SYNTHETIC DATA LABEL / DEMO MODE BANNER -->
+  <div id="dataRegimeBanner" class="data-regime-banner synthetic">
+    <span class="banner-pill" id="regimeBadge">DEMO MODE</span>
+    <span class="banner-msg" id="regimeMessage">Synthetic test data — not NASA observations.</span>
+    <span class="banner-details">(Reproducible physical climate model fixture active. Real-data Earthdata streaming available via credentials).</span>
+  </div>
+
   <!-- Main Three-Column Workspace Layout -->
   <main class="workspace-grid">
     
@@ -86,21 +93,38 @@
           <input type="checkbox" id="fdrToggle" checked />
           <label for="fdrToggle">Apply Benjamini-Hochberg FDR</label>
         </div>
-        <span class="field-hint">Filters false positives across thousands of spatial cells.</span>
+        <span class="field-hint">Controls False Discovery Rate across spatial grid cells.</span>
       </div>
 
-      <button id="runAnalysisBtn" class="btn btn-primary">
-        <span class="btn-icon">⚡</span> Run Trend Detection
-      </button>
+      <div class="action-buttons-group">
+        <button id="runAnalysisBtn" class="btn btn-primary">
+          <span class="btn-icon">⚡</span> Run Trend Detection
+        </button>
+        <button id="findInterestingBtn" class="btn btn-accent" title="Discovery Engine: Rank signals by magnitude * significance * completeness * spatial coherence">
+          <span class="btn-icon">🎯</span> Find Something Interesting
+        </button>
+      </div>
 
-      <!-- Quick Signals & Contrasts Summary -->
+      <!-- Discovery Engine: Candidate Signals Box -->
+      <div class="panel-section discovery-section">
+        <h3>🎯 Discovered Candidate Signals</h3>
+        <p class="section-subtext">Ranked by composite discovery score: |slope| × significance × completeness × (1 + coherence).</p>
+        <div id="signalsListContainer" class="signals-list">
+          <div class="signal-loading">Run analysis to discover candidate signals...</div>
+        </div>
+      </div>
+
+      <!-- Contrast Engine: Regional Divergence Summary -->
       <div class="panel-section contrast-section">
-        <h3>⚡ Discovered Regional Divergence</h3>
+        <h3>⚖️ Discovered Regional Divergence</h3>
         <div id="contrastSummaryCard" class="contrast-card">
           <div class="contrast-badge">Opposing Trends Detected</div>
           <div class="contrast-body" id="contrastContent">
             Analyzing spatial vectors...
           </div>
+          <button id="findContrastsBtn" class="btn btn-sm btn-outline">
+            Focus Contrasting Regions
+          </button>
         </div>
       </div>
 
@@ -109,7 +133,8 @@
         <h4>Source Provenance</h4>
         <div id="provenanceMeta" class="prov-text">
           NASA Global Modeling and Assimilation Office<br/>
-          DOI: <code>10.5067/A7F0JNNUTWOB</code>
+          DOI: <code>10.5067/A7F0JNNUTWOB</code><br/>
+          <span id="provenanceSourceLabel" class="source-tag">Synthetic test data</span>
         </div>
       </div>
     </aside>
@@ -207,11 +232,26 @@
           <div class="ev-sub">Missing gaps: 0 • Spatial Adjacency: Validated</div>
         </div>
 
+        <div class="evidence-card">
+          <div class="ev-label">SCIENTIFIC METHOD</div>
+          <div class="ev-value" id="evMethod">
+            Sen's robust median-of-slopes estimator with Mann-Kendall monotonic test and Benjamini-Hochberg FDR
+          </div>
+        </div>
+
         <div class="evidence-card caveat-card">
           <div class="ev-label">SCIENTIFIC CAVEATS & LIMITATIONS</div>
           <div class="ev-value caveat" id="evLimitations">
             Empirical observation of monotonic trend. Does not prove underlying atmospheric or oceanic causation without physical process attribution.
           </div>
+        </div>
+
+        <div class="evidence-card source-card">
+          <div class="ev-label">DATA SOURCE & AUDIT STATUS</div>
+          <div class="ev-value source" id="evSource">
+            NASA MERRA-2 Atmospheric Reanalysis
+          </div>
+          <div class="ev-sub" id="evDataRegimeLabel">Data Regime: Synthetic test data — not NASA observations.</div>
         </div>
 
         <!-- Downstream AI Explainer Integration -->
