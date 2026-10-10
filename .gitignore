@@ -34,6 +34,9 @@ yarn-error.log*
 *.tif
 *.tiff
 *.geojson
+*.db
+*.db-wal
+*.db-shm
 /data/
 cache/
 *.pdf

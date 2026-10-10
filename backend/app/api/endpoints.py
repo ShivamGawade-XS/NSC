@@ -50,39 +50,60 @@ ADAPTERS = {
     "nasa_power": NASAPowerAdapter()
 }
 
+from app.core.config import Settings
+from app.core.db_cache import save_to_db_cache, load_from_db_cache, get_cache_db_stats
+
 # Thread-safe in-memory LRU analysis cache
 CACHE_LOCK = threading.Lock()
 ANALYSIS_CACHE: OrderedDict[str, Dict[str, Any]] = OrderedDict()
 
 
 def get_cached_analysis(analysis_id: str) -> Optional[Dict[str, Any]]:
-    """Retrieve analysis from cache with thread-safe LRU ordering."""
+    """Retrieve analysis from cache with thread-safe LRU ordering and L2 SQLite fallback."""
     with CACHE_LOCK:
         if analysis_id in ANALYSIS_CACHE:
             ANALYSIS_CACHE.move_to_end(analysis_id)
             return ANALYSIS_CACHE[analysis_id]
-        return None
+
+    # L2 persistent SQLite database cache lookup via B-Tree index
+    db_payload = load_from_db_cache(analysis_id)
+    if db_payload:
+        with CACHE_LOCK:
+            ANALYSIS_CACHE[analysis_id] = db_payload
+            while len(ANALYSIS_CACHE) > Settings.CACHE_MAX_SIZE:
+                ANALYSIS_CACHE.popitem(last=False)
+        return db_payload
+    return None
 
 
-def set_cached_analysis(analysis_id: str, value: Dict[str, Any], max_size: int = 32) -> None:
-    """Store analysis in cache with thread-safe bounded LRU eviction."""
+def set_cached_analysis(analysis_id: str, value: Dict[str, Any], max_size: Optional[int] = None) -> None:
+    """Store analysis in cache with thread-safe bounded LRU eviction and indexed SQLite persistence."""
+    effective_max = max_size if max_size is not None else Settings.CACHE_MAX_SIZE
     with CACHE_LOCK:
         if analysis_id in ANALYSIS_CACHE:
             ANALYSIS_CACHE.move_to_end(analysis_id)
         ANALYSIS_CACHE[analysis_id] = value
-        while len(ANALYSIS_CACHE) > max_size:
+        while len(ANALYSIS_CACHE) > effective_max:
             ANALYSIS_CACHE.popitem(last=False)
+
+    # L2 SQLite indexed persistence
+    save_to_db_cache(analysis_id, value)
 
 
 @router.get("/health")
 def health_check() -> Dict[str, Any]:
-    """API health and capabilities status."""
+    """API health, database cache status, and capabilities."""
     return {
         "status": "healthy",
         "service": "EarthSift Scientific API",
         "version": "1.0.0",
         "engine": "Mann-Kendall + Theil-Sen + Benjamini-Hochberg FDR",
-        "adapters": list(ADAPTERS.keys())
+        "adapters": list(ADAPTERS.keys()),
+        "cache": {
+            "l1_memory_cached_analyses": len(ANALYSIS_CACHE),
+            "l1_max_size": Settings.CACHE_MAX_SIZE,
+            "l2_database": get_cache_db_stats()
+        }
     }
 
 
