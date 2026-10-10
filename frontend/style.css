@@ -53,8 +53,8 @@ h1, h2, h3, h4, .brand-title, .modal-title h3, .panel-header h2 {
 /* Header (Orizon SpaceX Aerospace Fleet Command HUD) */
 .app-header {
   background: rgba(10, 15, 29, 0.85);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-subtle);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   padding: 10px 24px;
@@ -122,6 +122,7 @@ h1, h2, h3, h4, .brand-title, .modal-title h3, .panel-header h2 {
   padding: 4px 10px;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
 
@@ -588,8 +589,8 @@ h1, h2, h3, h4, .brand-title, .modal-title h3, .panel-header h2 {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--text-muted);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 12px rgba(0, 240, 255, 0.15);
   pointer-events: none;
   transition: all 0.25s ease;

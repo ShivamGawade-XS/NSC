@@ -51,11 +51,13 @@ def get_metrics():
         mem_mb = 0.0
 
     from app.api.endpoints import ANALYSIS_CACHE
+    from app.core.db_cache import get_cache_db_stats
     return {
         "service": "EarthSift Scientific API",
         "version": settings.VERSION,
         "uptime_seconds": round(uptime, 1),
         "cached_analyses": len(ANALYSIS_CACHE),
+        "database_cache": get_cache_db_stats(),
         "memory_rss_mb": mem_mb,
         "status": "operational"
     }
