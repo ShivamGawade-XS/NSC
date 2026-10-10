@@ -3,10 +3,12 @@ EarthSift — Contrasting Trends Engine
 Identifies pairs of geographical regions demonstrating statistically significant
 trends in opposite directions (e.g. warming vs cooling, wetting vs drying)
 during the exact same temporal period.
+Uses connected component spatial clustering (8-connectivity) to isolate true regional clusters.
 """
 
 from typing import List, Dict, Any, Optional
 import numpy as np
+from scipy import ndimage
 
 
 def find_contrasting_regions(
@@ -19,6 +21,7 @@ def find_contrasting_regions(
 ) -> List[Dict[str, Any]]:
     """
     Discover contrasting spatial regions with opposing significant trends.
+    Uses 8-neighbor connected component labeling to isolate distinct geographic clusters.
     
     Parameters:
         slopes: 2D array of trend slopes (H, W).
@@ -26,7 +29,7 @@ def find_contrasting_regions(
         latitudes: 1D array of latitude coordinates.
         longitudes: 1D array of longitude coordinates.
         min_cluster_size: Minimum number of cells in each cluster.
-        top_k: Number of contrasting pairs to return.
+        top_k: Number of contrasting pairs to return (default: 5).
         
     Returns:
         List of contrast records pairing an increasing region with a decreasing region.
@@ -36,52 +39,101 @@ def find_contrasting_regions(
     pos_mask = (slopes > 0) & is_significant
     neg_mask = (slopes < 0) & is_significant
     
-    pos_indices = np.argwhere(pos_mask)
-    neg_indices = np.argwhere(neg_mask)
+    # 8-connectivity structuring element
+    struct_8 = np.ones((3, 3), dtype=int)
     
-    if len(pos_indices) < min_cluster_size or len(neg_indices) < min_cluster_size:
+    # Label connected spatial clusters
+    pos_labeled, num_pos = ndimage.label(pos_mask, structure=struct_8)
+    neg_labeled, num_neg = ndimage.label(neg_mask, structure=struct_8)
+    
+    def extract_clusters(labeled_grid: np.ndarray, num_features: int, label_type: str) -> List[Dict[str, Any]]:
+        clusters = []
+        for feat_id in range(1, num_features + 1):
+            indices = np.argwhere(labeled_grid == feat_id)
+            if len(indices) < min_cluster_size:
+                continue
+            
+            lats = latitudes[indices[:, 0]]
+            lons = longitudes[indices[:, 1]]
+            region_slopes = slopes[indices[:, 0], indices[:, 1]]
+            
+            clusters.append({
+                "cluster_id": f"{label_type}_{feat_id}",
+                "type": label_type,
+                "cell_count": int(len(indices)),
+                "mean_slope": round(float(np.mean(region_slopes)), 4),
+                "max_slope": round(float(np.max(region_slopes)), 4),
+                "min_slope": round(float(np.min(region_slopes)), 4),
+                "bbox": [
+                    round(float(np.min(lons)), 2),
+                    round(float(np.min(lats)), 2),
+                    round(float(np.max(lons)), 2),
+                    round(float(np.max(lats)), 2)
+                ],
+                "center": [
+                    round(float(np.mean(lons)), 2),
+                    round(float(np.mean(lats)), 2)
+                ]
+            })
+        # Sort clusters by absolute mean slope descending
+        clusters.sort(key=lambda c: abs(c["mean_slope"]), reverse=True)
+        return clusters
+
+    pos_clusters = extract_clusters(pos_labeled, num_pos, "increasing")
+    neg_clusters = extract_clusters(neg_labeled, num_neg, "decreasing")
+    
+    # Fallback to entire masks if clusters were fragmented below min_cluster_size
+    if not pos_clusters and np.sum(pos_mask) >= min_cluster_size:
+        indices = np.argwhere(pos_mask)
+        pos_clusters = [{
+            "cluster_id": "increasing_all",
+            "type": "increasing",
+            "cell_count": int(len(indices)),
+            "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
+            "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
+            "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
+            "bbox": [round(float(np.min(longitudes[indices[:, 1]])), 2), round(float(np.min(latitudes[indices[:, 0]])), 2),
+                     round(float(np.max(longitudes[indices[:, 1]])), 2), round(float(np.max(latitudes[indices[:, 0]])), 2)],
+            "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
+        }]
+        
+    if not neg_clusters and np.sum(neg_mask) >= min_cluster_size:
+        indices = np.argwhere(neg_mask)
+        neg_clusters = [{
+            "cluster_id": "decreasing_all",
+            "type": "decreasing",
+            "cell_count": int(len(indices)),
+            "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
+            "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
+            "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
+            "bbox": [round(float(np.min(longitudes[indices[:, 1]])), 2), round(float(np.min(latitudes[indices[:, 0]])), 2),
+                     round(float(np.max(longitudes[indices[:, 1]])), 2), round(float(np.max(latitudes[indices[:, 0]])), 2)],
+            "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
+        }]
+
+    if not pos_clusters or not neg_clusters:
         return []
     
-    # Simple spatial clustering using connected components or bounding boxes
-    def get_region_summary(indices: np.ndarray, label: str) -> Dict[str, Any]:
-        lats = latitudes[indices[:, 0]]
-        lons = longitudes[indices[:, 1]]
-        region_slopes = slopes[indices[:, 0], indices[:, 1]]
-        
-        return {
-            "type": label,
-            "cell_count": int(len(indices)),
-            "mean_slope": float(np.mean(region_slopes)),
-            "max_slope": float(np.max(region_slopes)),
-            "min_slope": float(np.min(region_slopes)),
-            "bbox": [
-                float(np.min(lons)),
-                float(np.min(lats)),
-                float(np.max(lons)),
-                float(np.max(lats))
-            ],
-            "center": [
-                float(np.mean(lons)),
-                float(np.mean(lats))
-            ]
-        }
-    
-    pos_summary = get_region_summary(pos_indices, "increasing")
-    neg_summary = get_region_summary(neg_indices, "decreasing")
-    
-    contrast_magnitude = abs(pos_summary["mean_slope"] - neg_summary["mean_slope"])
-    
-    contrast_record = {
-        "contrast_id": "contrast_001",
-        "title": "Opposing Spatial Trend Pair",
-        "magnitude_delta": float(contrast_magnitude),
-        "region_increasing": pos_summary,
-        "region_decreasing": neg_summary,
-        "scientific_caveat": (
-            "Opposing trends within the same temporal window demonstrate regional divergence. "
-            "However, this spatial divergence does not inherently imply a common causal driver "
-            "without physical atmospheric/oceanic transport modeling."
-        )
-    }
-    
-    return [contrast_record]
+    # Form cross-product pairs and rank by divergence delta
+    contrast_pairs = []
+    pair_count = 0
+    for pos in pos_clusters:
+        for neg in neg_clusters:
+            delta = abs(pos["mean_slope"] - neg["mean_slope"])
+            pair_count += 1
+            contrast_pairs.append({
+                "contrast_id": f"contrast_{pair_count:03d}",
+                "title": f"Opposing Trend Pair #{pair_count} (Delta: {delta:.3f})",
+                "magnitude_delta": round(float(delta), 4),
+                "region_increasing": pos,
+                "region_decreasing": neg,
+                "scientific_caveat": (
+                    "Opposing trends within the same temporal window demonstrate regional divergence. "
+                    "However, this spatial divergence does not inherently imply a common causal driver "
+                    "without physical atmospheric/oceanic transport modeling."
+                )
+            })
+            
+    # Sort pairs by divergence magnitude descending and limit to top_k
+    contrast_pairs.sort(key=lambda p: p["magnitude_delta"], reverse=True)
+    return contrast_pairs[:top_k]

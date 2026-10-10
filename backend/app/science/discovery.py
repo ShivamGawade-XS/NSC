@@ -3,14 +3,14 @@ EarthSift — Discovery Engine
 Surfaces candidate signals worth investigating using a transparent, documented composite score:
 - significance: FDR q <= alpha (weight 1.0), raw p <= alpha (0.5), non-sig (0.1)
 - magnitude: absolute slope rate |slope|
-- completeness: valid observations / total possible observations
+- completeness: valid observations / total possible observations (computed dynamically)
 - spatial coherence: fraction of adjacent 8-neighbors with consistent significant trend direction
 
 Formula:
   discovery_score = |slope| * significance_weight * completeness * (1.0 + spatial_coherence)
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import numpy as np
 
 
@@ -62,10 +62,23 @@ def discover_candidate_signals(
     latitudes: np.ndarray,
     longitudes: np.ndarray,
     alpha: float = 0.05,
-    top_n: int = 10
+    top_n: int = 10,
+    data_3d: Optional[np.ndarray] = None
 ) -> List[Dict[str, Any]]:
     """
     Rank all grid cells by the transparent composite discovery formula.
+    
+    Parameters:
+        slopes: 2D array of slopes.
+        p_values: 2D array of p-values.
+        q_values: 2D array of FDR q-values.
+        is_significant_raw: 2D boolean mask.
+        is_significant_fdr: 2D boolean mask.
+        latitudes: 1D latitude coordinates.
+        longitudes: 1D longitude coordinates.
+        alpha: significance threshold.
+        top_n: number of top candidates to return.
+        data_3d: optional (time, lat, lon) raw observations to calculate true completeness.
     
     Returns:
         List of top_n candidate signals sorted by discovery_score descending.
@@ -91,7 +104,14 @@ def discover_candidate_signals(
             else:
                 sig_weight = 0.1
 
-            completeness = 1.0  # Annual reanalysis grid points are 100% complete
+            # Dynamically calculate data completeness if 3D series is provided
+            if data_3d is not None and data_3d.shape[0] > 0:
+                cell_series = data_3d[:, i, j]
+                valid_count = int(np.sum(~np.isnan(cell_series)))
+                completeness = round(float(valid_count / len(cell_series)), 3)
+            else:
+                completeness = 1.0
+
             coh = float(coherence[i, j])
 
             # Transparent formula
@@ -113,7 +133,7 @@ def discover_candidate_signals(
                 "discovery_score": round(float(score), 4),
                 "ranking_rationale": (
                     f"|slope|={abs_slope:.3f} * sig_weight={sig_weight:.1f} * "
-                    f"completeness={completeness:.1f} * (1 + coherence={coh:.2f})"
+                    f"completeness={completeness:.2f} * (1 + coherence={coh:.2f})"
                 )
             })
 

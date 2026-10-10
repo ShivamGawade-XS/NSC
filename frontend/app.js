@@ -4,7 +4,9 @@
  */
 
 // API Configuration: supports direct local backend or proxy
-const API_BASE = window.location.port === "8000" ? "/api/v1" : "http://localhost:8000/api/v1";
+const API_BASE = (window.location.protocol === "http:" || window.location.protocol === "https:") && window.location.port === "8000"
+  ? "/api/v1"
+  : "http://localhost:8000/api/v1";
 
 let map;
 let gridLayerGroup;
@@ -14,19 +16,48 @@ let currentSelectedCell = null;
 let currentAnalysisData = null;
 let candidateSignals = [];
 
-// Color scale interpolator for diverging trend palette
+// Color scale interpolator: smooth 5-stop scientific diverging palette (Blue -> Neutral Slate -> Red)
 function getTrendColor(slope, minVal, maxVal) {
-  let norm;
-  if (slope > 0) {
-    norm = Math.min(1.0, slope / (maxVal || 0.5));
-    // Interpolate dark neutral to vivid crimson/red
-    return `rgba(${Math.round(200 + 55 * norm)}, ${Math.round(60 * (1 - norm))}, ${Math.round(60 * (1 - norm))}, 0.85)`;
-  } else if (slope < 0) {
-    norm = Math.min(1.0, Math.abs(slope) / Math.abs(minVal || -0.5));
-    // Interpolate dark neutral to vivid blue
-    return `rgba(${Math.round(30 * (1 - norm))}, ${Math.round(130 + 50 * norm)}, ${Math.round(240)}, 0.85)`;
-  } else {
+  if (slope === 0 || Math.abs(slope) < 1e-6) {
     return "rgba(100, 116, 139, 0.4)";
+  }
+  
+  if (slope > 0) {
+    const max = maxVal && maxVal > 0 ? maxVal : 0.5;
+    const norm = Math.min(1.0, slope / max);
+    // Interpolate from neutral slate (100, 116, 139) -> warm amber (245, 158, 11) -> deep crimson (239, 68, 68)
+    let r, g, b;
+    if (norm < 0.5) {
+      const t = norm / 0.5;
+      r = Math.round(100 + (245 - 100) * t);
+      g = Math.round(116 + (158 - 116) * t);
+      b = Math.round(139 + (11 - 139) * t);
+    } else {
+      const t = (norm - 0.5) / 0.5;
+      r = Math.round(245 + (239 - 245) * t);
+      g = Math.round(158 + (68 - 158) * t);
+      b = Math.round(11 + (68 - 11) * t);
+    }
+    const alpha = 0.5 + 0.45 * norm;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } else {
+    const min = minVal && minVal < 0 ? Math.abs(minVal) : 0.5;
+    const norm = Math.min(1.0, Math.abs(slope) / min);
+    // Interpolate from neutral slate (100, 116, 139) -> vivid cyan (56, 189, 248) -> deep cobalt (37, 99, 235)
+    let r, g, b;
+    if (norm < 0.5) {
+      const t = norm / 0.5;
+      r = Math.round(100 + (56 - 100) * t);
+      g = Math.round(116 + (189 - 116) * t);
+      b = Math.round(139 + (248 - 139) * t);
+    } else {
+      const t = (norm - 0.5) / 0.5;
+      r = Math.round(56 + (37 - 56) * t);
+      g = Math.round(189 + (99 - 189) * t);
+      b = Math.round(248 + (235 - 248) * t);
+    }
+    const alpha = 0.5 + 0.45 * norm;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 }
 
@@ -124,6 +155,7 @@ function initChart() {
 // Render Spatial Grid Markers on Map
 function renderSpatialGrid(grid, minSlope, maxSlope, maskSigOnly) {
   gridLayerGroup.clearLayers();
+  const canvasRenderer = L.canvas({ padding: 0.5 });
 
   grid.forEach(cell => {
     if (maskSigOnly && !cell.is_significant_fdr) {
@@ -134,6 +166,7 @@ function renderSpatialGrid(grid, minSlope, maxSlope, maskSigOnly) {
     const isSig = cell.is_significant_fdr;
 
     const marker = L.circleMarker([cell.lat, cell.lon], {
+      renderer: canvasRenderer,
       radius: isSig ? 9 : 6,
       fillColor: color,
       fillOpacity: isSig ? 0.85 : 0.45,
@@ -353,6 +386,14 @@ async function selectCell(lat, lon) {
     timeSeriesChart.data.labels = cell.years;
     timeSeriesChart.data.datasets[0].data = cell.observations;
     timeSeriesChart.data.datasets[1].data = cell.fitted_values;
+    if (timeSeriesChart.options.scales && timeSeriesChart.options.scales.y) {
+      timeSeriesChart.options.scales.y.title = {
+        display: true,
+        text: cell.display_units || "",
+        color: "#94a3b8",
+        font: { size: 10, family: "Inter" }
+      };
+    }
     timeSeriesChart.update();
 
     // Update Header and Badges
@@ -380,23 +421,32 @@ async function selectCell(lat, lon) {
   }
 }
 
-// Update Contrasts UI
+// Update Contrasts UI with multiple connected cluster pairs
 function updateContrastsUI(contrasts, units) {
   const container = document.getElementById("contrastContent");
   if (!contrasts || contrasts.length === 0) {
-    container.innerHTML = "No significant opposing pairs detected in current bounding box.";
+    container.innerHTML = "No significant opposing regional pairs detected in current bounding box.";
     return;
   }
 
-  const c = contrasts[0];
-  const pos = c.region_increasing;
-  const neg = c.region_decreasing;
-
-  container.innerHTML = `
-    <strong>Divergence Delta:</strong> ${c.magnitude_delta.toFixed(3)} ${units}<br/>
-    • <span style="color:#ef4444">Warming/Increasing:</span> ${pos.cell_count} cells (Mean: +${pos.mean_slope.toFixed(3)})<br/>
-    • <span style="color:#38bdf8">Cooling/Drying:</span> ${neg.cell_count} cells (Mean: ${neg.mean_slope.toFixed(3)})
-  `;
+  let html = `<div style="font-size: 11px; margin-bottom: 6px; color: var(--accent-cyan); font-weight: 600;">Discovered ${contrasts.length} Opposing Spatial Pairs:</div>`;
+  contrasts.slice(0, 3).forEach((c, idx) => {
+    const pos = c.region_increasing;
+    const neg = c.region_decreasing;
+    html += `
+      <div style="background: rgba(14, 22, 38, 0.7); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 11px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+          <strong style="color: var(--text-main);">#${idx + 1} Opposing Pair</strong>
+          <span style="color:#f59e0b; font-family:var(--font-mono); font-weight:600;">Δ ${c.magnitude_delta.toFixed(3)} ${units}</span>
+        </div>
+        <div style="font-size: 10px; color: #94a3b8; line-height: 1.4;">
+          • <span style="color:#ef4444; font-weight:500;">Increasing:</span> ${pos.cell_count} cells (Mean: +${pos.mean_slope.toFixed(3)})<br/>
+          • <span style="color:#38bdf8; font-weight:500;">Decreasing:</span> ${neg.cell_count} cells (Mean: ${neg.mean_slope.toFixed(3)})
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
 }
 
 // AI Explainer Request
