@@ -1,23 +1,28 @@
-/* EarthSift — Modern Scientific Instrument Aesthetic */
+/* EarthSift — Aerospace Command & Scientific GIS Instrument Aesthetic */
 :root {
-  --bg-deep: #070b14;
-  --bg-surface: #0e1626;
-  --bg-surface-elevated: #152238;
-  --bg-card: rgba(22, 35, 58, 0.7);
-  --border-subtle: #1e2e4a;
-  --border-focus: #38bdf8;
-  --text-main: #f1f5f9;
+  --bg-deep: #06090f;
+  --bg-surface: #0a0f1d;
+  --bg-surface-elevated: #111827;
+  --bg-card: rgba(16, 24, 40, 0.72);
+  --bg-glass: rgba(10, 15, 29, 0.78);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-card: rgba(255, 255, 255, 0.09);
+  --border-focus: #00f0ff;
+  --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-subtle: #64748b;
   --accent-nasa-blue: #0284c7;
-  --accent-cyan: #38bdf8;
+  --accent-cyan: #00f0ff;
+  --accent-cyan-glow: rgba(0, 240, 255, 0.35);
   --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
+  --font-display: 'Outfit', sans-serif;
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -40,15 +45,25 @@ body.dark-theme {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Header */
+h1, h2, h3, h4, .brand-title, .modal-title h3, .panel-header h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+/* Header (Orizon SpaceX Aerospace Fleet Command HUD) */
 .app-header {
-  background: linear-gradient(180deg, #0f192c 0%, #0a1120 100%);
+  background: rgba(10, 15, 29, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-subtle);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   padding: 10px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  z-index: 100;
+  position: relative;
 }
 
 .brand {
@@ -60,18 +75,18 @@ body.dark-theme {
 .brand-logo {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #0284c7 0%, #1e1b4b 100%);
-  border: 1px solid var(--accent-cyan);
+  background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
+  border: 1px solid rgba(0, 240, 255, 0.5);
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
 }
 
 .brand-title {
-  font-size: 1.15rem;
+  font-size: 1.18rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   display: flex;
@@ -81,25 +96,77 @@ body.dark-theme {
 
 .badge-tag {
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-display);
   text-transform: uppercase;
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(0, 240, 255, 0.12);
   color: var(--accent-cyan);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  padding: 2px 8px;
+  border: 1px solid rgba(0, 240, 255, 0.45);
+  padding: 2px 9px;
   border-radius: 9999px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
 }
 
 .brand-subtitle {
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
+}
+
+/* Quick Preset Investigation Ribbon (Orizon SpaceX HUD) */
+.preset-quick-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(14, 22, 38, 0.65);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.ribbon-label {
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--text-subtle);
+  letter-spacing: 0.08em;
+  margin-right: 2px;
+}
+
+.preset-pill-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.preset-pill-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.preset-pill-btn.active {
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--accent-cyan);
+  border-color: rgba(0, 240, 255, 0.55);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+  font-weight: 700;
 }
 
 .header-metrics {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .metric-pill {
@@ -441,7 +508,7 @@ body.dark-theme {
   color: var(--accent-cyan);
 }
 
-/* Center Map View */
+/* Center Map View (Fuselab Real-Time Scientific GIS Command Viewport) */
 .map-toolbar {
   padding: 10px 18px;
   background-color: var(--bg-surface);
@@ -450,11 +517,14 @@ body.dark-theme {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  z-index: 10;
 }
 
 .toolbar-title h3 {
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
 }
 
 .map-sub {
@@ -475,6 +545,76 @@ body.dark-theme {
   font-size: 0.72rem;
   color: var(--text-muted);
   cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.layer-toggle:hover {
+  background: rgba(0, 240, 255, 0.08);
+  border-color: rgba(0, 240, 255, 0.3);
+  color: var(--text-main);
+}
+
+.layer-toggle input:checked + span {
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+/* Map Viewport Wrapper & Real-Time GIS Crosshair HUD (Fuselab Creative) */
+.map-viewport-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.map-crosshair-hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 12, 22, 0.86);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: 9999px;
+  padding: 5px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 12px rgba(0, 240, 255, 0.15);
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+
+.crosshair-icon {
+  color: var(--accent-cyan);
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.hud-target-label, .hud-rate-label, .hud-sig-label {
+  color: var(--text-subtle);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.hud-val {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.hud-divider {
+  color: rgba(255, 255, 255, 0.18);
 }
 
 .map-container {
@@ -487,17 +627,17 @@ body.dark-theme {
 /* Map Legend */
 .map-legend {
   position: absolute;
-  top: 60px;
+  top: 56px;
   right: 18px;
-  background: rgba(14, 22, 38, 0.85);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  background: rgba(10, 15, 29, 0.88);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
   z-index: 999;
-  width: 260px;
-  box-shadow: var(--shadow-md);
+  width: 270px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55), 0 0 15px rgba(0, 240, 255, 0.1);
 }
 
 .legend-title {
@@ -605,7 +745,7 @@ body.dark-theme {
   width: 100%;
 }
 
-/* Evidence Panel */
+/* Evidence Panel (Shakuro Minimalist Obsidian Aerospace Cards) */
 .evidence-body {
   display: flex;
   flex-direction: column;
@@ -613,58 +753,73 @@ body.dark-theme {
 }
 
 .evidence-card {
-  background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), var(--shadow-sm);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.evidence-card:hover {
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 20px rgba(0, 0, 0, 0.45);
+  transform: translateY(-1px);
 }
 
 .ev-label {
-  font-size: 0.65rem;
+  font-size: 0.63rem;
   font-weight: 700;
+  font-family: var(--font-display);
   color: var(--text-subtle);
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
+  letter-spacing: 0.07em;
+  margin-bottom: 5px;
+  text-transform: uppercase;
 }
 
 .ev-value {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-main);
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .ev-value.highlight {
   font-family: var(--font-mono);
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--accent-cyan);
+  text-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
 }
 
 .ev-sub {
   font-size: 0.68rem;
   color: var(--text-subtle);
-  margin-top: 4px;
+  margin-top: 5px;
+  font-family: var(--font-mono);
 }
 
 .caveat-card {
-  border-color: rgba(245, 158, 11, 0.3);
-  background: rgba(245, 158, 11, 0.04);
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.06);
 }
 
 .ev-value.caveat {
-  font-size: 0.72rem;
+  font-size: 0.73rem;
   color: #fbbf24;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* AI Explainer */
+/* AI Explainer (Shakuro Clean Aerospace Assistant) */
 .ai-explainer-section {
-  margin-top: 6px;
-  background: rgba(56, 189, 248, 0.05);
-  border: 1px solid rgba(56, 189, 248, 0.2);
-  border-radius: var(--radius-sm);
-  padding: 12px;
+  margin-top: 8px;
+  background: rgba(14, 24, 46, 0.6);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(0, 240, 255, 0.1);
 }
 
 .ai-header {
@@ -675,34 +830,39 @@ body.dark-theme {
 }
 
 .ai-header h3 {
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--accent-cyan);
+  font-family: var(--font-display);
 }
 
 .ai-pill {
-  font-size: 0.6rem;
-  background: rgba(16, 185, 129, 0.2);
+  font-size: 0.62rem;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.18);
   color: var(--accent-emerald);
-  padding: 1px 6px;
-  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-family: var(--font-mono);
 }
 
 .ai-desc {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: var(--text-subtle);
   margin-bottom: 10px;
 }
 
 .ai-box {
   margin-top: 10px;
-  background: var(--bg-deep);
-  border: 1px solid var(--border-subtle);
+  background: rgba(6, 9, 15, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-sm);
-  padding: 10px;
-  font-size: 0.72rem;
-  line-height: 1.45;
+  padding: 12px;
+  font-size: 0.74rem;
+  line-height: 1.5;
   color: var(--text-main);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .ai-box.hidden { display: none; }
@@ -710,6 +870,9 @@ body.dark-theme {
 .ai-loader {
   color: var(--accent-cyan);
   font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Data Regime / Synthetic Banner */
@@ -866,54 +1029,76 @@ body.dark-theme {
 }
 
 .signal-card {
-  background: rgba(14, 22, 38, 0.85);
-  border: 1px solid var(--border-subtle);
+  background: rgba(14, 22, 38, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
-  padding: 7px 10px;
+  padding: 8px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  margin-bottom: 6px;
 }
 
 .signal-card:hover {
-  border-color: var(--accent-cyan);
-  background: rgba(21, 34, 56, 0.95);
-  transform: translateX(2px);
+  border-color: rgba(0, 240, 255, 0.4);
+  background: rgba(20, 32, 54, 0.85);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 10px rgba(0, 240, 255, 0.15);
+  transform: translateX(3px);
 }
 
 .signal-card.active {
-  border-color: var(--accent-emerald);
-  background: rgba(16, 185, 129, 0.12);
+  border-color: var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.12);
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
 }
 
 .signal-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex: 1;
 }
 
 .signal-rank {
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--text-subtle);
-  background: rgba(30, 46, 74, 0.5);
-  padding: 2px 5px;
-  border-radius: 3px;
+  color: var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.1);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
   font-family: var(--font-mono);
 }
 
 .signal-coords {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-main);
   font-family: var(--font-mono);
 }
 
 .signal-sub {
-  font-size: 0.62rem;
+  font-size: 0.64rem;
   color: var(--text-muted);
+}
+
+.signal-meter-track {
+  width: 90%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.signal-meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7, #00f0ff);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
 }
 
 .signal-score-badge {
@@ -1059,37 +1244,63 @@ body.dark-theme {
   border: 1px solid rgba(100, 116, 139, 0.35);
 }
 
-/* Scientific Export & Dossier Actions */
+/* Scientific Export & Dossier Actions (Shakuro Clean Action Pills) */
 .export-actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 14px;
-  padding-top: 12px;
+  padding-top: 14px;
   border-top: 1px solid var(--border-subtle);
 }
 
 .btn-export {
-  background: linear-gradient(135deg, rgba(21, 34, 56, 0.95), rgba(15, 23, 42, 0.95));
-  border: 1px solid var(--border-subtle);
+  background: rgba(14, 22, 38, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   color: var(--text-main);
-  padding: 7px 12px;
-  font-size: 0.74rem;
+  padding: 8px 14px;
+  font-size: 0.75rem;
   font-weight: 600;
+  font-family: var(--font-display);
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  transition: all 0.2s ease;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.btn-export:hover {
-  background: rgba(56, 189, 248, 0.15);
-  border-color: var(--accent-cyan);
-  color: #ffffff;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+#exportNetcdfBtn:hover {
+  background: rgba(2, 132, 199, 0.2);
+  border-color: #0284c7;
+  color: #38bdf8;
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
+}
+
+#exportGeojsonBtn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #6ee7b7;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}
+
+#exportDossierBtn:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fcd34d;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+#exportNotebookBtn:hover {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #a855f7;
+  color: #d8b4fe;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35);
   transform: translateY(-1px);
 }
 
