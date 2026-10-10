@@ -72,8 +72,49 @@ def compute_global_morans_i(
     moran_i = float(numerator / denom) if denom > 0 else 0.0
     expected_i = float(-1.0 / (n - 1))
 
-    # Analytical variance under randomization assumption
-    var_i = max(1e-6, 1.0 / float(n))
+    # Analytical variance under randomization assumption (Cliff & Ord 1981)
+    # Compute weight matrix statistics: S0, S1, S2
+    # Using row-standardized Queen weights
+    s0 = 0.0
+    s1 = 0.0
+    s2_w = 0.0
+    for r in range(h):
+        for c in range(w):
+            if not valid_mask[r, c]:
+                continue
+            r_min_n, r_max_n = max(0, r - 1), min(h, r + 2)
+            c_min_n, c_max_n = max(0, c - 1), min(w, c + 2)
+            nb_mask_n = valid_mask[r_min_n:r_max_n, c_min_n:c_max_n].copy()
+            nb_mask_n[r - r_min_n, c - c_min_n] = False
+            nb_count_n = int(np.sum(nb_mask_n))
+            if nb_count_n > 0:
+                w_ij = 1.0 / nb_count_n
+                row_sum = 0.0
+                col_sum = 0.0
+                for dr in range(nb_mask_n.shape[0]):
+                    for dc in range(nb_mask_n.shape[1]):
+                        if nb_mask_n[dr, dc]:
+                            s0 += w_ij
+                            s1 += 2.0 * w_ij * w_ij  # (w_ij + w_ji)^2 / 2 simplified
+                            row_sum += w_ij
+                s2_w += (2.0 * row_sum) ** 2  # (sum_j w_ij + sum_j w_ji)^2
+
+    s0 = max(s0, 1e-6)
+    n_f = float(n)
+    e_i = -1.0 / (n_f - 1.0)
+
+    # Kurtosis term (b2)
+    z_vals = z[valid_mask]
+    m2 = float(np.mean(z_vals ** 2))
+    m4 = float(np.mean(z_vals ** 4))
+    b2 = m4 / (m2 ** 2) if m2 > 1e-12 else 3.0
+
+    # Full randomization variance (Cliff & Ord 1981, eq. 4.6)
+    a_term = n_f * ((n_f * n_f - 3.0 * n_f + 3.0) * s1 - n_f * s2_w + 3.0 * s0 * s0)
+    b_term = b2 * ((n_f * n_f - n_f) * s1 - 2.0 * n_f * s2_w + 6.0 * s0 * s0)
+    c_term = (n_f - 1.0) * (n_f - 2.0) * (n_f - 3.0) * s0 * s0
+
+    var_i = max(1e-8, (a_term - b_term) / c_term - e_i * e_i) if c_term > 0 else max(1e-8, 1.0 / n_f)
     z_score = float((moran_i - expected_i) / np.sqrt(var_i))
     p_value = float(2.0 * (1.0 - stats.norm.cdf(abs(z_score))))
 

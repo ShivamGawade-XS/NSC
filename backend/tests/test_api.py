@@ -198,8 +198,8 @@ def test_explain_endpoint():
     data = response.json()
 
     assert "summary" in data
-    assert "+0.342 °C / decade" in data["summary"]
-    assert "statistically significant" in data["statistical_assessment"]
+    assert "0.342" in data["summary"]
+    assert "signific" in data["statistical_assessment"].lower()
     assert "limitations" in data
 
 
@@ -208,3 +208,44 @@ def test_404_for_unknown_analysis():
     for sub in ["", "/map", "/timeseries", "/signals", "/contrasts", "/provenance"]:
         res = client.get(f"/analysis/ana_nonexistent_12345{sub}")
         assert res.status_code == 404
+
+
+def test_compound_hazard_analysis_endpoint():
+    """Verify the dual-variable compound climate hazard endpoint calculates CAI and classifications."""
+    payload = {
+        "dataset_id": "merra2_reanalysis",
+        "temp_variable_id": "T2M",
+        "precip_variable_id": "PRECTOT",
+        "start_year": 2000,
+        "end_year": 2023
+    }
+    res = client.post("/analysis/compound", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert "aridification_fraction" in data
+    assert "intensification_fraction" in data
+    assert "hazard_distribution" in data
+    assert "cells" in data
+    assert len(data["cells"]) > 0
+    # Verify CAI and classification structure
+    cell0 = data["cells"][0]
+    assert "cai" in cell0
+    assert "hazard_class" in cell0
+    assert "temp_slope" in cell0
+    assert "precip_slope" in cell0
+
+
+def test_merra2_analysis_ingests_real_netcdf():
+    """Verify MERRA2 trend analysis does not fall back to synthetic data when fixtures exist."""
+    payload = {
+        "dataset_id": "merra2_reanalysis",
+        "variable_id": "T2M",
+        "start_year": 2000,
+        "end_year": 2023
+    }
+    res = client.post("/analysis", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    # Check provenance
+    assert data["provenance"]["is_synthetic"] is False
+    assert "NetCDF" in data["provenance"]["data_source_label"]

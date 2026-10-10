@@ -1,0 +1,4 @@
+[ 1220337ms] [ERROR] Compound Hazard Analysis failed: TypeError: Cannot set properties of null (setting 'innerText')
+    at executeCompoundHazardAnalysis (http://localhost:8000/app.js:648:53) @ http://localhost:8000/app.js:653
+[ 1232142ms] [ERROR] Compound Hazard Analysis failed: TypeError: Cannot set properties of null (setting 'innerText')
+    at HTMLButtonElement.executeCompoundHazardAnalysis (http://localhost:8000/app.js:648:53) @ http://localhost:8000/app.js:653

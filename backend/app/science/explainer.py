@@ -44,6 +44,18 @@ def deterministic_fallback_explanation(req: ExplainRequest) -> ExplainResponse:
     )
 
 
+def _clean_and_parse_json(raw: str) -> dict:
+    text = raw.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+    return json.loads(text)
+
+
 def explain_evidence_with_ai(req: ExplainRequest) -> ExplainResponse:
     """
     Downstream scientific explainer:
@@ -69,39 +81,62 @@ def explain_evidence_with_ai(req: ExplainRequest) -> ExplainResponse:
         f"- Trend Direction: {req.direction}\n"
         f"- Sample Count: {req.sample_count} verified observations from {req.source}\n\n"
         f"STRICT RULES:\n"
-        f"1. DO NOT alter any calculated numbers.\n"
-        f"2. DO NOT speculate on unverified physical drivers.\n"
-        f"3. Return ONLY a valid JSON object with keys: 'summary', 'statistical_assessment', 'limitations'."
+        f"1. You MUST explicitly state the exact numerical rate ({req.slope:+.3f} {req.slope_units}) in the summary.\n"
+        f"2. DO NOT alter any calculated numbers.\n"
+        f"3. DO NOT speculate on unverified physical drivers.\n"
+        f"4. Return ONLY a valid JSON object with keys: 'summary', 'statistical_assessment', 'limitations'."
     )
+
+    def _ground_evidence(parsed_dict: dict) -> ExplainResponse:
+        summary_text = parsed_dict.get("summary", "").strip()
+        slope_3f = f"{req.slope:.3f}"
+        slope_abs_3f = f"{abs(req.slope):.3f}"
+        if not any(s in summary_text for s in [slope_3f, slope_abs_3f, str(req.slope)]):
+            summary_text = f"{summary_text.rstrip('.')} at an estimated rate of {req.slope:+.3f} {req.slope_units}."
+        stat_text = parsed_dict.get("statistical_assessment", "").strip()
+        if not stat_text:
+            sig_str = "statistically significant" if req.significant else "not statistically significant"
+            stat_text = f"The non-parametric trend test is {sig_str} (p = {req.p_value:.4f}, FDR q = {req.q_value:.4f})."
+        limit_text = parsed_dict.get("limitations", "").strip()
+        if not limit_text:
+            limit_text = "Observations subject to reanalysis spatial grid resolution and sensor adjustments."
+        return ExplainResponse(
+            summary=summary_text,
+            statistical_assessment=stat_text,
+            limitations=limit_text
+        )
 
     # 1. Attempt Gemini API
     if gemini_key:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-            headers = {"Content-Type": "application/json"}
-            payload = {
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "temperature": 0.2,
-                    "maxOutputTokens": 500,
-                    "responseMimeType": "application/json"
+        candidate_models = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash"]
+        for model in candidate_models:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+                headers = {"Content-Type": "application/json"}
+                payload = {
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {
+                        "temperature": 0.2,
+                        "maxOutputTokens": 500,
+                        "responseMimeType": "application/json"
+                    }
                 }
-            }
-            with httpx.Client(timeout=8.0) as client:
-                res = client.post(url, headers=headers, json=payload)
-                if res.status_code == 200:
-                    data = res.json()
-                    candidates = data.get("candidates", [])
-                    if candidates:
-                        text_resp = candidates[0]["content"]["parts"][0]["text"]
-                        parsed = json.loads(text_resp)
-                        return ExplainResponse(
-                            summary=parsed.get("summary", ""),
-                            statistical_assessment=parsed.get("statistical_assessment", ""),
-                            limitations=parsed.get("limitations", "")
-                        )
-        except Exception as e:
-            logger.warning("Gemini AI Explainer call failed (%s); falling back to deterministic template.", e)
+                with httpx.Client(timeout=10.0) as client:
+                    res = client.post(url, headers=headers, json=payload)
+                    if res.status_code == 200:
+                        data = res.json()
+                        candidates = data.get("candidates", [])
+                        if candidates:
+                            text_resp = candidates[0]["content"]["parts"][0]["text"]
+                            parsed = _clean_and_parse_json(text_resp)
+                            return _ground_evidence(parsed)
+                    elif res.status_code in (400, 401, 403):
+                        logger.warning("Gemini API rejected key/request with status %d (%s); aborting model loop.", res.status_code, res.text[:200])
+                        break
+                    else:
+                        logger.warning("Gemini model %s returned HTTP %d: %s", model, res.status_code, res.text[:150])
+            except Exception as e:
+                logger.warning("Gemini model %s failed (%s); trying next.", model, e)
 
     # 2. Attempt OpenAI API
     if openai_key:
@@ -125,12 +160,10 @@ def explain_evidence_with_ai(req: ExplainRequest) -> ExplainResponse:
                 if res.status_code == 200:
                     data = res.json()
                     content = data["choices"][0]["message"]["content"]
-                    parsed = json.loads(content)
-                    return ExplainResponse(
-                        summary=parsed.get("summary", ""),
-                        statistical_assessment=parsed.get("statistical_assessment", ""),
-                        limitations=parsed.get("limitations", "")
-                    )
+                    parsed = _clean_and_parse_json(content)
+                    return _ground_evidence(parsed)
+                elif res.status_code in (401, 403):
+                    logger.warning("OpenAI API rejected key with HTTP %d.", res.status_code)
         except Exception as e:
             logger.warning("OpenAI Explainer call failed (%s); falling back to deterministic template.", e)
 

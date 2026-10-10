@@ -111,6 +111,55 @@ def find_contrasting_regions(
             "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
         }]
 
+    # Fallback to thermal/hydrological refugia if domain is uniformly one-directional
+    if not neg_clusters and len(pos_clusters) > 0:
+        valid_slopes = slopes[~np.isnan(slopes)]
+        if len(valid_slopes) >= min_cluster_size * 2:
+            q25 = float(np.percentile(valid_slopes, 25))
+            refugium_mask = (slopes <= q25) & (~np.isnan(slopes))
+            if int(np.sum(refugium_mask)) >= min_cluster_size:
+                ref_labeled, num_ref = ndimage.label(refugium_mask, structure=struct_8)
+                ref_clusters = extract_clusters(ref_labeled, num_ref, "refugium")
+                if not ref_clusters and int(np.sum(refugium_mask)) >= min_cluster_size:
+                    indices = np.argwhere(refugium_mask)
+                    ref_clusters = [{
+                        "cluster_id": "refugium_all",
+                        "type": "refugium",
+                        "cell_count": int(len(indices)),
+                        "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
+                        "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
+                        "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
+                        "bbox": [round(float(np.min(longitudes[indices[:, 1]])), 2), round(float(np.min(latitudes[indices[:, 0]])), 2),
+                                 round(float(np.max(longitudes[indices[:, 1]])), 2), round(float(np.max(latitudes[indices[:, 0]])), 2)],
+                        "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
+                    }]
+                if ref_clusters:
+                    neg_clusters = ref_clusters
+
+    if not pos_clusters and len(neg_clusters) > 0:
+        valid_slopes = slopes[~np.isnan(slopes)]
+        if len(valid_slopes) >= min_cluster_size * 2:
+            q75 = float(np.percentile(valid_slopes, 75))
+            buffer_mask = (slopes >= q75) & (~np.isnan(slopes))
+            if int(np.sum(buffer_mask)) >= min_cluster_size:
+                buf_labeled, num_buf = ndimage.label(buffer_mask, structure=struct_8)
+                buf_clusters = extract_clusters(buf_labeled, num_buf, "buffered")
+                if not buf_clusters and int(np.sum(buffer_mask)) >= min_cluster_size:
+                    indices = np.argwhere(buffer_mask)
+                    buf_clusters = [{
+                        "cluster_id": "buffered_all",
+                        "type": "buffered",
+                        "cell_count": int(len(indices)),
+                        "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
+                        "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
+                        "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
+                        "bbox": [round(float(np.min(longitudes[indices[:, 1]])), 2), round(float(np.min(latitudes[indices[:, 0]])), 2),
+                                 round(float(np.max(longitudes[indices[:, 1]])), 2), round(float(np.max(latitudes[indices[:, 0]])), 2)],
+                        "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
+                    }]
+                if buf_clusters:
+                    pos_clusters = buf_clusters
+
     if not pos_clusters or not neg_clusters:
         return []
     
@@ -121,17 +170,30 @@ def find_contrasting_regions(
         for neg in neg_clusters:
             delta = abs(pos["mean_slope"] - neg["mean_slope"])
             pair_count += 1
-            contrast_pairs.append({
-                "contrast_id": f"contrast_{pair_count:03d}",
-                "title": f"Opposing Trend Pair #{pair_count} (Delta: {delta:.3f})",
-                "magnitude_delta": round(float(delta), 4),
-                "region_increasing": pos,
-                "region_decreasing": neg,
-                "scientific_caveat": (
+            is_refugium_pair = neg.get("type") == "refugium" or pos.get("type") == "buffered"
+            
+            title = (
+                f"Accelerated Trend vs Buffered Refugium #{pair_count} (Delta: {delta:.3f})"
+                if is_refugium_pair
+                else f"Opposing Trend Pair #{pair_count} (Delta: {delta:.3f})"
+            )
+            caveat = (
+                "Entire domain exhibits monotonic broad-scale drift. This contrast isolates the regional acceleration core against microclimatic refugia."
+                if is_refugium_pair
+                else (
                     "Opposing trends within the same temporal window demonstrate regional divergence. "
                     "However, this spatial divergence does not inherently imply a common causal driver "
                     "without physical atmospheric/oceanic transport modeling."
                 )
+            )
+
+            contrast_pairs.append({
+                "contrast_id": f"contrast_{pair_count:03d}",
+                "title": title,
+                "magnitude_delta": round(float(delta), 4),
+                "region_increasing": pos,
+                "region_decreasing": neg,
+                "scientific_caveat": caveat
             })
             
     # Sort pairs by divergence magnitude descending and limit to top_k

@@ -1,0 +1,123 @@
+"""
+Tests for Championship Production Features:
+1. Pettitt (1979) non-parametric regime changepoint test
+2. Self-contained reproducible Jupyter Notebook (.ipynb) export
+3. System telemetry (/metrics) and readiness (/ready) probes
+4. NASA Earthdata auth status and configuration
+"""
+
+import pytest
+import numpy as np
+from fastapi.testclient import TestClient
+from app.main import app
+from app.science.trend import pettitt_changepoint_test
+from app.science.export import generate_jupyter_notebook
+from app.core.config import settings
+
+client = TestClient(app)
+
+
+def test_pettitt_changepoint_step_increase():
+    """Verify Pettitt test correctly identifies an abrupt regime shift."""
+    # Create a series with a clear regime shift from mean 10 to mean 25 at index 12 (year 2012)
+    years = np.arange(2000, 2024)
+    series = np.concatenate([
+        np.full(12, 10.0) + np.random.normal(0, 0.2, 12),
+        np.full(12, 25.0) + np.random.normal(0, 0.2, 12)
+    ])
+
+    res = pettitt_changepoint_test(series, time_coords=years)
+    assert res["significant"] is True
+    assert res["p_value"] < 0.05
+    assert res["changepoint_time"] in (2011, 2012)
+    assert res["k_statistic"] > 50
+
+
+def test_pettitt_changepoint_constant_or_small():
+    """Verify Pettitt test behavior on small samples or flat data."""
+    # Under 6 samples
+    res_small = pettitt_changepoint_test(np.array([1.0, 2.0, 3.0]))
+    assert res_small["significant"] is False
+
+    # Flat line without changepoint
+    flat = np.full(20, 15.0)
+    res_flat = pettitt_changepoint_test(flat)
+    assert res_flat["significant"] is False
+
+
+def test_jupyter_notebook_generation():
+    """Verify self-contained Jupyter Notebook generation matches nbformat 4."""
+    analysis_record = {
+        "variable": "T2M",
+        "units": "°C",
+        "provenance": {
+            "source": "NASA POWER Project",
+            "doi": "10.5067/POWER/10.0.0"
+        },
+        "results": {
+            "cells": [
+                {
+                    "lat": 32.0,
+                    "lon": -98.0,
+                    "slope": 0.45,
+                    "p_value": 0.002,
+                    "q_value": 0.005,
+                    "significant": True
+                }
+            ]
+        }
+    }
+
+    nb = generate_jupyter_notebook(analysis_record)
+    assert nb["nbformat"] == 4
+    assert len(nb["cells"]) >= 5
+    assert any("Pettitt" in cell.get("source", [""])[0] or "Pettitt" in "".join(cell.get("source", [])) for cell in nb["cells"])
+    assert any("Mann-Kendall" in "".join(cell.get("source", [])) for cell in nb["cells"])
+
+
+def test_system_metrics_and_readiness():
+    """Verify /metrics, /api/v1/ready, and /api/v1/auth/status endpoints."""
+    m_res = client.get("/metrics")
+    assert m_res.status_code == 200
+    m_data = m_res.json()
+    assert m_data["service"] == "EarthSift Scientific API"
+    assert "uptime_seconds" in m_data
+    assert "memory_rss_mb" in m_data
+
+    r_res = client.get("/api/v1/ready")
+    assert r_res.status_code == 200
+    assert r_res.json()["ready"] is True
+
+    a_res = client.get("/api/v1/auth/status")
+    assert a_res.status_code == 200
+    assert "auth_type" in a_res.json()
+
+
+def test_notebook_export_endpoint():
+    """Verify GET /api/v1/analysis/{id}/export/notebook returns valid .ipynb JSON."""
+    # 1. Run an analysis first
+    run_res = client.post("/api/v1/analysis", json={
+        "dataset_id": "nasa_power",
+        "variable_id": "T2M",
+        "start_year": 2000,
+        "end_year": 2023,
+        "alpha": 0.05,
+        "use_fdr": True,
+        "bbox": [-102.0, 30.0, -94.0, 38.0]
+    })
+    assert run_res.status_code == 200
+    ana_id = run_res.json()["analysis_id"]
+
+    # 2. Query cell detail and verify changepoint fields
+    cell_res = client.get(f"/api/v1/analysis/{ana_id}/timeseries?lat=32.0&lon=-98.0")
+    assert cell_res.status_code == 200
+    cell_data = cell_res.json()
+    assert "changepoint_year" in cell_data
+    assert "changepoint_p_value" in cell_data
+    assert "changepoint" in cell_data["evidence_record"]
+
+    # 3. Export Jupyter Notebook
+    nb_res = client.get(f"/api/v1/analysis/{ana_id}/export/notebook")
+    assert nb_res.status_code == 200
+    assert "application/x-ipynb+json" in nb_res.headers.get("content-type", "")
+    assert "nbformat" in nb_res.text

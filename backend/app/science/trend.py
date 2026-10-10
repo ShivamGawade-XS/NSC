@@ -370,3 +370,69 @@ def compute_spatial_trends(
         "lisa_clusters": lisa_clusters,
     }
 
+
+def pettitt_changepoint_test(
+    y: np.ndarray,
+    time_coords: Optional[np.ndarray] = None,
+    alpha: float = 0.05
+) -> Dict[str, Any]:
+    """
+    Pettitt's (1979) non-parametric test for detecting a single abrupt regime changepoint
+    in a continuous climate time series.
+    
+    Formula:
+        U_t = 2 * W_t - t * (n + 1)
+        where W_t = sum(rank(y[1..t]))
+        K = max_{1 <= t < n} |U_t|
+        p ~= 2 * exp(-6 * K^2 / (n^3 + n^2))
+    """
+    valid_mask = ~np.isnan(y)
+    data = y[valid_mask]
+    n = len(data)
+
+    if n < 6:
+        return {
+            "changepoint_index": None,
+            "changepoint_time": None,
+            "k_statistic": 0.0,
+            "p_value": 1.0,
+            "significant": False
+        }
+
+    times = time_coords[valid_mask] if time_coords is not None else np.arange(n)
+
+    # Compute ranks
+    ranks = stats.rankdata(data)
+    
+    # Cumulative rank sum W_t
+    w = np.cumsum(ranks)
+    t = np.arange(1, n + 1)
+    
+    # U_t for 1 <= t < n
+    u = 2.0 * w[:-1] - t[:-1] * (n + 1)
+    abs_u = np.abs(u)
+    
+    tau_idx = int(np.argmax(abs_u))
+    k_stat = float(abs_u[tau_idx])
+    
+    # Asymptotic p-value approximation (Pettitt 1979)
+    p_val = float(2.0 * np.exp(-6.0 * (k_stat ** 2) / (n ** 3 + n ** 2)))
+    p_val = min(1.0, max(0.0, p_val))
+    
+    cp_time = times[tau_idx] if tau_idx < len(times) else None
+    
+    formatted_cp_time = None
+    if cp_time is not None:
+        try:
+            formatted_cp_time = int(cp_time)
+        except (ValueError, TypeError):
+            formatted_cp_time = str(cp_time)
+
+    return {
+        "changepoint_index": tau_idx,
+        "changepoint_time": formatted_cp_time,
+        "k_statistic": round(k_stat, 2),
+        "p_value": round(p_val, 5),
+        "significant": bool(p_val < alpha)
+    }
+
