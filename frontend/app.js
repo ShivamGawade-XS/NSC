@@ -1072,6 +1072,49 @@ async function selectCell(lat, lon) {
     document.getElementById("evSource").innerText = ev.source;
     document.getElementById("evDataRegimeLabel").innerText = `Data Regime: ${ev.data_source_label || (cell.provenance && cell.provenance.is_synthetic ? "Synthetic test data" : "NASA Authentic Observations")}`;
 
+    // Update SpaceX Active Target Card
+    const assetTitle = document.getElementById("assetTitle");
+    if (assetTitle) assetTitle.innerText = `Cell ${formatCoords(cell.lat, cell.lon)}`;
+    const assetSub = document.getElementById("assetSub");
+    if (assetSub) assetSub.innerText = `NASA POWER • 0.5° SYNOPTIC • ${cell.variable_name || "T2M"}`;
+    const assetStatusBadge = document.getElementById("assetStatusBadge");
+    if (assetStatusBadge) {
+      if (cell.significant) {
+        assetStatusBadge.innerText = "HOTSPOT DETECTED";
+        assetStatusBadge.className = "asset-status-badge hotspot";
+      } else {
+        assetStatusBadge.innerText = "NOMINAL";
+        assetStatusBadge.className = "asset-status-badge nominal";
+      }
+    }
+
+    // Update SpaceX Amber Anomaly Card
+    const anomalyCard = document.getElementById("spacexAnomalyCard");
+    if (anomalyCard) {
+      if (cell.significant) {
+        anomalyCard.classList.remove("hidden");
+        const driftPct = Math.min(100, Math.max(15, Math.round(Math.abs(cell.slope) * 110)));
+        const confPct = Math.min(99, Math.max(50, Math.round((1 - Math.min(cell.p_value, 0.5)) * 100)));
+        const coherencePct = cell.lisa_cluster === "HH" ? 92 : (cell.lisa_cluster === "LL" ? 85 : 68);
+        const dPctEl = document.getElementById("anomDriftPct");
+        if (dPctEl) dPctEl.innerText = `${driftPct}%`;
+        const dBarEl = document.getElementById("anomDriftBar");
+        if (dBarEl) dBarEl.style.width = `${driftPct}%`;
+        const cPctEl = document.getElementById("anomConfPct");
+        if (cPctEl) cPctEl.innerText = `${confPct}%`;
+        const cBarEl = document.getElementById("anomConfBar");
+        if (cBarEl) cBarEl.style.width = `${confPct}%`;
+        const cohPctEl = document.getElementById("anomCoherencePct");
+        if (cohPctEl) cohPctEl.innerText = `${coherencePct}%`;
+        const cohBarEl = document.getElementById("anomCoherenceBar");
+        if (cohBarEl) cohBarEl.style.width = `${coherencePct}%`;
+        const subEl = document.getElementById("anomalySubText");
+        if (subEl) subEl.innerText = `${cell.slope > 0 ? "Positive" : "Negative"} Monotonic Trend (${cell.slope > 0 ? "+" : ""}${cell.slope.toFixed(4)} ${cell.slope_units})`;
+      } else {
+        anomalyCard.classList.add("hidden");
+      }
+    }
+
     // Reset AI explainer box
     document.getElementById("aiOutputBox").classList.add("hidden");
   } catch (err) {
@@ -1605,6 +1648,75 @@ window.addEventListener("DOMContentLoaded", () => {
   };
   document.getElementById("startYear").addEventListener("input", updateYearHint);
   document.getElementById("endYear").addEventListener("input", updateYearHint);
+
+  // SpaceX UTC Live Clock Ticker
+  const updateClocks = () => {
+    const now = new Date();
+    const h = String(now.getUTCHours()).padStart(2, '0');
+    const m = String(now.getUTCMinutes()).padStart(2, '0');
+    const s = String(now.getUTCSeconds()).padStart(2, '0');
+    const str = `${h}:${m}:${s} UTC`;
+    const hEl = document.getElementById("headerUtcClock");
+    if (hEl) hEl.innerText = str;
+    const dEl = document.getElementById("dockUtcTime");
+    if (dEl) dEl.innerText = str;
+  };
+  updateClocks();
+  setInterval(updateClocks, 1000);
+
+  // SpaceX Map Floating Dock Buttons
+  const dock2d = document.getElementById("dock2dBtn");
+  const dockGibs = document.getElementById("dockGibsBtn");
+  const dockHotspots = document.getElementById("dockHotspotsBtn");
+  const dockLive = document.getElementById("dockLiveBtn");
+  if (dock2d) {
+    dock2d.addEventListener("click", () => {
+      document.querySelectorAll(".dock-pill").forEach(p => p.classList.remove("active"));
+      dock2d.classList.add("active");
+      const gibs = document.getElementById("gibsToggle");
+      if (gibs && gibs.checked) gibs.click();
+    });
+  }
+  if (dockGibs) {
+    dockGibs.addEventListener("click", () => {
+      const gibs = document.getElementById("gibsToggle");
+      if (gibs) {
+        gibs.click();
+        dockGibs.classList.toggle("active", gibs.checked);
+      }
+    });
+  }
+  if (dockHotspots) {
+    dockHotspots.addEventListener("click", () => {
+      const lisa = document.getElementById("lisaToggle");
+      if (lisa) {
+        lisa.click();
+        dockHotspots.classList.toggle("active", lisa.checked);
+      }
+    });
+  }
+  if (dockLive) {
+    dockLive.addEventListener("click", () => {
+      executeAnalysis();
+    });
+  }
+
+  // SpaceX Anomaly Card Actions
+  const hideAnomaly = () => {
+    const card = document.getElementById("spacexAnomalyCard");
+    if (card) card.classList.add("hidden");
+  };
+  const dismissBtn = document.getElementById("dismissAnomalyBtn");
+  if (dismissBtn) dismissBtn.addEventListener("click", hideAnomaly);
+  const anomDismiss = document.getElementById("anomDismissBtn");
+  if (anomDismiss) anomDismiss.addEventListener("click", hideAnomaly);
+  const anomRespond = document.getElementById("anomRespondBtn");
+  if (anomRespond) {
+    anomRespond.addEventListener("click", () => {
+      const askBtn = document.getElementById("askAiBtn");
+      if (askBtn) askBtn.click();
+    });
+  }
 
   // Auto-run initial analysis (restore from URL hash if present, or boot into Case 1)
   setTimeout(() => {

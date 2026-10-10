@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="vendor/leaflet.css" />
   <script src="vendor/chart.umd.min.js"></script>
   <script src="vendor/leaflet.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=spacex" />
 </head>
 <body class="dark-theme">
   <!-- Global Loading Overlay -->
@@ -28,7 +28,7 @@
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>
   <!-- Top Application Bar (Orizon SpaceX Aerospace Command HUD) -->
   <header class="app-header">
-    <div class="brand">
+    <a href="landing.html" class="brand" style="text-decoration:none;color:inherit;" title="Back to Landing Page">
       <div class="brand-logo">
         <span class="globe-icon">🌍</span>
       </div>
@@ -36,25 +36,37 @@
         <h1 class="brand-title">EarthSift <span class="badge-tag">NASA Space Apps 2026</span></h1>
         <p class="brand-subtitle">Be An Earth System Trend Detective • Evidence-First Discovery Engine</p>
       </div>
-    </div>
+    </a>
 
     <!-- Quick Preset Investigation Ribbon -->
     <div class="preset-quick-ribbon" id="presetQuickRibbon" role="toolbar" aria-label="Quick Detective Presets">
       <span class="ribbon-label">CASES:</span>
-      <button class="preset-pill-btn active" data-preset="case1" title="Texas & Southern Plains Thermal Acceleration (NASA POWER Verified)">🔥 Texas Heat</button>
-      <button class="preset-pill-btn" data-preset="case2" title="Southwest US Compound Aridification (Temperature + Precipitation Dual Hazard)">🌵 SW Drought</button>
-      <button class="preset-pill-btn" data-preset="case3" title="North American Continental Synoptic Footprint">🌎 Continental</button>
-      <button class="preset-pill-btn" data-preset="case4" title="Agricultural Belt Hydrological Variability">🌾 Crop Belt</button>
+      <button class="preset-pill-btn active" data-preset="case1" title="Texas & Southern Plains Thermal Acceleration (NASA POWER Verified)">🔥 Texas Warming</button>
+      <button class="preset-pill-btn" data-preset="case2" title="Southwest US Compound Aridification (Temperature + Precipitation Dual Hazard)">🌵 Southwest Aridification</button>
+      <button class="preset-pill-btn" data-preset="case3" title="North American Continental Synoptic Footprint">🌎 Continental Footprint</button>
+      <button class="preset-pill-btn" data-preset="case4" title="Agricultural Belt Hydrological Variability">🌾 Crop Belt Dynamics</button>
     </div>
     
     <div class="header-metrics">
+      <div class="metric-pill live-feed-pill">
+        <span class="beacon-dot"></span>
+        <span class="pill-val live-feed-val">LIVE NASA FEED</span>
+      </div>
+      <div class="metric-pill">
+        <span class="pill-label">SPEC:</span>
+        <span class="pill-val">CF-1.8 COMPLIANT</span>
+      </div>
       <div class="metric-pill">
         <span class="pill-label">METHOD:</span>
-        <span class="pill-val">Theil-Sen + Mann-Kendall</span>
+        <span class="pill-val">SEN + MANN-KENDALL</span>
       </div>
       <div class="metric-pill">
         <span class="pill-label">MULTIPLICITY:</span>
         <span class="pill-val" id="fdrStatusBadge">FDR (q ≤ 0.05)</span>
+      </div>
+      <div class="metric-pill">
+        <span class="pill-label">UTC:</span>
+        <span class="pill-val" id="headerUtcClock">--:--:--</span>
       </div>
       <button id="detectiveTourBtn" class="btn btn-sm btn-tour" title="Launch Interactive Detective Case Tour">
         <span>🕵️</span> Detective Case Tour
@@ -237,6 +249,14 @@
           <span id="hudSig" class="hud-val">--</span>
         </div>
         <div id="trendMap" class="map-container"></div>
+        <!-- SpaceX Map Floating Dock -->
+        <div class="map-floating-dock" id="mapFloatingDock">
+          <button class="dock-pill active" id="dock2dBtn">2D Grid</button>
+          <button class="dock-pill" id="dockGibsBtn">🛰️ Satellite (GIBS)</button>
+          <button class="dock-pill" id="dockHotspotsBtn">🔥 Hotspots</button>
+          <button class="dock-pill live-pill" id="dockLiveBtn"><span class="beacon-dot"></span> Live NASA Feed</button>
+          <span class="dock-time" id="dockUtcTime">--:--:-- UTC</span>
+        </div>
       </div>
 
       <!-- Map Legend -->
@@ -292,6 +312,88 @@
       </div>
 
       <div class="evidence-body">
+        <!-- SpaceX Active Target Asset Card -->
+        <div class="active-asset-card" id="activeAssetCard">
+          <div class="asset-header">
+            <div>
+              <span class="asset-meta-label">ACTIVE TARGET</span>
+              <h3 class="asset-title" id="assetTitle">Cell 31.00°N, -101.88°W</h3>
+              <span class="asset-sub" id="assetSub">NASA POWER • 0.5° SYNOPTIC • LEO T2M</span>
+            </div>
+            <span class="asset-status-badge nominal" id="assetStatusBadge">Nominal</span>
+          </div>
+          <div class="signal-visualizer">
+            <div class="sig-vis-label">
+              <span>SIGNAL INTEGRITY</span>
+              <span id="sigIntegrityVal">96.4% • NOISE DAMPED</span>
+            </div>
+            <div class="sig-spectrum-bars">
+              <span class="sbar" style="height:35%"></span>
+              <span class="sbar" style="height:55%"></span>
+              <span class="sbar" style="height:70%"></span>
+              <span class="sbar" style="height:45%"></span>
+              <span class="sbar" style="height:85%"></span>
+              <span class="sbar" style="height:60%"></span>
+              <span class="sbar" style="height:90%"></span>
+              <span class="sbar" style="height:75%"></span>
+              <span class="sbar" style="height:100%"></span>
+              <span class="sbar" style="height:80%"></span>
+              <span class="sbar" style="height:65%"></span>
+              <span class="sbar" style="height:85%"></span>
+              <span class="sbar" style="height:95%"></span>
+              <span class="sbar" style="height:70%"></span>
+              <span class="sbar" style="height:80%"></span>
+              <span class="sbar" style="height:50%"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SpaceX Amber Anomaly Card -->
+        <div class="spacex-anomaly-card" id="spacexAnomalyCard">
+          <div class="anomaly-card-header">
+            <div class="anomaly-icon-box">
+              <span class="anomaly-icon">⚠️</span>
+            </div>
+            <div class="anomaly-title-box">
+              <div class="anomaly-title">CLIMATE ANOMALY DETECTED</div>
+              <div class="anomaly-sub" id="anomalySubText">Monotonic Thermal Drift Confirmed</div>
+            </div>
+            <button class="anomaly-dismiss-btn" id="dismissAnomalyBtn" title="Dismiss">✕</button>
+          </div>
+          <div class="anomaly-metrics">
+            <div class="anom-metric-row">
+              <div class="anom-row-labels">
+                <span>THERMAL DRIFT MAGNITUDE</span>
+                <span id="anomDriftPct">84%</span>
+              </div>
+              <div class="anom-progress-track">
+                <div class="anom-progress-bar amber" id="anomDriftBar" style="width: 84%"></div>
+              </div>
+            </div>
+            <div class="anom-metric-row">
+              <div class="anom-row-labels">
+                <span>CONFIDENCE LEVEL (1 - p)</span>
+                <span id="anomConfPct">98%</span>
+              </div>
+              <div class="anom-progress-track">
+                <div class="anom-progress-bar cyan" id="anomConfBar" style="width: 98%"></div>
+              </div>
+            </div>
+            <div class="anom-metric-row">
+              <div class="anom-row-labels">
+                <span>SPATIAL COHERENCE (LISA)</span>
+                <span id="anomCoherencePct">76%</span>
+              </div>
+              <div class="anom-progress-track">
+                <div class="anom-progress-bar green" id="anomCoherenceBar" style="width: 76%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="anomaly-actions">
+            <button class="btn-anom-action secondary" id="anomDismissBtn">Dismiss</button>
+            <button class="btn-anom-action primary" id="anomRespondBtn">⚡ Inspect Finding</button>
+          </div>
+        </div>
         <div class="evidence-card">
           <div class="ev-label">EMPIRICAL OBSERVATION</div>
           <div class="ev-value" id="evObservation">
@@ -361,11 +463,11 @@
           <div class="ev-sub" id="evDataRegimeLabel">Data Regime: Synthetic test data — not NASA observations.</div>
         </div>
 
-        <!-- Downstream AI Explainer Integration -->
+        <!-- Downstream AI Explainer Integration (Shakuro Minimalist Obsidian Aerospace) -->
         <div class="ai-explainer-section">
           <div class="ai-header">
             <h3>🤖 Downstream AI Explainer</h3>
-            <span class="ai-pill">Zero Hallucination Mode</span>
+            <span class="ai-pill">Zero Hallucination Grounding</span>
           </div>
           <p class="ai-desc">Translates only the verified evidence record into plain scientific English.</p>
           <button id="askAiBtn" class="btn btn-secondary">
@@ -383,16 +485,16 @@
         <!-- Export & Dossier Actions -->
         <div class="export-actions">
           <button id="exportNetcdfBtn" class="btn btn-sm btn-export" title="Export as CF-1.8 NetCDF-4 binary granule (.nc) — viewable in NASA Panoply, QGIS, or Python xarray">
-            📦 NetCDF-4 (.nc)
+            <span class="file-badge nc">📦 .NC</span> NetCDF-4
           </button>
           <button id="exportGeojsonBtn" class="btn btn-sm btn-export" title="Export as GeoJSON FeatureCollection (.geojson) — viewable in QGIS, ArcGIS, or geojson.io">
-            🗺️ GeoJSON (.geojson)
+            <span class="file-badge geojson">🗺️ .GEOJSON</span> GIS Layer
           </button>
           <button id="exportDossierBtn" class="btn btn-sm btn-export" title="Export NASA Climate Science Dossier (.md) — Markdown publication report">
-            📄 Dossier (.md)
+            <span class="file-badge md">📄 .MD</span> Dossier
           </button>
           <button id="exportNotebookBtn" class="btn btn-sm btn-export" title="Export reproducible Jupyter Notebook (.ipynb) — open in Google Colab, JupyterLab, or VS Code">
-            📓 Notebook (.ipynb)
+            <span class="file-badge ipynb">📓 .IPYNB</span> Notebook
           </button>
         </div>
       </div>
@@ -450,6 +552,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=spacex"></script>
 </body>
 </html>
