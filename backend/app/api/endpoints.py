@@ -1,6 +1,7 @@
 """
 EarthSift — FastAPI Endpoints
-Routes for datasets, trend analysis, cell drilldown, and scientific evidence.
+Routes for datasets, variables, trend analysis, map layers,
+time series, discovery signals, contrasts, provenance, and AI explanations.
 """
 
 from typing import Dict, Any, List, Optional
@@ -14,13 +15,20 @@ from app.schemas.analysis import (
     AnalysisSummary,
     CellDetailResponse,
     ExplainRequest,
-    ExplainResponse
+    ExplainResponse,
+    MapLayerResponse,
+    SignalsResponse,
+    CandidateSignal,
+    ContrastsResponse,
+    ProvenanceResponse,
+    VariableInfo
 )
 from app.adapters.merra2 import MERRA2Adapter
 from app.science.trend import compute_spatial_trends, mann_kendall_test, sens_slope
 from app.science.contrasts import find_contrasting_regions
+from app.science.discovery import discover_candidate_signals
 
-router = APIRouter(prefix="/api/v1")
+router = APIRouter()
 
 # Global adapters registry
 ADAPTERS = {
@@ -31,10 +39,50 @@ ADAPTERS = {
 ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
+@router.get("/health")
+def health_check() -> Dict[str, Any]:
+    """API health and capabilities status."""
+    return {
+        "status": "healthy",
+        "service": "EarthSift Scientific API",
+        "version": "1.0.0",
+        "engine": "Mann-Kendall + Theil-Sen + Benjamini-Hochberg FDR",
+        "adapters": list(ADAPTERS.keys())
+    }
+
+
 @router.get("/datasets")
 def list_datasets() -> List[Dict[str, Any]]:
     """Return available NASA datasets and supported variables."""
-    return [adapter.get_metadata() for adapter in ADAPTERS.values()]
+    return [adapter.metadata() for adapter in ADAPTERS.values()]
+
+
+@router.get("/datasets/{dataset_id}")
+def get_dataset(dataset_id: str) -> Dict[str, Any]:
+    """Retrieve metadata for a specific dataset."""
+    adapter = ADAPTERS.get(dataset_id)
+    if not adapter:
+        raise HTTPException(status_code=404, detail=f"Dataset '{dataset_id}' not found.")
+    return adapter.metadata()
+
+
+@router.get("/variables", response_model=List[VariableInfo])
+def list_variables() -> List[VariableInfo]:
+    """Return catalog of all supported physical variables across datasets."""
+    variables: List[VariableInfo] = []
+    for d_id, adapter in ADAPTERS.items():
+        meta = adapter.metadata()
+        for v_id, v_info in meta["variables"].items():
+            variables.append(VariableInfo(
+                variable_id=v_id,
+                name=v_info["name"],
+                source_units=v_info["source_units"],
+                display_units=v_info["display_units"],
+                slope_units=v_info["slope_units"],
+                description=v_info["description"],
+                dataset_id=d_id
+            ))
+    return variables
 
 
 @router.post("/analysis", response_model=AnalysisResponse)
@@ -76,6 +124,19 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
         is_significant=sig_fdr,
         latitudes=lats,
         longitudes=lons
+    )
+
+    # Discover candidate signals with transparent composite score
+    signals = discover_candidate_signals(
+        slopes=slopes,
+        p_values=p_vals,
+        q_values=q_vals,
+        is_significant_raw=sig_raw,
+        is_significant_fdr=sig_fdr,
+        latitudes=lats,
+        longitudes=lons,
+        alpha=req.alpha,
+        top_n=10
     )
 
     # Build spatial grid points
@@ -125,6 +186,9 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
         "raw_slice": raw_slice,
         "trend_results": trend_results,
         "contrasts": contrasts,
+        "signals": signals,
+        "grid": grid_points,
+        "summary": summary,
         "req": req
     }
 
@@ -144,13 +208,61 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
     )
 
 
+@router.get("/analysis/{analysis_id}", response_model=AnalysisResponse)
+def get_analysis(analysis_id: str) -> AnalysisResponse:
+    """Retrieve full cached analysis results by ID."""
+    cached = ANALYSIS_CACHE.get(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+    raw_slice = cached["raw_slice"]
+    req = cached["req"]
+
+    return AnalysisResponse(
+        analysis_id=analysis_id,
+        status="completed",
+        dataset_id=req.dataset_id,
+        variable_id=req.variable_id,
+        variable_name=raw_slice["variable_name"],
+        display_units=raw_slice["display_units"],
+        slope_units=raw_slice["slope_units"],
+        time_span=f"{req.start_year} - {req.end_year}",
+        summary=cached["summary"],
+        grid=cached["grid"],
+        contrasts=cached["contrasts"],
+        provenance=raw_slice["provenance"]
+    )
+
+
+@router.get("/analysis/{analysis_id}/map", response_model=MapLayerResponse)
+def get_analysis_map(analysis_id: str) -> MapLayerResponse:
+    """Retrieve spatial grid field and map bounding boundaries."""
+    cached = ANALYSIS_CACHE.get(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+    raw = cached["raw_slice"]
+    lats = raw["lat"]
+    lons = raw["lon"]
+    bounds = [float(np.min(lons)), float(np.min(lats)), float(np.max(lons)), float(np.max(lats))]
+
+    return MapLayerResponse(
+        analysis_id=analysis_id,
+        variable_id=raw["variable_id"],
+        variable_name=raw["variable_name"],
+        slope_units=raw["slope_units"],
+        bounds=bounds,
+        summary=cached["summary"],
+        grid=cached["grid"]
+    )
+
+
+@router.get("/analysis/{analysis_id}/timeseries", response_model=CellDetailResponse)
 @router.get("/analysis/{analysis_id}/cell", response_model=CellDetailResponse)
-def get_cell_drilldown(
+def get_cell_timeseries(
     analysis_id: str,
-    lat: float = Query(..., description="Latitude coordinate"),
-    lon: float = Query(..., description="Longitude coordinate")
+    lat: Optional[float] = Query(None, description="Latitude coordinate"),
+    lon: Optional[float] = Query(None, description="Longitude coordinate")
 ) -> CellDetailResponse:
-    """Retrieve time series, fitted trend, and evidence record for selected coordinates."""
+    """Retrieve time series, fitted trend, and structured evidence record for coordinates."""
     cached = ANALYSIS_CACHE.get(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found or expired.")
@@ -162,7 +274,15 @@ def get_cell_drilldown(
     years = raw["time"]
     time_coords = (years - years[0]) / 10.0
 
-    # Find closest coordinate index
+    # If coordinates omitted, default to top candidate signal coordinate
+    if lat is None or lon is None:
+        if cached.get("signals") and len(cached["signals"]) > 0:
+            lat = cached["signals"][0]["lat"]
+            lon = cached["signals"][0]["lon"]
+        else:
+            lat = float(lats[len(lats) // 2])
+            lon = float(lons[len(lons) // 2])
+
     lat_idx = int(np.argmin(np.abs(lats - lat)))
     lon_idx = int(np.argmin(np.abs(lons - lon)))
 
@@ -176,8 +296,6 @@ def get_cell_drilldown(
 
     # Mann-Kendall statistics
     mk = mann_kendall_test(series, alpha=cached["req"].alpha)
-    
-    # FDR q-value from cached spatial field
     q_val = float(cached["trend_results"]["q_values"][lat_idx, lon_idx])
 
     evidence = {
@@ -187,6 +305,8 @@ def get_cell_drilldown(
         "method": "Sen's robust median-of-slopes estimator with Mann-Kendall monotonic test and Benjamini-Hochberg FDR",
         "coverage": f"{len(series)} valid annual observations (100% complete)",
         "source": f"{raw['provenance']['source']} (DOI: {raw['provenance']['doi']})",
+        "is_synthetic": raw.get("is_synthetic", False),
+        "data_source_label": raw.get("data_source_label", "NASA Observations"),
         "scientific_limitation": (
             "Empirical observation of monotonic trend. Does not prove underlying atmospheric "
             "or oceanic causation without physical process attribution."
@@ -210,6 +330,61 @@ def get_cell_drilldown(
         significant=mk["significant"],
         direction=mk["direction"],
         evidence_record=evidence
+    )
+
+
+@router.get("/analysis/{analysis_id}/signals", response_model=SignalsResponse)
+def get_candidate_signals(analysis_id: str) -> SignalsResponse:
+    """Discovery Engine: Return candidate signals worth investigating."""
+    cached = ANALYSIS_CACHE.get(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+    raw = cached["raw_slice"]
+    signals = [CandidateSignal(**s) for s in cached["signals"]]
+
+    return SignalsResponse(
+        analysis_id=analysis_id,
+        variable_name=raw["variable_name"],
+        method="Composite Discovery Scoring (magnitude * significance * completeness * spatial coherence)",
+        criteria=[
+            "Statistical significance (FDR q <= 0.05)",
+            "Robust slope rate magnitude |Sen's slope|",
+            "Temporal data completeness fraction",
+            "Spatial neighborhood coherence (8-neighbor cluster consistency)"
+        ],
+        signals=signals
+    )
+
+
+@router.get("/analysis/{analysis_id}/contrasts", response_model=ContrastsResponse)
+def get_analysis_contrasts(analysis_id: str) -> ContrastsResponse:
+    """Contrast Engine: Return opposing regional trend pairs."""
+    cached = ANALYSIS_CACHE.get(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+    contrasts = cached["contrasts"]
+    raw = cached["raw_slice"]
+
+    return ContrastsResponse(
+        analysis_id=analysis_id,
+        variable_name=raw["variable_name"],
+        contrasts_found=len(contrasts),
+        contrasts=contrasts
+    )
+
+
+@router.get("/analysis/{analysis_id}/provenance", response_model=ProvenanceResponse)
+def get_analysis_provenance(analysis_id: str) -> ProvenanceResponse:
+    """Provenance Engine: Return full data lineage, citations, and validation metadata."""
+    cached = ANALYSIS_CACHE.get(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+    raw = cached["raw_slice"]
+
+    return ProvenanceResponse(
+        analysis_id=analysis_id,
+        dataset_id=cached["req"].dataset_id,
+        provenance=raw["provenance"]
     )
 
 

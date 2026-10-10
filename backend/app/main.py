@@ -19,17 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router)
-
-@app.get("/health")
-def health_check():
-    """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "EarthSift Scientific API",
-        "version": "1.0.0",
-        "engine": "Mann-Kendall + Theil-Sen + Benjamini-Hochberg FDR"
-    }
+# Mount both versioned and root paths for all typed endpoints
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix="")
 
 # Mount frontend static web instrument
 frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"
