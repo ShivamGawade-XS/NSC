@@ -201,6 +201,7 @@ def find_cached_analysis_id(
               AND bbox_min_lon = ?
               AND bbox_max_lon = ?
               AND alpha = ?
+            ORDER BY created_at DESC
             LIMIT 1;
         """, (
             dataset_id, variable_id, start_year, end_year,

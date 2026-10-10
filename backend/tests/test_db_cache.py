@@ -14,10 +14,12 @@ from app.schemas.analysis import AnalysisRequest
 
 
 def test_sqlite_db_cache_lifecycle(tmp_path):
-    test_id = f"ana_test_db_{int(time.time() * 1000)}"
+    unique_ts = int(time.time() * 1000)
+    test_id = f"ana_test_db_{unique_ts}"
+    test_var = f"TEST_VAR_{unique_ts}"
     req = AnalysisRequest(
         dataset_id="nasa_power",
-        variable_id="T2M",
+        variable_id=test_var,
         start_year=2005,
         end_year=2020,
         bbox=[-100.0, 31.0, -95.0, 36.0],
@@ -37,12 +39,12 @@ def test_sqlite_db_cache_lifecycle(tmp_path):
     loaded = load_from_db_cache(test_id)
     assert loaded is not None
     assert loaded["summary"]["test_metric"] == 42.0
-    assert loaded["req"].variable_id == "T2M"
+    assert loaded["req"].variable_id == test_var
 
     # Verify B-Tree index discovery
     found_id = find_cached_analysis_id(
         dataset_id="nasa_power",
-        variable_id="T2M",
+        variable_id=test_var,
         start_year=2005,
         end_year=2020,
         bbox=[-100.0, 31.0, -95.0, 36.0],
