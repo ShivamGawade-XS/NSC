@@ -193,7 +193,7 @@ def generate_scientific_dossier(analysis_record: Dict[str, Any]) -> str:
 - **Investigated Domain:** {len(cells)} gridded spatial cells across bounding box.
 - **Analyzed Variable:** {var} ({units}).
 - **Domain Mean Trend Rate:** `{mean_slope:+.4f} {units}/decade` (Range: `{min_slope:+.4f}` to `{max_slope:+.4f}`).
-- **FDR Significance:** `{sig_count} of {len(cells)} cells ({sig_count/max(1, len(cells))*100:.1f}%)` pass Benjamini-Hochberg False Discovery Rate control ($\alpha = {analysis_record.get('alpha', 0.05)}$).
+- **FDR Significance:** `{sig_count} of {len(cells)} cells ({sig_count/max(1, len(cells))*100:.1f}%)` pass Benjamini-Hochberg False Discovery Rate control ($\\alpha = {analysis_record.get('alpha', 0.05)}$).
 - **Spatial Autocorrelation (Moran's I):** `{moran.get('moran_i', 0.0):.4f}` ($z = {moran.get('z_score', 0.0):.2f}$, $p = {moran.get('p_value', 1.0)}$).  
   *Interpretation:* {moran.get('interpretation', 'Random spatial variation.')}
 

@@ -149,7 +149,7 @@
         </div>
         <div class="toolbar-actions">
           <label class="layer-toggle">
-            <input type="checkbox" id="maskToggle" checked />
+            <input type="checkbox" id="maskToggle" />
             <span>Significant Only</span>
           </label>
           <label class="layer-toggle">
@@ -181,9 +181,11 @@
           <span class="legend-item"><span class="legend-dot insig"></span> Non-Significant / Noise</span>
         </div>
         <div class="moran-summary" id="moranSummary">
-          <span class="moran-icon">🌐</span>
-          <span class="moran-title">Spatial Autocorrelation:</span>
-          <span id="moranScore" class="moran-value">Moran's I = -- (Awaiting analysis)</span>
+          <div class="moran-header">
+            <span class="moran-icon">🌐</span>
+            <span class="moran-title">Spatial Autocorrelation</span>
+          </div>
+          <div id="moranScore" class="moran-value">Moran's I = -- (Awaiting analysis)</div>
         </div>
       </div>
 

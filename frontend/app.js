@@ -90,11 +90,10 @@ function initMap() {
     zoomControl: true
   });
 
-  // Dark Matter Carto basemap
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    attribution: '&copy; <a href="https://carto.com/">CARTO</a> | NASA Space Apps 2026',
-    subdomains: "abcd",
-    maxZoom: 19
+  // High-fidelity Dark Gray Canvas basemap (unwatermarked, fast, reliable CDN)
+  L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, DeLorme, NAVTEQ | NASA Space Apps 2026',
+    maxZoom: 16
   }).addTo(map);
 
   gridLayerGroup = L.layerGroup().addTo(map);
