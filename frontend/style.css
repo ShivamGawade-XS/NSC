@@ -873,3 +873,37 @@ body.dark-theme {
   margin-top: 4px;
   font-weight: 600;
 }
+
+/* Responsive Ergonomics */
+@media (max-width: 1280px) {
+  .workspace-grid {
+    grid-template-columns: 280px 1fr 310px;
+  }
+}
+
+@media (max-width: 1024px) {
+  body.dark-theme {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  .workspace-grid {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  .panel {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    max-height: none;
+    overflow: visible;
+  }
+  .map-container {
+    min-height: 450px;
+  }
+  .timeseries-section {
+    min-height: 320px;
+  }
+}
+

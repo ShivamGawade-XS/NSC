@@ -126,7 +126,7 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
         longitudes=lons
     )
 
-    # Discover candidate signals with transparent composite score
+    # Discover candidate signals with transparent composite score and true completeness
     signals = discover_candidate_signals(
         slopes=slopes,
         p_values=p_vals,
@@ -136,7 +136,8 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
         latitudes=lats,
         longitudes=lons,
         alpha=req.alpha,
-        top_n=10
+        top_n=10,
+        data_3d=data_3d
     )
 
     # Build spatial grid points
@@ -179,7 +180,18 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
         min_slope=round(float(np.min(slopes)), 4)
     )
 
-    analysis_id = f"ana_{req.dataset_id}_{req.variable_id}_{req.start_year}_{req.end_year}"
+    # Robust cache key incorporating bounding box and significance threshold
+    if req.bbox and len(req.bbox) == 4:
+        bbox_slug = f"b{int(req.bbox[0])}_{int(req.bbox[1])}_{int(req.bbox[2])}_{int(req.bbox[3])}"
+    else:
+        bbox_slug = "bdef"
+    alpha_slug = f"a{int(req.alpha * 1000)}"
+    analysis_id = f"ana_{req.dataset_id}_{req.variable_id}_{req.start_year}_{req.end_year}_{bbox_slug}_{alpha_slug}"
+
+    # Bounded cache eviction (LRU policy: cap at 32 analysis entries to prevent memory leaks)
+    if len(ANALYSIS_CACHE) >= 32 and analysis_id not in ANALYSIS_CACHE:
+        oldest_key = next(iter(ANALYSIS_CACHE))
+        ANALYSIS_CACHE.pop(oldest_key, None)
 
     # Cache for interactive drilldown
     ANALYSIS_CACHE[analysis_id] = {

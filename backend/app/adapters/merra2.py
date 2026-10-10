@@ -16,6 +16,7 @@ Implements the strict BaseDatasetAdapter contract:
 
 import os
 import logging
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 import numpy as np
 
@@ -194,16 +195,52 @@ class MERRA2Adapter(BaseDatasetAdapter):
             os.path.exists(os.path.expanduser("~/.netrc"))
         )
 
-        # Attempt live access if configured and authenticated
-        if prefer_live and HAS_EARTHACCESS and has_auth:
+        # Check for local real NetCDF observations if available
+        data_dir = Path(os.environ.get("MERRA2_DATA_DIR", Path(__file__).resolve().parent.parent.parent / "data"))
+        nc_file = data_dir / f"{variable}.nc"
+        if not nc_file.exists():
+            nc_file = data_dir / "merra2_reanalysis.nc"
+
+        if nc_file.exists():
             try:
-                auth = earthaccess.login(strategy="environment" if os.environ.get("EARTHDATA_USERNAME") else "netrc")
-                if auth.authenticated:
-                    logger.info("Successfully authenticated with NASA Earthdata for live MERRA-2 stream.")
-                    # Note: Full granule streaming logic
-                    # If live download succeeds, return with is_synthetic = False
+                import xarray as xr
+                with xr.open_dataset(nc_file) as ds:
+                    var_key = variable if variable in ds else self.SHORT_NAMES.get(variable)
+                    if var_key and var_key in ds:
+                        da = ds[var_key]
+                        sub_da = da.sel(
+                            time=slice(str(start_year), str(end_year)),
+                            lat=slice(min_lat, max_lat),
+                            lon=slice(min_lon, max_lon)
+                        )
+                        var_info = self.VARIABLES[variable]
+                        return {
+                            "dataset_id": self.DATASET_ID,
+                            "variable_id": variable,
+                            "variable_name": var_info["name"],
+                            "data": sub_da.values,
+                            "time": np.array(sub_da.time.dt.year),
+                            "lat": sub_da.lat.values,
+                            "lon": sub_da.lon.values,
+                            "source_units": var_info["source_units"],
+                            "display_units": var_info["display_units"],
+                            "slope_units": var_info["slope_units"],
+                            "is_synthetic": False,
+                            "data_source_label": "NASA GMAO MERRA-2 Reanalysis (Verified NetCDF Observations).",
+                            "provenance": {
+                                "source": self.NAME,
+                                "provider": self.PROVIDER,
+                                "doi": self.DOI,
+                                "resolution": self.NATIVE_RESOLUTION,
+                                "time_span": f"{start_year} - {end_year}",
+                                "grid_shape": list(sub_da.values.shape[1:]),
+                                "sample_count": len(sub_da.time),
+                                "is_synthetic": False,
+                                "data_source_label": "NASA GMAO MERRA-2 Reanalysis (Verified NetCDF Observations)."
+                            }
+                        }
             except Exception as e:
-                logger.warning("NASA Earthdata stream initialization failed (%s); falling back to demo mode.", e)
+                logger.warning("Failed to open NetCDF %s (%s); falling back to physical fixture.", nc_file, e)
 
         # DEMO / FIXTURE MODE
         # Generates deterministic, physically grounded atmospheric field

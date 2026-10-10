@@ -109,3 +109,55 @@ def test_malformed_ai_request():
     }
     res = client.post("/explain", json=malformed_payload)
     assert res.status_code == 422
+
+
+def test_cache_collision_prevention_on_bbox_and_alpha():
+    """Verify different bounding boxes and significance thresholds yield distinct cache keys."""
+    base_payload = {
+        "dataset_id": "merra2_reanalysis",
+        "variable_id": "T2M",
+        "start_year": 2005,
+        "end_year": 2018,
+        "alpha": 0.05,
+        "bbox": [-120.0, 30.0, -90.0, 45.0]
+    }
+    res1 = client.post("/analysis", json=base_payload)
+    assert res1.status_code == 200
+    id1 = res1.json()["analysis_id"]
+
+    # Different bbox
+    payload_bbox2 = dict(base_payload, bbox=[-110.0, 32.0, -85.0, 48.0])
+    res2 = client.post("/analysis", json=payload_bbox2)
+    assert res2.status_code == 200
+    id2 = res2.json()["analysis_id"]
+    assert id1 != id2, "Analyses with different bounding boxes must NOT collide in cache"
+
+    # Different alpha
+    payload_alpha = dict(base_payload, alpha=0.01)
+    res3 = client.post("/analysis", json=payload_alpha)
+    assert res3.status_code == 200
+    id3 = res3.json()["analysis_id"]
+    assert id1 != id3, "Analyses with different alpha values must NOT collide in cache"
+
+
+def test_contrast_clustering_structure():
+    """Verify contrasting engine produces structured clusters respecting schema."""
+    res = client.post("/analysis", json={
+        "dataset_id": "merra2_reanalysis",
+        "variable_id": "T2M",
+        "start_year": 2000,
+        "end_year": 2023,
+        "alpha": 0.05
+    })
+    assert res.status_code == 200
+    contrasts = res.json()["contrasts"]
+    assert isinstance(contrasts, list)
+    if len(contrasts) > 0:
+        c = contrasts[0]
+        assert "contrast_id" in c
+        assert "magnitude_delta" in c
+        assert "region_increasing" in c
+        assert "region_decreasing" in c
+        assert c["region_increasing"]["cell_count"] >= 1
+        assert c["region_decreasing"]["cell_count"] >= 1
+
