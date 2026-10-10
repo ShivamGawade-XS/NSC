@@ -19,6 +19,7 @@ class AnalysisRequest(BaseModel):
     )
     alpha: float = Field(default=0.05, gt=0.0, lt=0.5, description="Significance threshold")
     prefer_live: bool = Field(default=True, description="Prefer authentic NASA NetCDF observations over synthetic fixture")
+    use_fdr: bool = Field(default=True, description="Apply Benjamini-Hochberg False Discovery Rate control")
 
 
 
@@ -85,6 +86,8 @@ class CellDetailResponse(BaseModel):
     significant: bool
     direction: str
     lisa_cluster: Optional[str] = "NS"
+    changepoint_year: Optional[int] = None
+    changepoint_p_value: Optional[float] = None
     evidence_record: Dict[str, Any]
 
 
@@ -170,3 +173,26 @@ class ExplainResponse(BaseModel):
     summary: str
     statistical_assessment: str
     limitations: str
+
+
+class CompoundHazardRequest(BaseModel):
+    """Payload to trigger dual-variable compound hazard analysis."""
+    dataset_id: str = Field(default="merra2_reanalysis", description="NASA dataset identifier")
+    temp_variable_id: str = Field(default="T2M", description="Thermal variable machine name")
+    precip_variable_id: str = Field(default="PRECTOT", description="Hydrological variable machine name")
+    start_year: int = Field(default=2000, ge=1980, le=2024, description="Start year")
+    end_year: int = Field(default=2023, ge=1980, le=2024, description="End year")
+    bbox: Optional[List[float]] = Field(default=None, description="[min_lon, min_lat, max_lon, max_lat] bounding box")
+    alpha: float = Field(default=0.05, gt=0.0, lt=0.5, description="Significance threshold")
+    prefer_live: bool = Field(default=True, description="Prefer authentic NASA observations")
+
+
+class CompoundHazardResponse(BaseModel):
+    """Dual-variable compound divergence and aridification assessment."""
+    dataset_id: str
+    time_span: str
+    aridification_fraction: float
+    intensification_fraction: float
+    summary: str
+    hazard_distribution: Dict[str, int]
+    cells: List[Dict[str, Any]]

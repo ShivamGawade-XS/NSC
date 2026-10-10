@@ -242,6 +242,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             bbox = self.DEFAULT_BBOX
 
         min_lon, min_lat, max_lon, max_lat = bbox
+        was_clamped = ((max_lat - min_lat) > 9.9) or ((max_lon - min_lon) > 9.9)
         var_meta = self.VARIABLES[variable]
         nasa_param = var_meta["nasa_param"]
 
@@ -345,12 +346,14 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                     "doi": self.DOI,
                     "conventions": conventions,
                     "resolution": self.NATIVE_RESOLUTION,
-                    "time_span": f"{years_arr[0]} - {years_arr[-1]}",
+                    "time_span": f"{years_arr[0]} - {years_arr[-1]}" if len(years_arr) > 0 else f"{start_year} - {end_year}",
                     "grid_shape": list(raw_vals.shape[1:]),
                     "sample_count": len(years_arr),
                     "is_synthetic": False,
                     "granule_file": nc_path.name,
-                    "data_source_label": source_label
+                    "data_source_label": source_label,
+                    "bbox_clamped": was_clamped,
+                    "warning": "Requested spatial extent exceeded NASA POWER 10° regional API limit and was constrained to 9.9°." if was_clamped else None
                 }
             }
 

@@ -1,0 +1,198 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: 🌍
+      - generic [ref=e6]:
+        - heading "EarthSift NASA Space Apps 2026" [level=1] [ref=e7]:
+          - text: EarthSift
+          - generic [ref=e8]: NASA Space Apps 2026
+        - paragraph [ref=e9]: Be An Earth System Trend Detective • Evidence-First Discovery Engine
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: "METHOD:"
+        - generic [ref=e13]: Mann-Kendall + Theil-Sen
+      - generic [ref=e14]:
+        - generic [ref=e15]: "MULTIPLICITY:"
+        - generic [ref=e16]: FDR (q ≤ 0.05)
+      - button "🕵️ Detective Case Tour" [ref=e17] [cursor=pointer]:
+        - generic [ref=e18]: 🕵️
+        - text: Detective Case Tour
+      - generic [ref=e19]: Engine Ready
+  - generic [ref=e22]:
+    - generic [ref=e23]: DEMO MODE
+    - generic [ref=e24]: Synthetic test data — not NASA observations.
+    - generic [ref=e25]: (Reproducible physical climate model fixture active. Real-data Earthdata streaming available via credentials).
+  - main [ref=e26]:
+    - complementary [ref=e27]:
+      - heading "🔬 Investigation Controls" [level=2] [ref=e29]
+      - generic [ref=e30]:
+        - generic [ref=e31]: 🎯 Detective Case Presets
+        - combobox "🎯 Detective Case Presets" [ref=e32]:
+          - 'option "Case 1: Texas & S. Plains Warming (NASA Verified)" [selected]'
+          - 'option "Case 2: Southwest US Compound Aridification (T + P)"'
+          - 'option "Case 3: North American Continental Synoptic Footprint"'
+          - 'option "Case 4: Agricultural Belt Hydrological Variability"'
+          - option "Custom Geographic Exploration..."
+        - generic [ref=e33]: "One-click benchmark: Loads verified NASA observations & optimal bounds."
+      - generic [ref=e34]:
+        - generic [ref=e35]: Dataset Provider
+        - combobox "Dataset Provider" [ref=e36]:
+          - option "🛰️ NASA POWER Reanalysis (NASA Langley LaRC)" [selected]
+          - option "NASA MERRA-2 Atmospheric Reanalysis (GMAO)"
+        - generic [ref=e37]: "NASA Langley Research Center • CF-1.8 Compliant • DOI: 10.5067/POWER/10.0.0"
+      - generic [ref=e38]:
+        - generic [ref=e39]: Target Variable
+        - combobox "Target Variable" [ref=e40]:
+          - option "2-Meter Air Temperature (T2M) [°C]" [selected]
+          - option "Total Corrected Precipitation [mm/day]"
+          - option "Total Precipitation Rate (PRECTOT) [mm/day]"
+      - generic [ref=e41]:
+        - generic [ref=e42]: Temporal Analysis Window
+        - generic [ref=e43]:
+          - spinbutton "Start Year" [ref=e44]: "2000"
+          - generic [ref=e45]: to
+          - spinbutton "End Year" [ref=e46]: "2023"
+        - generic [ref=e47]: 24 consecutive annual records
+      - generic [ref=e48]:
+        - generic [ref=e49]: Statistical Multiplicity Control
+        - generic [ref=e50] [cursor=pointer]:
+          - checkbox "Apply Benjamini-Hochberg FDR" [checked] [ref=e51]
+          - generic [ref=e52]: Apply Benjamini-Hochberg FDR
+        - generic [ref=e53]: Controls False Discovery Rate across spatial grid cells.
+      - generic [ref=e54]:
+        - generic [ref=e55]: Bounding Box (Geographic Region)
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - spinbutton "Min Longitude" [ref=e58]
+            - spinbutton "Min Latitude" [ref=e59]
+          - generic [ref=e60]:
+            - spinbutton "Max Longitude" [ref=e61]
+            - spinbutton "Max Latitude" [ref=e62]
+        - generic [ref=e63]: "[min_lon, min_lat] → [max_lon, max_lat] • Leave blank for dataset default"
+      - generic [ref=e64]:
+        - button "⚡ Run Trend Detection" [ref=e65] [cursor=pointer]:
+          - generic [ref=e66]: ⚡
+          - text: Run Trend Detection
+        - button "🎯 Find Something Interesting" [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: 🎯
+          - text: Find Something Interesting
+        - button "🔥 Compound Hazard (T + P)" [ref=e69] [cursor=pointer]:
+          - generic [ref=e70]: 🔥
+          - text: Compound Hazard (T + P)
+      - generic [ref=e71]:
+        - heading "🎯 Discovered Candidate Signals" [level=3] [ref=e72]
+        - paragraph [ref=e73]: "Ranked by composite discovery score: |slope| × significance × completeness × (1 + coherence)."
+        - generic [ref=e74]: Run analysis to discover candidate signals...
+      - generic [ref=e76]:
+        - heading "⚖️ Discovered Regional Divergence" [level=3] [ref=e77]
+        - generic [ref=e78]:
+          - generic [ref=e79]: Opposing Trends Detected
+          - generic [ref=e80]: Analyzing spatial vectors...
+          - button "Focus Contrasting Regions" [ref=e81] [cursor=pointer]
+      - generic [ref=e82]:
+        - heading "Source Provenance" [level=4] [ref=e83]
+        - generic [ref=e84]:
+          - text: "NASA Global Modeling and Assimilation Office DOI:"
+          - code [ref=e85]: 10.5067/A7F0JNNUTWOB
+          - generic [ref=e86]: Synthetic test data
+    - generic [ref=e87]:
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - heading "Spatial Trend Field" [level=3] [ref=e90]
+          - text: Sen's Robust Slope Rate with Significance Stippling
+        - generic [ref=e91]:
+          - generic [ref=e92] [cursor=pointer]:
+            - checkbox "Significant Only" [ref=e93]
+            - generic [ref=e94]: Significant Only
+          - generic [ref=e95] [cursor=pointer]:
+            - checkbox "LISA Clusters" [ref=e96]
+            - generic [ref=e97]: LISA Clusters
+          - generic [ref=e98] [cursor=pointer]:
+            - checkbox "🛰️ NASA Worldview" [ref=e99]
+            - generic [ref=e100]: 🛰️ NASA Worldview
+          - button "Reset View" [ref=e101] [cursor=pointer]
+      - generic [ref=e102]:
+        - generic:
+          - generic [ref=e103]:
+            - button "Zoom in" [ref=e104] [cursor=pointer]: +
+            - button "Zoom out" [ref=e105] [cursor=pointer]: −
+          - generic [ref=e106]:
+            - link "Leaflet" [ref=e107] [cursor=pointer]:
+              - /url: https://leafletjs.com
+            - text: "| ©"
+            - link "Esri" [ref=e112] [cursor=pointer]:
+              - /url: https://www.esri.com/
+            - text: ", DeLorme, NAVTEQ | NASA Space Apps 2026"
+      - generic [ref=e113]:
+        - generic [ref=e114]: Trend Magnitude & Direction (°C / decade)
+        - generic [ref=e115]:
+          - generic [ref=e116]: "-0.50"
+          - generic [ref=e118]: "0.00"
+          - generic [ref=e119]: "+0.50"
+        - generic [ref=e120]:
+          - generic [ref=e121]: Statistically Significant (q ≤ 0.05)
+          - generic [ref=e123]: Non-Significant / Noise
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - generic [ref=e127]: 🌐
+            - generic [ref=e128]: Spatial Autocorrelation
+          - generic [ref=e129]: Moran's I = -- (Awaiting analysis)
+      - generic [ref=e131]:
+        - generic [ref=e132]:
+          - heading "📈 Coordinate Observation Record & Sen's Trendline" [level=4] [ref=e133]
+          - text: "Selected Cell: 35.00°N, -95.00°W"
+        - generic [ref=e134]:
+          - button "Δ Anomaly Mode" [ref=e135] [cursor=pointer]
+          - generic [ref=e136]: "Slope: +0.32 °C / decade"
+          - generic [ref=e137]: p = 0.0018
+          - generic [ref=e138]: τ = 0.65
+    - complementary [ref=e141]:
+      - generic [ref=e142]:
+        - heading "📋 Scientific Evidence Inspector" [level=2] [ref=e143]
+        - generic [ref=e144]: "Axiom 1: Inspectable Truth"
+      - generic [ref=e145]:
+        - generic [ref=e146]:
+          - generic [ref=e147]: EMPIRICAL OBSERVATION
+          - generic [ref=e148]: Calculated increasing trend of +0.342 °C / decade.
+        - generic [ref=e149]:
+          - generic [ref=e150]: ROBUST MAGNITUDE
+          - generic [ref=e151]: +0.3420 °C / decade
+          - generic [ref=e152]: Theil-Sen estimator (Median of pairwise coordinate slopes)
+        - generic [ref=e153]:
+          - generic [ref=e154]: STATISTICAL SIGNIFICANCE
+          - generic [ref=e155]: p = 0.0018 | FDR q = 0.0032
+          - generic [ref=e156]: "Status: Statistically Significant (Null hypothesis rejected)"
+        - generic [ref=e157]:
+          - generic [ref=e158]: 95% CONFIDENCE INTERVAL (GILBERT 1987)
+          - generic [ref=e159]: "[+0.2100, +0.4800] °C / decade"
+          - generic [ref=e160]: Non-parametric rank-based confidence bounds
+        - generic [ref=e161]:
+          - generic [ref=e162]: SPATIAL CLUSTER (ANSELIN LISA)
+          - generic [ref=e163]: HH (High-High Hotspot)
+          - generic [ref=e165]: Local Moran's I spatial association regime
+        - generic [ref=e166]:
+          - generic [ref=e167]: DATA COVERAGE & INTEGRITY
+          - generic [ref=e168]: 24 / 24 annual points (100% valid coverage)
+          - generic [ref=e169]: "Missing gaps: 0 • Spatial Adjacency: Validated"
+        - generic [ref=e170]:
+          - generic [ref=e171]: SCIENTIFIC METHOD
+          - generic [ref=e172]: Sen's robust median-of-slopes estimator with Mann-Kendall monotonic test and Benjamini-Hochberg FDR
+        - generic [ref=e173]:
+          - generic [ref=e174]: SCIENTIFIC CAVEATS & LIMITATIONS
+          - generic [ref=e175]: Empirical observation of monotonic trend. Does not prove underlying atmospheric or oceanic causation without physical process attribution.
+        - generic [ref=e176]:
+          - generic [ref=e177]: DATA SOURCE & AUDIT STATUS
+          - generic [ref=e178]: NASA MERRA-2 Atmospheric Reanalysis
+          - generic [ref=e179]: "Data Regime: Synthetic test data — not NASA observations."
+        - generic [ref=e180]:
+          - generic [ref=e181]:
+            - heading "🤖 Downstream AI Explainer" [level=3] [ref=e182]
+            - generic [ref=e183]: Zero Hallucination Mode
+          - paragraph [ref=e184]: Translates only the verified evidence record into plain scientific English.
+          - button "✨ Explain Finding with AI" [ref=e185] [cursor=pointer]:
+            - generic [ref=e186]: ✨
+            - text: Explain Finding with AI
+        - generic [ref=e187]:
+          - button "📦 Export NetCDF-4" [ref=e188] [cursor=pointer]
+          - button "🗺️ Export GeoJSON" [ref=e189] [cursor=pointer]
+          - button "📄 Science Dossier" [ref=e190] [cursor=pointer]

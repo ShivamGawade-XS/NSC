@@ -9,12 +9,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <!-- Vendored Local Offline Libraries (Leaflet & Chart.js) -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="vendor/leaflet.css" />
   <script src="vendor/chart.umd.min.js"></script>
   <script src="vendor/leaflet.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="dark-theme">
+  <!-- Global Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay hidden" aria-live="polite" aria-label="Computing analysis">
+    <div class="loading-card">
+      <div class="loading-spinner"></div>
+      <div class="loading-title" id="loadingTitle">Computing Trend Analysis...</div>
+      <div class="loading-sub" id="loadingSub">Fetching NASA observations • Running Mann-Kendall • Applying FDR correction</div>
+    </div>
+  </div>
+  <!-- Toast Notification Stack -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
   <!-- Top Application Bar -->
   <header class="app-header">
     <div class="brand">
@@ -36,6 +47,12 @@
         <span class="pill-label">MULTIPLICITY:</span>
         <span class="pill-val" id="fdrStatusBadge">FDR (q ≤ 0.05)</span>
       </div>
+      <button id="detectiveTourBtn" class="btn btn-sm btn-tour" title="Launch Interactive Detective Case Tour">
+        <span>🕵️</span> Detective Case Tour
+      </button>
+      <button id="shareLinkBtn" class="btn btn-sm btn-tour" title="Copy shareable deep-link with current coordinates and parameters">
+        <span>🔗</span> Share Link
+      </button>
       <div class="status-indicator">
         <span class="status-dot live"></span>
         <span id="apiStatusText">Engine Ready</span>
@@ -59,6 +76,18 @@
         <h2>🔬 Investigation Controls</h2>
       </div>
 
+      <div class="form-group preset-group">
+        <label for="presetSelect">🎯 Detective Case Presets</label>
+        <select id="presetSelect" class="input-control preset-control">
+          <option value="case1" selected>Case 1: Texas & S. Plains Warming (NASA Verified)</option>
+          <option value="case2">Case 2: Southwest US Compound Aridification (T + P)</option>
+          <option value="case3">Case 3: North American Continental Synoptic Footprint</option>
+          <option value="case4">Case 4: Agricultural Belt Hydrological Variability</option>
+          <option value="custom">Custom Geographic Exploration...</option>
+        </select>
+        <span class="field-hint">One-click benchmark: Loads verified NASA observations & optimal bounds.</span>
+      </div>
+
       <div class="form-group">
         <label for="datasetSelect">Dataset Provider</label>
         <select id="datasetSelect" class="input-control">
@@ -80,9 +109,9 @@
       <div class="form-group">
         <label>Temporal Analysis Window</label>
         <div class="range-inputs">
-          <input type="number" id="startYear" class="input-control mini" value="2000" min="1980" max="2023" />
+          <input type="number" id="startYear" class="input-control mini" value="2000" min="1980" max="2023" title="Start Year" aria-label="Start Year" placeholder="Start Year" />
           <span class="range-divider">to</span>
-          <input type="number" id="endYear" class="input-control mini" value="2023" min="1981" max="2024" />
+          <input type="number" id="endYear" class="input-control mini" value="2023" min="1981" max="2024" title="End Year" aria-label="End Year" placeholder="End Year" />
         </div>
         <span class="field-hint" id="yearCountHint">24 consecutive annual records</span>
       </div>
@@ -96,12 +125,33 @@
         <span class="field-hint">Controls False Discovery Rate across spatial grid cells.</span>
       </div>
 
+      <div class="form-group">
+        <label class="label-split">
+          <span>Bounding Box (Geographic Region)</span>
+          <button id="clearBboxBtn" class="btn-clear-bbox" title="Clear bounding box fields">✕ Clear</button>
+        </label>
+        <div class="bbox-grid">
+          <div class="bbox-row">
+            <input type="number" id="bboxMinLon" class="input-control mini" value="" step="0.5" placeholder="Min Lon (-102)" title="Min Longitude" />
+            <input type="number" id="bboxMinLat" class="input-control mini" value="" step="0.5" placeholder="Min Lat (30)" title="Min Latitude" />
+          </div>
+          <div class="bbox-row">
+            <input type="number" id="bboxMaxLon" class="input-control mini" value="" step="0.5" placeholder="Max Lon (-94)" title="Max Longitude" />
+            <input type="number" id="bboxMaxLat" class="input-control mini" value="" step="0.5" placeholder="Max Lat (38)" title="Max Latitude" />
+          </div>
+        </div>
+        <span class="field-hint" id="bboxHint">[min_lon, min_lat] → [max_lon, max_lat] • Leave blank for dataset default</span>
+      </div>
+
       <div class="action-buttons-group">
-        <button id="runAnalysisBtn" class="btn btn-primary">
+        <button id="runAnalysisBtn" class="btn btn-primary" title="Run analysis (Enter)">
           <span class="btn-icon">⚡</span> Run Trend Detection
         </button>
         <button id="findInterestingBtn" class="btn btn-accent" title="Discovery Engine: Rank signals by magnitude * significance * completeness * spatial coherence">
           <span class="btn-icon">🎯</span> Find Something Interesting
+        </button>
+        <button id="runCompoundBtn" class="btn btn-hazard" title="Run Multivariate Compound Hazard Analysis (Temperature + Precipitation Aridification Index)">
+          <span class="btn-icon">🔥</span> Compound Hazard (T + P)
         </button>
       </div>
 
@@ -197,9 +247,13 @@
             <span id="tsCoordinateLabel" class="ts-sub">Selected Cell: 35.00°N, -95.00°W</span>
           </div>
           <div class="ts-stats">
+            <button id="toggleAnomalyBtn" class="btn btn-xs btn-outline" title="Toggle between raw observations and climatological baseline departures (anomalies)">
+              Δ Anomaly Mode
+            </button>
             <span class="stat-badge" id="tsSlopeBadge">Slope: +0.32 °C / decade</span>
             <span class="stat-badge" id="tsPValBadge">p = 0.0018</span>
             <span class="stat-badge" id="tsTauBadge">τ = 0.65</span>
+            <span class="stat-badge" id="tsChangepointBadge" title="Pettitt (1979) Non-Parametric Abrupt Regime Changepoint">Shift: None</span>
           </div>
         </div>
         <div class="chart-container">
@@ -298,24 +352,81 @@
           <div id="aiOutputBox" class="ai-box hidden">
             <div class="ai-loader" id="aiLoader">Generating deterministic interpretation...</div>
             <div class="ai-content" id="aiContentText"></div>
+            <div class="ai-actions hidden" id="aiActions">
+              <button id="copyAiBtn" class="btn-ai-action" title="Copy explanation to clipboard">📋 Copy</button>
+              <button id="dismissAiBtn" class="btn-ai-action btn-ai-dismiss" title="Dismiss explanation">✕ Dismiss</button>
+            </div>
           </div>
         </div>
         <!-- Export & Dossier Actions -->
         <div class="export-actions">
-          <button id="exportNetcdfBtn" class="btn btn-sm btn-export" title="Export as CF-1.8 NetCDF-4 (viewable in NASA Panoply / QGIS)">
-            📦 Export NetCDF-4
+          <button id="exportNetcdfBtn" class="btn btn-sm btn-export" title="Export as CF-1.8 NetCDF-4 binary granule (.nc) — viewable in NASA Panoply, QGIS, or Python xarray">
+            📦 NetCDF-4 (.nc)
           </button>
-          <button id="exportGeojsonBtn" class="btn btn-sm btn-export" title="Export as GeoJSON FeatureCollection">
-            🗺️ Export GeoJSON
+          <button id="exportGeojsonBtn" class="btn btn-sm btn-export" title="Export as GeoJSON FeatureCollection (.geojson) — viewable in QGIS, ArcGIS, or geojson.io">
+            🗺️ GeoJSON (.geojson)
           </button>
-          <button id="exportDossierBtn" class="btn btn-sm btn-export" title="Generate NASA Climate Science Dossier (Markdown)">
-            📄 Science Dossier
+          <button id="exportDossierBtn" class="btn btn-sm btn-export" title="Export NASA Climate Science Dossier (.md) — Markdown publication report">
+            📄 Dossier (.md)
+          </button>
+          <button id="exportNotebookBtn" class="btn btn-sm btn-export" title="Export reproducible Jupyter Notebook (.ipynb) — open in Google Colab, JupyterLab, or VS Code">
+            📓 Notebook (.ipynb)
           </button>
         </div>
       </div>
     </aside>
 
   </main>
+
+  <!-- Interactive Detective Tour Modal -->
+  <div id="tourModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="modal-icon">🕵️</span>
+          <h3>NASA Earth System Trend Detective Tour</h3>
+        </div>
+        <button id="closeTourBtn" class="btn-close" aria-label="Close Tour">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="tour-intro">Welcome, Detective! Follow the 4 core investigative clues to examine how multi-decadal climate signals are rigorously verified from NASA satellite observations.</p>
+        
+        <div class="tour-steps-grid">
+          <div class="tour-step-card" id="tourStep1">
+            <div class="step-num">CLUE 1</div>
+            <h4>Empirical Monotonic Drift</h4>
+            <p>Ordinary linear regressions (OLS) assume normally distributed noise and constant variance. EarthSift deploys <strong>Sen's median-of-slopes</strong> and the non-parametric <strong>Mann-Kendall test</strong> to discover real physical signals immune to extreme sensor outliers.</p>
+            <button class="btn btn-sm btn-accent step-action" data-case="case1">⚡ Inspect Texas Thermal Signal</button>
+          </div>
+
+          <div class="tour-step-card" id="tourStep2">
+            <div class="step-num">CLUE 2</div>
+            <h4>The Red Noise Trap</h4>
+            <p>Climate inertia creates serial persistence that fools standard trend tests into declaring false positives. EarthSift applies <strong>Hamed & Rao (1998) variance correction</strong> on detrended residuals to verify true physical trends.</p>
+            <button class="btn btn-sm btn-accent step-action" data-case="case3">⚡ Test Autocorrelation Correction</button>
+          </div>
+
+          <div class="tour-step-card" id="tourStep3">
+            <div class="step-num">CLUE 3</div>
+            <h4>Spatial Regimes (Anselin LISA)</h4>
+            <p>Isolated pixel anomalies could be noise. Using <strong>Local Indicators of Spatial Association (LISA)</strong> and <strong>Cliff & Ord Moran's I</strong>, EarthSift isolates contiguous High-High (Hotspots) and Low-Low (Refugia) spatial clusters.</p>
+            <button class="btn btn-sm btn-accent step-action" data-case="lisa">⚡ View LISA Hotspots</button>
+          </div>
+
+          <div class="tour-step-card" id="tourStep4">
+            <div class="step-num">CLUE 4</div>
+            <h4>Dual Compound Hazards (T + P)</h4>
+            <p>Heatwaves alone are dangerous; heat combined with precipitation decline creates catastrophic aridification. EarthSift's <strong>Compound Aridification Index (CAI)</strong> cross-analyzes multivariate divergence.</p>
+            <button class="btn btn-sm btn-accent step-action" data-case="case2">⚡ Run Compound Hazard Engine</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span class="tour-hint">Click any clue above to immediately configure the instrument and run live analysis.</span>
+        <button id="dismissTourBtn" class="btn btn-secondary btn-sm">Close Tour</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

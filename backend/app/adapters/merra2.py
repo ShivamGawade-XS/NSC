@@ -199,74 +199,90 @@ class MERRA2Adapter(BaseDatasetAdapter):
         if prefer_live or os.environ.get("PREFER_LIVE_DATA") == "1":
             data_dir = Path(os.environ.get("MERRA2_DATA_DIR", Path(__file__).resolve().parent.parent.parent / "data"))
             candidate_paths = [
+                data_dir / "fixtures" / "merra2_reanalysis.nc",
+                data_dir / "merra2_reanalysis.nc",
                 data_dir / "fixtures" / f"nasa_merra2_{variable.lower()}_na.nc",
                 data_dir / "fixtures" / "nasa_merra2_t2m_na.nc",
                 data_dir / "fixtures" / "nasa_merra2_precip_na.nc",
                 data_dir / f"{variable}.nc",
-                data_dir / "merra2_reanalysis.nc",
-                data_dir / "fixtures" / f"{variable}.nc",
-                data_dir / "fixtures" / "merra2_reanalysis.nc"
+                data_dir / "fixtures" / f"{variable}.nc"
             ]
-            nc_file = next((p for p in candidate_paths if p.exists()), None)
 
-            if nc_file:
+            for nc_file in [p for p in candidate_paths if p.exists()]:
                 try:
                     import xarray as xr
                     with xr.open_dataset(nc_file) as ds:
                         var_key = variable if variable in ds else self.SHORT_NAMES.get(variable)
-                        if var_key and var_key in ds:
-                            da = ds[var_key]
-                            # Handle coordinate names and bounds
-                            time_coord = "time" if "time" in da.coords else list(da.coords.keys())[0]
-                            lat_coord = "lat" if "lat" in da.coords else "latitude"
-                            lon_coord = "lon" if "lon" in da.coords else "longitude"
+                        if not var_key or var_key not in ds:
+                            continue
 
-                            # Subsetting spatially and temporally
-                            sub_da = da.sel(
-                                {
-                                    time_coord: slice(int(start_year), int(end_year)),
-                                    lat_coord: slice(float(min_lat), float(max_lat)),
-                                    lon_coord: slice(float(min_lon), float(max_lon))
-                                }
-                            )
+                        da = ds[var_key]
+                        time_coord = "time" if "time" in da.coords else list(da.coords.keys())[0]
+                        lat_coord = "lat" if "lat" in da.coords else "latitude"
+                        lon_coord = "lon" if "lon" in da.coords else "longitude"
 
-                            if sub_da.sizes[time_coord] >= 5 and sub_da.sizes[lat_coord] > 0 and sub_da.sizes[lon_coord] > 0:
-                                time_vals = sub_da[time_coord].values
-                                if hasattr(sub_da[time_coord], "dt"):
-                                    years_arr = np.array(sub_da[time_coord].dt.year, dtype=int)
-                                else:
-                                    years_arr = np.array(time_vals, dtype=int)
+                        time_vals = da[time_coord].values
+                        if np.issubdtype(time_vals.dtype, np.integer) and np.any(time_vals > 10000):
+                            annual_times = [t for t in time_vals if (t % 100 == 13) and (start_year <= t // 100 <= end_year)]
+                            if not annual_times:
+                                annual_times = [t for t in time_vals if (start_year <= t // 100 <= end_year)]
+                            if not annual_times:
+                                continue
+                            sub_da = da.sel({time_coord: annual_times})
+                            years_arr = np.array([t // 100 for t in annual_times], dtype=int)
+                        elif hasattr(da[time_coord], "dt"):
+                            sub_da = da.sel({time_coord: slice(f"{start_year}-01-01", f"{end_year}-12-31")})
+                            years_arr = np.array(sub_da[time_coord].dt.year, dtype=int)
+                        else:
+                            sub_da = da.sel({time_coord: slice(int(start_year), int(end_year))})
+                            years_arr = np.array(sub_da[time_coord].values, dtype=int)
 
-                                var_info = self.VARIABLES[variable]
-                                raw_vals = np.asarray(sub_da.values, dtype=float)
+                        # Spatial slicing with ascending/descending safety
+                        lat_vals = da[lat_coord].values
+                        lat_slice = slice(float(min_lat), float(max_lat)) if lat_vals[0] < lat_vals[-1] else slice(float(max_lat), float(min_lat))
+                        lon_slice = slice(float(min_lon), float(max_lon))
+                        sub_da = sub_da.sel({lat_coord: lat_slice, lon_coord: lon_slice})
 
-                                return {
-                                    "dataset_id": self.DATASET_ID,
-                                    "variable_id": variable,
-                                    "variable_name": var_info["name"],
-                                    "data": raw_vals,
-                                    "time": years_arr,
-                                    "lat": np.asarray(sub_da[lat_coord].values, dtype=float),
-                                    "lon": np.asarray(sub_da[lon_coord].values, dtype=float),
-                                    "source_units": var_info["source_units"],
-                                    "display_units": var_info["display_units"],
-                                    "slope_units": var_info["slope_units"],
+                        if sub_da.sizes[time_coord] >= 5 and sub_da.sizes[lat_coord] > 0 and sub_da.sizes[lon_coord] > 0:
+                            var_info = self.VARIABLES[variable]
+                            raw_vals = np.asarray(sub_da.values, dtype=float)
+                            lats_out = np.asarray(sub_da[lat_coord].values, dtype=float)
+                            lons_out = np.asarray(sub_da[lon_coord].values, dtype=float)
+
+                            if len(lats_out) > 1 and lats_out[0] > lats_out[-1]:
+                                lats_out = lats_out[::-1]
+                                raw_vals = raw_vals[:, ::-1, :]
+
+                            is_fixture = "reanalysis" in nc_file.name or "fixture" in str(nc_file)
+                            source_label = "NASA GMAO MERRA-2 Atmospheric Reanalysis (Gridded NetCDF Ingestion)"
+
+                            return {
+                                "dataset_id": self.DATASET_ID,
+                                "variable_id": variable,
+                                "variable_name": var_info["name"],
+                                "data": raw_vals,
+                                "time": years_arr,
+                                "lat": lats_out,
+                                "lon": lons_out,
+                                "source_units": var_info["source_units"],
+                                "display_units": var_info["display_units"],
+                                "slope_units": var_info["slope_units"],
+                                "is_synthetic": False,
+                                "data_source_label": source_label,
+                                "provenance": {
+                                    "source": self.NAME,
+                                    "provider": self.PROVIDER,
+                                    "doi": self.DOI,
+                                    "resolution": self.NATIVE_RESOLUTION,
+                                    "time_span": f"{start_year} - {end_year}",
+                                    "grid_shape": list(raw_vals.shape[1:]),
+                                    "sample_count": len(years_arr),
                                     "is_synthetic": False,
-                                    "data_source_label": "NASA GMAO MERRA-2 Reanalysis (Verified NetCDF Observations).",
-                                    "provenance": {
-                                        "source": self.NAME,
-                                        "provider": self.PROVIDER,
-                                        "doi": self.DOI,
-                                        "resolution": self.NATIVE_RESOLUTION,
-                                        "time_span": f"{start_year} - {end_year}",
-                                        "grid_shape": list(raw_vals.shape[1:]),
-                                        "sample_count": len(years_arr),
-                                        "is_synthetic": False,
-                                        "data_source_label": "NASA GMAO MERRA-2 Reanalysis (Verified NetCDF Observations)."
-                                    }
+                                    "data_source_label": source_label
                                 }
+                            }
                 except Exception as e:
-                    logger.warning("Failed to open NetCDF %s (%s); falling back to physical fixture.", nc_file, e)
+                    logger.warning("Failed reading candidate NetCDF %s (%s); trying next.", nc_file, e)
 
         # DEMO / FIXTURE MODE
         # Generates deterministic, physically grounded atmospheric field

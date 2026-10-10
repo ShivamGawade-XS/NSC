@@ -9,8 +9,12 @@ import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
 import os
+import shutil
 import tempfile
+import threading
+from collections import OrderedDict
 from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
+from starlette.background import BackgroundTask
 
 from app.schemas.analysis import (
     AnalysisRequest,
@@ -25,15 +29,17 @@ from app.schemas.analysis import (
     CandidateSignal,
     ContrastsResponse,
     ProvenanceResponse,
-    VariableInfo
+    VariableInfo,
+    CompoundHazardRequest,
+    CompoundHazardResponse
 )
 from app.adapters.merra2 import MERRA2Adapter
 from app.adapters.nasa_power import NASAPowerAdapter
-from app.science.trend import compute_spatial_trends, mann_kendall_test, sens_slope
+from app.science.trend import compute_spatial_trends, mann_kendall_test, sens_slope, pettitt_changepoint_test
 from app.science.contrasts import find_contrasting_regions
 from app.science.discovery import discover_candidate_signals
 from app.science.explainer import explain_evidence_with_ai
-from app.science.export import export_to_netcdf, export_to_geojson, generate_scientific_dossier
+from app.science.export import export_to_netcdf, export_to_geojson, generate_scientific_dossier, generate_jupyter_notebook
 from app.science.compound import compute_compound_hazard
 
 router = APIRouter()
@@ -44,8 +50,28 @@ ADAPTERS = {
     "nasa_power": NASAPowerAdapter()
 }
 
-# In-memory analysis cache: analysis_id -> full dataset dict & calculated grids
-ANALYSIS_CACHE: Dict[str, Dict[str, Any]] = {}
+# Thread-safe in-memory LRU analysis cache
+CACHE_LOCK = threading.Lock()
+ANALYSIS_CACHE: OrderedDict[str, Dict[str, Any]] = OrderedDict()
+
+
+def get_cached_analysis(analysis_id: str) -> Optional[Dict[str, Any]]:
+    """Retrieve analysis from cache with thread-safe LRU ordering."""
+    with CACHE_LOCK:
+        if analysis_id in ANALYSIS_CACHE:
+            ANALYSIS_CACHE.move_to_end(analysis_id)
+            return ANALYSIS_CACHE[analysis_id]
+        return None
+
+
+def set_cached_analysis(analysis_id: str, value: Dict[str, Any], max_size: int = 32) -> None:
+    """Store analysis in cache with thread-safe bounded LRU eviction."""
+    with CACHE_LOCK:
+        if analysis_id in ANALYSIS_CACHE:
+            ANALYSIS_CACHE.move_to_end(analysis_id)
+        ANALYSIS_CACHE[analysis_id] = value
+        while len(ANALYSIS_CACHE) > max_size:
+            ANALYSIS_CACHE.popitem(last=False)
 
 
 @router.get("/health")
@@ -129,12 +155,20 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
     n_samples = trend_results["n_samples"]
 
     # Discover opposing regional contrasts
+    active_sig = sig_fdr if req.use_fdr else sig_raw
     contrasts = find_contrasting_regions(
         slopes=slopes,
-        is_significant=sig_fdr,
+        is_significant=active_sig,
         latitudes=lats,
         longitudes=lons
     )
+    if not contrasts and req.use_fdr and int(np.sum(sig_raw)) > 0:
+        contrasts = find_contrasting_regions(
+            slopes=slopes,
+            is_significant=sig_raw,
+            latitudes=lats,
+            longitudes=lons
+        )
 
     # Discover candidate signals with transparent composite score and true completeness
     signals = discover_candidate_signals(
@@ -160,7 +194,7 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
     for i in range(h_len):
         for j in range(w_len):
             s = float(slopes[i, j])
-            is_sig = bool(sig_fdr[i, j])
+            is_sig = bool(sig_fdr[i, j]) if req.use_fdr else bool(sig_raw[i, j])
 
             if is_sig and s > 0:
                 direction = "increasing"
@@ -207,13 +241,8 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
     alpha_slug = f"a{int(req.alpha * 1000)}"
     analysis_id = f"ana_{req.dataset_id}_{req.variable_id}_{req.start_year}_{req.end_year}_{bbox_slug}_{alpha_slug}"
 
-    # Bounded cache eviction (LRU policy: cap at 32 analysis entries to prevent memory leaks)
-    if len(ANALYSIS_CACHE) >= 32 and analysis_id not in ANALYSIS_CACHE:
-        oldest_key = next(iter(ANALYSIS_CACHE))
-        ANALYSIS_CACHE.pop(oldest_key, None)
-
-    # Cache for interactive drilldown
-    ANALYSIS_CACHE[analysis_id] = {
+    # Cache for interactive drilldown with thread-safe bounded LRU eviction
+    set_cached_analysis(analysis_id, {
         "raw_slice": raw_slice,
         "trend_results": trend_results,
         "contrasts": contrasts,
@@ -221,7 +250,7 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
         "grid": grid_points,
         "summary": summary,
         "req": req
-    }
+    })
 
     return AnalysisResponse(
         analysis_id=analysis_id,
@@ -242,7 +271,7 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
 @router.get("/analysis/{analysis_id}", response_model=AnalysisResponse)
 def get_analysis(analysis_id: str) -> AnalysisResponse:
     """Retrieve full cached analysis results by ID."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
     raw_slice = cached["raw_slice"]
@@ -267,7 +296,7 @@ def get_analysis(analysis_id: str) -> AnalysisResponse:
 @router.get("/analysis/{analysis_id}/map", response_model=MapLayerResponse)
 def get_analysis_map(analysis_id: str) -> MapLayerResponse:
     """Retrieve spatial grid field and map bounding boundaries."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
     raw = cached["raw_slice"]
@@ -294,7 +323,7 @@ def get_cell_timeseries(
     lon: Optional[float] = Query(None, description="Longitude coordinate")
 ) -> CellDetailResponse:
     """Retrieve time series, fitted trend, and structured evidence record for coordinates."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found or expired.")
 
@@ -329,6 +358,12 @@ def get_cell_timeseries(
     mk = mann_kendall_test(series, alpha=cached["req"].alpha)
     q_val = float(cached["trend_results"]["q_values"][lat_idx, lon_idx])
 
+    # Pettitt (1979) abrupt regime changepoint test
+    pettitt = pettitt_changepoint_test(series, time_coords=years, alpha=cached["req"].alpha)
+    cp_year = pettitt.get("changepoint_time")
+    cp_pval = pettitt.get("p_value")
+    cp_sig = pettitt.get("significant", False)
+
     # Pull pre-computed CI and LISA from spatial results
     _ci_l_grid = cached["trend_results"].get("ci_lower")
     _ci_u_grid = cached["trend_results"].get("ci_upper")
@@ -337,14 +372,23 @@ def get_cell_timeseries(
     ci_u = round(float(_ci_u_grid[lat_idx, lon_idx]), 4) if _ci_u_grid is not None else slope
     lisa_lbl = str(_lisa_grid[lat_idx, lon_idx]) if _lisa_grid is not None else "NS"
 
+    valid_obs = int(np.sum(~np.isnan(series)))
+    total_obs = len(series)
+    pct = (valid_obs / max(1, total_obs)) * 100
+
     evidence = {
         "observation": f"Calculated {mk['direction']} trend of {slope:+.3f} {raw['slope_units']}.",
         "magnitude": f"{slope:+.4f} {raw['slope_units']}",
         "confidence_interval_95": f"[{ci_l:+.4f}, {ci_u:+.4f}] {raw['slope_units']} (Gilbert 1987)",
         "significance": f"p-value = {mk['p_value']:.4f}, FDR q-value = {q_val:.4f} (Significant: {mk['significant']})",
+        "changepoint": (
+            f"Abrupt regime shift detected in {cp_year} (p = {cp_pval:.4f})"
+            if cp_sig and cp_year else
+            f"Gradual monotonic drift (no abrupt changepoint, p = {cp_pval:.4f})"
+        ),
         "lisa_cluster": lisa_lbl,
-        "method": "Sen's robust median-of-slopes estimator with Mann-Kendall, Hamed-Rao autocorrelation correction, Benjamini-Hochberg FDR, and Gilbert (1987) 95% CI",
-        "coverage": f"{len(series)} valid annual observations (100% complete)",
+        "method": "Sen's robust median-of-slopes estimator with Mann-Kendall, Hamed-Rao autocorrelation correction, Benjamini-Hochberg FDR, Pettitt changepoint test, and Gilbert (1987) 95% CI",
+        "coverage": f"{valid_obs} / {total_obs} valid annual observations ({pct:.1f}% complete)",
         "source": f"{raw['provenance']['source']} (DOI: {raw['provenance']['doi']})",
         "is_synthetic": raw.get("is_synthetic", False),
         "data_source_label": raw.get("data_source_label", "NASA Observations"),
@@ -373,6 +417,8 @@ def get_cell_timeseries(
         significant=mk["significant"],
         direction=mk["direction"],
         lisa_cluster=lisa_lbl,
+        changepoint_year=cp_year,
+        changepoint_p_value=cp_pval,
         evidence_record=evidence
     )
 
@@ -380,7 +426,7 @@ def get_cell_timeseries(
 @router.get("/analysis/{analysis_id}/signals", response_model=SignalsResponse)
 def get_candidate_signals(analysis_id: str) -> SignalsResponse:
     """Discovery Engine: Return candidate signals worth investigating."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
     raw = cached["raw_slice"]
@@ -403,7 +449,7 @@ def get_candidate_signals(analysis_id: str) -> SignalsResponse:
 @router.get("/analysis/{analysis_id}/contrasts", response_model=ContrastsResponse)
 def get_analysis_contrasts(analysis_id: str) -> ContrastsResponse:
     """Contrast Engine: Return opposing regional trend pairs."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
     contrasts = cached["contrasts"]
@@ -420,7 +466,7 @@ def get_analysis_contrasts(analysis_id: str) -> ContrastsResponse:
 @router.get("/analysis/{analysis_id}/provenance", response_model=ProvenanceResponse)
 def get_analysis_provenance(analysis_id: str) -> ProvenanceResponse:
     """Provenance Engine: Return full data lineage, citations, and validation metadata."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
     raw = cached["raw_slice"]
@@ -441,7 +487,7 @@ def explain_evidence(req: ExplainRequest) -> ExplainResponse:
 @router.get("/analysis/{analysis_id}/export/netcdf")
 def export_analysis_netcdf(analysis_id: str):
     """Export full spatial analysis as CF-1.8 compliant NetCDF-4 file (viewable in NASA Panoply/QGIS)."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
 
@@ -471,20 +517,28 @@ def export_analysis_netcdf(analysis_id: str):
 
     out_dir = tempfile.mkdtemp(prefix="earthsift_")
     nc_path = os.path.join(out_dir, f"earthsift_{analysis_id}.nc")
+    filename = f"earthsift_{req.variable_id}_{req.start_year}_{req.end_year}.nc"
     try:
         export_to_netcdf(analysis_record, nc_path)
         return FileResponse(
-            nc_path, media_type="application/x-netcdf",
-            filename=f"earthsift_{req.variable_id}_{req.start_year}_{req.end_year}.nc"
+            nc_path,
+            media_type="application/x-netcdf",
+            filename=filename,
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            },
+            background=BackgroundTask(shutil.rmtree, out_dir, ignore_errors=True)
         )
     except Exception as e:
+        shutil.rmtree(out_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=f"NetCDF export failed: {str(e)}")
 
 
 @router.get("/analysis/{analysis_id}/export/geojson")
 def export_analysis_geojson(analysis_id: str):
     """Export full spatial analysis as GeoJSON FeatureCollection."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
 
@@ -510,13 +564,21 @@ def export_analysis_geojson(analysis_id: str):
         }
     }
     geojson_dict = export_to_geojson(analysis_record)
-    return JSONResponse(content=geojson_dict, media_type="application/geo+json")
+    filename = f"earthsift_trends_{req.variable_id}_{req.start_year}_{req.end_year}.geojson"
+    return JSONResponse(
+        content=geojson_dict,
+        media_type="application/geo+json",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
 
 
 @router.get("/analysis/{analysis_id}/dossier")
 def get_scientific_dossier(analysis_id: str):
     """Generate a publication-quality NASA Climate Science Dossier in Markdown."""
-    cached = ANALYSIS_CACHE.get(analysis_id)
+    cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
 
@@ -542,4 +604,148 @@ def get_scientific_dossier(analysis_id: str):
         }
     }
     dossier_md = generate_scientific_dossier(analysis_record)
-    return PlainTextResponse(dossier_md, media_type="text/markdown")
+    filename = f"NASA_Climate_Science_Dossier_{req.variable_id}_{req.start_year}_{req.end_year}.md"
+    return PlainTextResponse(
+        dossier_md,
+        media_type="text/markdown",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+
+
+@router.get("/analysis/{analysis_id}/export/notebook")
+def export_analysis_notebook(analysis_id: str):
+    """Export self-contained reproducible Jupyter Notebook (.ipynb) independently verifiable in Google Colab or JupyterLab."""
+    import json
+    cached = get_cached_analysis(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+
+    raw = cached["raw_slice"]
+    grid = cached["grid"]
+    req = cached["req"]
+
+    analysis_record = {
+        "variable": req.variable_id,
+        "units": raw.get("display_units", ""),
+        "is_synthetic": raw.get("is_synthetic", False),
+        "provenance": raw.get("provenance", {}),
+        "results": {
+            "cells": [
+                {
+                    "lat": g.lat, "lon": g.lon, "slope": g.slope,
+                    "p_value": g.p_value, "q_value": g.q_value,
+                    "significant": g.is_significant_fdr
+                } for g in grid
+            ]
+        }
+    }
+    nb_dict = generate_jupyter_notebook(analysis_record)
+    content = json.dumps(nb_dict, indent=2)
+    filename = f"earthsift_reproducible_{req.variable_id}_{req.start_year}_{req.end_year}.ipynb"
+    return PlainTextResponse(
+        content=content,
+        media_type="application/x-ipynb+json",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+
+
+@router.post("/analysis/compound", response_model=CompoundHazardResponse)
+def run_compound_hazard_analysis(req: CompoundHazardRequest) -> CompoundHazardResponse:
+    """
+    Spatiotemporal Compound Climate Hazard Engine:
+    Cross-analyzes joint thermal and hydrological trends (e.g. T2M warming + PRECTOT drying)
+    to calculate the Compound Aridification Index (CAI) and classify regional divergence regimes:
+    - Severe Aridification (Warming + Drying hotspot)
+    - Hydrological Intensification (Warming + Pluvial extreme)
+    - Thermal Buffering (Cooling/Stable + Wetting)
+    """
+    adapter = ADAPTERS.get(req.dataset_id)
+    if not adapter:
+        raise HTTPException(status_code=404, detail=f"Dataset '{req.dataset_id}' not found.")
+
+    # 1. Fetch thermal variable slice
+    try:
+        slice_t = adapter.fetch_subset(
+            variable=req.temp_variable_id,
+            start_year=req.start_year,
+            end_year=req.end_year,
+            bbox=req.bbox,
+            prefer_live=req.prefer_live
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Temperature variable error: {str(e)}")
+
+    # 2. Fetch precipitation variable slice
+    try:
+        slice_p = adapter.fetch_subset(
+            variable=req.precip_variable_id,
+            start_year=req.start_year,
+            end_year=req.end_year,
+            bbox=req.bbox,
+            prefer_live=req.prefer_live
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Precipitation variable error: {str(e)}")
+
+    # Compute spatial trends for both variables (scaled to decades)
+    time_coords_t = (slice_t["time"] - req.start_year) / 10.0
+    time_coords_p = (slice_p["time"] - req.start_year) / 10.0
+    trend_t = compute_spatial_trends(slice_t["data"], time_coords=time_coords_t, alpha=req.alpha)
+    trend_p = compute_spatial_trends(slice_p["data"], time_coords=time_coords_p, alpha=req.alpha)
+
+    # Align spatial dimensions if shapes differ slightly
+    t_slopes = trend_t["slopes"]
+    p_slopes = trend_p["slopes"]
+    min_h = min(t_slopes.shape[0], p_slopes.shape[0])
+    min_w = min(t_slopes.shape[1], p_slopes.shape[1])
+    t_slopes = t_slopes[:min_h, :min_w]
+    p_slopes = p_slopes[:min_h, :min_w]
+
+    t_sig = trend_t["is_significant_fdr"][:min_h, :min_w]
+    p_sig = trend_p["is_significant_fdr"][:min_h, :min_w]
+
+    compound_res = compute_compound_hazard(
+        temp_slopes=t_slopes,
+        precip_slopes=p_slopes,
+        temp_sig=t_sig,
+        precip_sig=p_sig
+    )
+
+    lats = slice_t["lat"][:min_h]
+    lons = slice_t["lon"][:min_w]
+    cai_map = compound_res["cai_map"]
+    hazard_map = compound_res["hazard_classification"]
+
+    cells = []
+    dist = {}
+    for r in range(min_h):
+        for c in range(min_w):
+            h_class = str(hazard_map[r, c])
+            dist[h_class] = dist.get(h_class, 0) + 1
+            cells.append({
+                "lat": float(lats[r]),
+                "lon": float(lons[c]),
+                "temp_slope": float(round(t_slopes[r, c], 4)),
+                "precip_slope": float(round(p_slopes[r, c], 4)),
+                "cai": float(round(cai_map[r, c], 3)),
+                "hazard_class": h_class,
+                "hazard_type": h_class,
+                "temp_significant": bool(t_sig[r, c]),
+                "precip_significant": bool(p_sig[r, c])
+            })
+
+    return CompoundHazardResponse(
+        dataset_id=req.dataset_id,
+        time_span=f"{req.start_year} - {req.end_year}",
+        aridification_fraction=compound_res["aridification_fraction"],
+        intensification_fraction=compound_res["intensification_fraction"],
+        summary=compound_res["summary"],
+        hazard_distribution=dist,
+        cells=cells
+    )

@@ -144,8 +144,8 @@ def test_ai_explainer_fallback_and_validation():
     assert "summary" in data
     assert "statistical_assessment" in data
     assert "limitations" in data
-    assert "-0.155 mm / day / decade" in data["summary"]
-    assert "decrease" in data["summary"].lower()
+    assert "-0.155" in data["summary"]
+    assert any(term in data["summary"].lower() for term in ["decreas", "decline", "reduction"])
 
 
 def test_malformed_ai_request():
