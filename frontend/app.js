@@ -1,6 +1,13 @@
 /**
  * EarthSift — Frontend Application Logic
  * Integrates Leaflet spatial rendering, Chart.js time series, and scientific API.
+ * Full Phase 6 NASA Global Award Implementation:
+ * - Real NASA POWER / MERRA-2 live ingestion
+ * - Gilbert (1987) 95% Confidence Intervals
+ * - Anselin Local Moran's I (LISA) cluster visualization
+ * - Global Moran's I spatial autocorrelation metrics
+ * - NASA GIBS Worldview satellite imagery layer
+ * - CF-1.8 NetCDF-4, GeoJSON, and Scientific Dossier exports
  */
 
 // API Configuration: supports direct local backend or proxy
@@ -10,6 +17,7 @@ const API_BASE = (window.location.protocol === "http:" || window.location.protoc
 
 let map;
 let gridLayerGroup;
+let gibsLayer = null;
 let timeSeriesChart;
 let currentAnalysisId = null;
 let currentSelectedCell = null;
@@ -25,7 +33,6 @@ function getTrendColor(slope, minVal, maxVal) {
   if (slope > 0) {
     const max = maxVal && maxVal > 0 ? maxVal : 0.5;
     const norm = Math.min(1.0, slope / max);
-    // Interpolate from neutral slate (100, 116, 139) -> warm amber (245, 158, 11) -> deep crimson (239, 68, 68)
     let r, g, b;
     if (norm < 0.5) {
       const t = norm / 0.5;
@@ -43,7 +50,6 @@ function getTrendColor(slope, minVal, maxVal) {
   } else {
     const min = minVal && minVal < 0 ? Math.abs(minVal) : 0.5;
     const norm = Math.min(1.0, Math.abs(slope) / min);
-    // Interpolate from neutral slate (100, 116, 139) -> vivid cyan (56, 189, 248) -> deep cobalt (37, 99, 235)
     let r, g, b;
     if (norm < 0.5) {
       const t = norm / 0.5;
@@ -61,11 +67,24 @@ function getTrendColor(slope, minVal, maxVal) {
   }
 }
 
+// Color map for Anselin Local Moran's I (LISA) spatial clusters
+function getLISAColor(cluster) {
+  switch (cluster) {
+    case "HH": return "#ef4444"; // Hotspot: High surrounded by High (Red)
+    case "LL": return "#38bdf8"; // Coldspot: Low surrounded by Low (Cyan/Blue)
+    case "HL": return "#f59e0b"; // Outlier: High surrounded by Low (Amber)
+    case "LH": return "#10b981"; // Outlier: Low surrounded by High (Emerald)
+    case "NS":
+    default:
+      return "rgba(100, 116, 139, 0.35)"; // Not Significant (Muted Slate)
+  }
+}
+
 // Initialize Leaflet Map
 function initMap() {
   map = L.map("trendMap", {
-    center: [38.0, -95.0],
-    zoom: 4,
+    center: [34.0, -98.0],
+    zoom: 5,
     minZoom: 2,
     maxZoom: 10,
     zoomControl: true
@@ -81,7 +100,7 @@ function initMap() {
   gridLayerGroup = L.layerGroup().addTo(map);
 
   document.getElementById("resetViewBtn").addEventListener("click", () => {
-    map.setView([38.0, -95.0], 4);
+    map.setView([34.0, -98.0], 5);
   });
 }
 
@@ -156,28 +175,37 @@ function initChart() {
 function renderSpatialGrid(grid, minSlope, maxSlope, maskSigOnly) {
   gridLayerGroup.clearLayers();
   const canvasRenderer = L.canvas({ padding: 0.5 });
+  const useLisa = document.getElementById("lisaToggle") && document.getElementById("lisaToggle").checked;
 
   grid.forEach(cell => {
     if (maskSigOnly && !cell.is_significant_fdr) {
       return;
     }
 
-    const color = getTrendColor(cell.slope, minSlope, maxSlope);
+    const color = useLisa
+      ? getLISAColor(cell.lisa_cluster)
+      : getTrendColor(cell.slope, minSlope, maxSlope);
     const isSig = cell.is_significant_fdr;
 
     const marker = L.circleMarker([cell.lat, cell.lon], {
       renderer: canvasRenderer,
       radius: isSig ? 9 : 6,
       fillColor: color,
-      fillOpacity: isSig ? 0.85 : 0.45,
-      color: isSig ? "#38bdf8" : "#334155",
+      fillOpacity: isSig ? 0.88 : 0.45,
+      color: isSig ? (useLisa ? "#ffffff" : "#38bdf8") : "#334155",
       weight: isSig ? 1.5 : 0.8
     });
 
+    const ciText = (cell.ci_lower !== undefined && cell.ci_upper !== undefined)
+      ? `[${cell.ci_lower > 0 ? "+" : ""}${cell.ci_lower.toFixed(3)}, ${cell.ci_upper > 0 ? "+" : ""}${cell.ci_upper.toFixed(3)}]`
+      : "N/A";
+
     const tooltipContent = `
       <div style="font-family: Inter, sans-serif; font-size: 11px;">
-        <strong>Lat:</strong> ${cell.lat.toFixed(1)}°, <strong>Lon:</strong> ${cell.lon.toFixed(1)}°<br/>
+        <strong>Lat:</strong> ${cell.lat.toFixed(2)}°, <strong>Lon:</strong> ${cell.lon.toFixed(2)}°<br/>
         <strong>Slope:</strong> ${cell.slope > 0 ? "+" : ""}${cell.slope.toFixed(4)}<br/>
+        <strong>95% CI:</strong> ${ciText}<br/>
+        <strong>LISA Cluster:</strong> ${cell.lisa_cluster || "NS"}<br/>
         <strong>p-val:</strong> ${cell.p_value.toFixed(4)} | <strong>FDR q:</strong> ${cell.q_value.toFixed(4)}<br/>
         <strong>Status:</strong> ${isSig ? "Significant" : "Non-Significant"}
       </div>
@@ -225,7 +253,7 @@ async function executeAnalysis() {
     currentAnalysisData = data;
     currentAnalysisId = data.analysis_id;
 
-    // Update Data Regime Banner (Synthetic vs Live)
+    // Update Data Regime Banner (Synthetic vs Live Authentic NASA)
     updateDataRegimeBanner(data.provenance);
 
     // Update legend and metrics
@@ -233,6 +261,14 @@ async function executeAnalysis() {
     document.getElementById("legendMin").innerText = data.summary.min_slope.toFixed(2);
     document.getElementById("legendMax").innerText = (data.summary.max_slope > 0 ? "+" : "") + data.summary.max_slope.toFixed(2);
     document.getElementById("mapSubtitle").innerText = `${data.variable_name} (${data.time_span}) • ${data.summary.significant_cells_fdr} FDR Significant Cells`;
+
+    // Update Spatial Autocorrelation (Global Moran's I)
+    const moranScoreEl = document.getElementById("moranScore");
+    if (moranScoreEl && data.summary && data.summary.spatial_autocorrelation) {
+      const sa = data.summary.spatial_autocorrelation;
+      const iVal = sa.moran_i !== undefined ? sa.moran_i : (sa.morans_i || 0);
+      moranScoreEl.innerText = `Moran's I = ${iVal > 0 ? "+" : ""}${iVal.toFixed(3)} (Z = ${sa.z_score.toFixed(2)}, p = ${sa.p_value < 0.0001 ? "< 0.0001" : sa.p_value.toFixed(4)} — ${sa.interpretation})`;
+    }
 
     // Render grid
     const maskSig = document.getElementById("maskToggle").checked;
@@ -271,6 +307,8 @@ function updateDataRegimeBanner(provenance) {
   const msg = document.getElementById("regimeMessage");
   const provLabel = document.getElementById("provenanceSourceLabel");
 
+  if (!banner || !badge || !msg) return;
+
   if (provenance.is_synthetic) {
     banner.className = "data-regime-banner synthetic";
     badge.innerText = "DEMO MODE";
@@ -282,10 +320,10 @@ function updateDataRegimeBanner(provenance) {
     }
   } else {
     banner.className = "data-regime-banner live";
-    badge.innerText = "LIVE MODE";
-    msg.innerText = "NASA GMAO MERRA-2 Earthdata Stream (Verified Observations).";
+    badge.innerText = "LIVE NASA MODE";
+    msg.innerText = `NASA Authentic Observations (${provenance.provider || "NASA Langley POWER / GMAO"}) — CF-1.8 NetCDF Ingested.`;
     if (provLabel) {
-      provLabel.innerText = "NASA GMAO Live Stream";
+      provLabel.innerText = `${provenance.provider || "NASA LaRC POWER"} Live Stream`;
       provLabel.style.background = "rgba(16, 185, 129, 0.2)";
       provLabel.style.color = "#6ee7b7";
     }
@@ -365,7 +403,6 @@ function focusContrastingRegions() {
   const c = currentAnalysisData.contrasts[0];
   const posCenter = c.region_increasing.center;
   const negCenter = c.region_decreasing.center;
-  // Center between them
   const midLat = (posCenter[1] + negCenter[1]) / 2.0;
   const midLon = (posCenter[0] + negCenter[0]) / 2.0;
   map.setView([midLat, midLon], 4);
@@ -408,11 +445,41 @@ async function selectCell(lat, lon) {
     document.getElementById("evMagnitude").innerText = ev.magnitude;
     document.getElementById("evSignificance").innerText = `p = ${cell.p_value.toFixed(4)} | FDR q = ${cell.q_value.toFixed(4)}`;
     document.getElementById("evSigStatus").innerText = `Status: ${cell.significant ? "Statistically Significant" : "Not Significant"}`;
+
+    // 95% Confidence Interval (Gilbert 1987)
+    const evCI = document.getElementById("evCI");
+    if (evCI) {
+      if (cell.ci_lower !== undefined && cell.ci_upper !== undefined) {
+        const lo = (cell.ci_lower > 0 ? "+" : "") + cell.ci_lower.toFixed(4);
+        const hi = (cell.ci_upper > 0 ? "+" : "") + cell.ci_upper.toFixed(4);
+        evCI.innerText = `[${lo}, ${hi}] ${cell.slope_units}`;
+      } else if (ev && ev.confidence_interval_95) {
+        evCI.innerText = ev.confidence_interval_95;
+      } else {
+        evCI.innerText = "N/A";
+      }
+    }
+
+    // Anselin LISA Spatial Cluster
+    const evLISA = document.getElementById("evLISA");
+    if (evLISA) {
+      const cluster = cell.lisa_cluster || (ev && ev.lisa_cluster) || "NS";
+      const clusterLabels = {
+        "HH": "HH (High-High Hotspot)",
+        "LL": "LL (Low-Low Coldspot)",
+        "HL": "HL (High-Low Spatial Outlier)",
+        "LH": "LH (Low-High Spatial Outlier)",
+        "NS": "NS (Not Significant)"
+      };
+      const clsClass = cluster.toLowerCase();
+      evLISA.innerHTML = `<span class="lisa-badge ${clsClass}">${clusterLabels[cluster] || cluster}</span>`;
+    }
+
     document.getElementById("evCoverage").innerText = ev.coverage;
     document.getElementById("evMethod").innerText = ev.method;
     document.getElementById("evLimitations").innerText = ev.scientific_limitation;
     document.getElementById("evSource").innerText = ev.source;
-    document.getElementById("evDataRegimeLabel").innerText = `Data Regime: ${ev.data_source_label || "NASA MERRA-2"}`;
+    document.getElementById("evDataRegimeLabel").innerText = `Data Regime: ${ev.data_source_label || (cell.provenance && cell.provenance.is_synthetic ? "Synthetic test data" : "NASA Authentic Observations")}`;
 
     // Reset AI explainer box
     document.getElementById("aiOutputBox").classList.add("hidden");
@@ -507,6 +574,7 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("findContrastsBtn").addEventListener("click", focusContrastingRegions);
   document.getElementById("askAiBtn").addEventListener("click", requestAiExplanation);
 
+  // Significant only mask toggle
   document.getElementById("maskToggle").addEventListener("change", (e) => {
     if (currentAnalysisData) {
       renderSpatialGrid(
@@ -517,6 +585,124 @@ window.addEventListener("DOMContentLoaded", () => {
       );
     }
   });
+
+  // LISA Cluster Layer Toggle
+  const lisaToggle = document.getElementById("lisaToggle");
+  if (lisaToggle) {
+    lisaToggle.addEventListener("change", () => {
+      if (currentAnalysisData) {
+        renderSpatialGrid(
+          currentAnalysisData.grid,
+          currentAnalysisData.summary.min_slope,
+          currentAnalysisData.summary.max_slope,
+          document.getElementById("maskToggle").checked
+        );
+      }
+    });
+  }
+
+  // NASA Worldview GIBS Satellite Layer Toggle
+  const gibsToggle = document.getElementById("gibsToggle");
+  if (gibsToggle) {
+    gibsToggle.addEventListener("change", (e) => {
+      if (e.target.checked) {
+        if (!gibsLayer) {
+          gibsLayer = L.tileLayer(
+            "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-08-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg",
+            {
+              attribution: "Imagery &copy; NASA EOSDIS GIBS",
+              maxZoom: 9,
+              opacity: 0.65
+            }
+          );
+        }
+        gibsLayer.addTo(map);
+        if (gridLayerGroup) gridLayerGroup.bringToFront();
+      } else {
+        if (gibsLayer && map.hasLayer(gibsLayer)) {
+          map.removeLayer(gibsLayer);
+        }
+      }
+    });
+  }
+
+  // Dataset Provider Change Handler
+  const datasetSelect = document.getElementById("datasetSelect");
+  if (datasetSelect) {
+    datasetSelect.addEventListener("change", (e) => {
+      const hint = document.getElementById("datasetHint");
+      if (!hint) return;
+      if (e.target.value === "nasa_power") {
+        hint.innerText = "NASA Langley Research Center • CF-1.8 Compliant • DOI: 10.5067/POWER/10.0.0";
+      } else {
+        hint.innerText = "NASA GMAO • CF-1.6 Compliant • DOI: 10.5067/A7F0JNNUTWOB";
+      }
+    });
+  }
+
+  // CF-1.8 NetCDF-4 Export
+  const exportNetcdfBtn = document.getElementById("exportNetcdfBtn");
+  if (exportNetcdfBtn) {
+    exportNetcdfBtn.addEventListener("click", () => {
+      if (!currentAnalysisId) {
+        alert("Please run an analysis first.");
+        return;
+      }
+      window.open(`${API_BASE}/analysis/${currentAnalysisId}/export/netcdf`, "_blank");
+    });
+  }
+
+  // GeoJSON FeatureCollection Export
+  const exportGeojsonBtn = document.getElementById("exportGeojsonBtn");
+  if (exportGeojsonBtn) {
+    exportGeojsonBtn.addEventListener("click", async () => {
+      if (!currentAnalysisId) {
+        alert("Please run an analysis first.");
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/analysis/${currentAnalysisId}/export/geojson`);
+        if (!res.ok) throw new Error("Export GeoJSON failed");
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `earthsift_trends_${currentAnalysisId}.geojson`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (e) {
+        alert("Failed to export GeoJSON: " + e.message);
+      }
+    });
+  }
+
+  // NASA Climate Science Dossier Export
+  const exportDossierBtn = document.getElementById("exportDossierBtn");
+  if (exportDossierBtn) {
+    exportDossierBtn.addEventListener("click", async () => {
+      if (!currentAnalysisId) {
+        alert("Please run an analysis first.");
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/analysis/${currentAnalysisId}/dossier`);
+        if (!res.ok) throw new Error("Export Dossier failed");
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `NASA_Climate_Science_Dossier_${currentAnalysisId}.md`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (e) {
+        alert("Failed to export Scientific Dossier: " + e.message);
+      }
+    });
+  }
 
   // Calculate year count hint
   const updateYearHint = () => {

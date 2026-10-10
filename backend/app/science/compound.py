@@ -1,0 +1,106 @@
+"""
+EarthSift — Compound Climate Hazard & Decoupling Engine
+Cross-analyzes multi-variable climate trends (e.g. Temperature + Precipitation)
+to identify compound geophysical divergence:
+- Compound Aridification / Megadrought Regimes (Warming + Drying)
+- Hydrological Acceleration / Convective Extreme Regimes (Warming + Pluvial)
+- Pluvial Thermal Buffering
+"""
+
+from typing import Dict, Any, Optional
+import numpy as np
+
+
+def compute_compound_hazard(
+    temp_slopes: np.ndarray,
+    precip_slopes: np.ndarray,
+    temp_sig: Optional[np.ndarray] = None,
+    precip_sig: Optional[np.ndarray] = None
+) -> Dict[str, Any]:
+    """
+    Compute multi-hazard compound divergence across matching spatial grids.
+
+    Parameters:
+        temp_slopes: 2D array of temperature trends (°C / decade).
+        precip_slopes: 2D array of precipitation trends (mm/day / decade).
+        temp_sig: Optional boolean mask of significant temperature trends.
+        precip_sig: Optional boolean mask of significant precipitation trends.
+
+    Returns:
+        Dict with compound hazard classification array, CAI (Compound Aridification Index),
+        and aggregate regional risk exposure statistics.
+    """
+    shape = temp_slopes.shape
+    valid_mask = ~np.isnan(temp_slopes) & ~np.isnan(precip_slopes)
+    n_valid = int(np.sum(valid_mask))
+
+    cai_map = np.zeros(shape, dtype=float)
+    hazard_map = np.full(shape, "neutral_baseline", dtype=object)
+
+    if n_valid < 4:
+        return {
+            "cai_map": cai_map,
+            "hazard_classification": hazard_map,
+            "aridification_fraction": 0.0,
+            "intensification_fraction": 0.0,
+            "summary": "Insufficient joint spatial points for compound hazard analysis."
+        }
+
+    # Standardize slopes across valid cells
+    t_vals = temp_slopes[valid_mask]
+    p_vals = precip_slopes[valid_mask]
+
+    t_std = float(np.std(t_vals)) if np.std(t_vals) > 1e-6 else 1.0
+    p_std = float(np.std(p_vals)) if np.std(p_vals) > 1e-6 else 1.0
+
+    z_t = (temp_slopes - float(np.mean(t_vals))) / t_std
+    z_p = (precip_slopes - float(np.mean(p_vals))) / p_std
+
+    # Compound Aridification Index: High Z(T) combined with Low Z(P)
+    cai = z_t - z_p
+    cai_map[valid_mask] = np.round(cai[valid_mask], 3)
+
+    # Classification
+    arid_count = 0
+    intens_count = 0
+    buffer_count = 0
+
+    for r in range(shape[0]):
+        for c in range(shape[1]):
+            if not valid_mask[r, c]:
+                continue
+            t_s = temp_slopes[r, c]
+            p_s = precip_slopes[r, c]
+
+            # Compound Aridification: warming and drying
+            if t_s > 0 and p_s < 0:
+                if cai[r, c] > 0.5:
+                    hazard_map[r, c] = "severe_aridification"
+                    arid_count += 1
+                else:
+                    hazard_map[r, c] = "moderate_drying"
+            # Hydrological Intensification: warming and wetting
+            elif t_s > 0 and p_s > 0:
+                hazard_map[r, c] = "hydrologic_intensification"
+                intens_count += 1
+            # Thermal Buffering: cooling/stable with wetting
+            elif t_s <= 0 and p_s >= 0:
+                hazard_map[r, c] = "thermal_buffering"
+                buffer_count += 1
+            else:
+                hazard_map[r, c] = "neutral_baseline"
+
+    arid_frac = round(arid_count / max(1, n_valid), 3)
+    intens_frac = round(intens_count / max(1, n_valid), 3)
+
+    return {
+        "cai_map": cai_map,
+        "hazard_classification": hazard_map,
+        "aridification_fraction": arid_frac,
+        "intensification_fraction": intens_frac,
+        "total_analyzed_cells": n_valid,
+        "summary": (
+            f"Analyzed {n_valid} cells. Aridification regime covers {arid_frac*100:.1f}% "
+            f"of domain; hydrological intensification covers {intens_frac*100:.1f}%."
+        )
+    }

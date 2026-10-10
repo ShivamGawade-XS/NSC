@@ -199,6 +199,9 @@ class MERRA2Adapter(BaseDatasetAdapter):
         if prefer_live or os.environ.get("PREFER_LIVE_DATA") == "1":
             data_dir = Path(os.environ.get("MERRA2_DATA_DIR", Path(__file__).resolve().parent.parent.parent / "data"))
             candidate_paths = [
+                data_dir / "fixtures" / f"nasa_merra2_{variable.lower()}_na.nc",
+                data_dir / "fixtures" / "nasa_merra2_t2m_na.nc",
+                data_dir / "fixtures" / "nasa_merra2_precip_na.nc",
                 data_dir / f"{variable}.nc",
                 data_dir / "merra2_reanalysis.nc",
                 data_dir / "fixtures" / f"{variable}.nc",

@@ -62,15 +62,17 @@
       <div class="form-group">
         <label for="datasetSelect">Dataset Provider</label>
         <select id="datasetSelect" class="input-control">
-          <option value="merra2_reanalysis">NASA MERRA-2 Atmospheric Reanalysis</option>
+          <option value="nasa_power" selected>🛰️ NASA POWER Reanalysis (NASA Langley LaRC)</option>
+          <option value="merra2_reanalysis">NASA MERRA-2 Atmospheric Reanalysis (GMAO)</option>
         </select>
-        <span class="field-hint">NASA GMAO • Native 0.5° × 0.625° Resolution</span>
+        <span class="field-hint" id="datasetHint">NASA Langley Research Center • CF-1.8 Compliant • DOI: 10.5067/POWER/10.0.0</span>
       </div>
 
       <div class="form-group">
         <label for="variableSelect">Target Variable</label>
         <select id="variableSelect" class="input-control">
           <option value="T2M" selected>2-Meter Air Temperature (T2M) [°C]</option>
+          <option value="PRECTOTCORR">Total Corrected Precipitation [mm/day]</option>
           <option value="PRECTOT">Total Precipitation Rate (PRECTOT) [mm/day]</option>
         </select>
       </div>
@@ -148,7 +150,15 @@
         <div class="toolbar-actions">
           <label class="layer-toggle">
             <input type="checkbox" id="maskToggle" checked />
-            <span>Highlight Significant Only</span>
+            <span>Significant Only</span>
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" id="lisaToggle" />
+            <span>LISA Clusters</span>
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" id="gibsToggle" />
+            <span>🛰️ NASA Worldview</span>
           </label>
           <button id="resetViewBtn" class="btn btn-sm">Reset View</button>
         </div>
@@ -169,6 +179,11 @@
         <div class="legend-indicators">
           <span class="legend-item"><span class="legend-dot sig"></span> Statistically Significant (q ≤ 0.05)</span>
           <span class="legend-item"><span class="legend-dot insig"></span> Non-Significant / Noise</span>
+        </div>
+        <div class="moran-summary" id="moranSummary">
+          <span class="moran-icon">🌐</span>
+          <span class="moran-title">Spatial Autocorrelation:</span>
+          <span id="moranScore" class="moran-value">Moran's I = -- (Awaiting analysis)</span>
         </div>
       </div>
 
@@ -223,6 +238,22 @@
         </div>
 
         <div class="evidence-card">
+          <div class="ev-label">95% CONFIDENCE INTERVAL (GILBERT 1987)</div>
+          <div class="ev-value" id="evCI">
+            [+0.2100, +0.4800] °C / decade
+          </div>
+          <div class="ev-sub">Non-parametric rank-based confidence bounds</div>
+        </div>
+
+        <div class="evidence-card">
+          <div class="ev-label">SPATIAL CLUSTER (ANSELIN LISA)</div>
+          <div class="ev-value" id="evLISA">
+            <span class="lisa-badge hh">HH (High-High Hotspot)</span>
+          </div>
+          <div class="ev-sub">Local Moran's I spatial association regime</div>
+        </div>
+
+        <div class="evidence-card">
           <div class="ev-label">DATA COVERAGE & INTEGRITY</div>
           <div class="ev-value" id="evCoverage">
             24 / 24 annual points (100% valid coverage)
@@ -266,6 +297,18 @@
             <div class="ai-loader" id="aiLoader">Generating deterministic interpretation...</div>
             <div class="ai-content" id="aiContentText"></div>
           </div>
+        </div>
+        <!-- Export & Dossier Actions -->
+        <div class="export-actions">
+          <button id="exportNetcdfBtn" class="btn btn-sm btn-export" title="Export as CF-1.8 NetCDF-4 (viewable in NASA Panoply / QGIS)">
+            📦 Export NetCDF-4
+          </button>
+          <button id="exportGeojsonBtn" class="btn btn-sm btn-export" title="Export as GeoJSON FeatureCollection">
+            🗺️ Export GeoJSON
+          </button>
+          <button id="exportDossierBtn" class="btn btn-sm btn-export" title="Generate NASA Climate Science Dossier (Markdown)">
+            📄 Science Dossier
+          </button>
         </div>
       </div>
     </aside>

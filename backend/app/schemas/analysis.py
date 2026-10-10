@@ -27,11 +27,14 @@ class SpatialGridPoint(BaseModel):
     lat: float
     lon: float
     slope: float
+    ci_lower: Optional[float] = None
+    ci_upper: Optional[float] = None
     p_value: float
     q_value: float
     is_significant_raw: bool
     is_significant_fdr: bool
     direction: str
+    lisa_cluster: Optional[str] = "NS"
     n_samples: int
 
 
@@ -43,6 +46,7 @@ class AnalysisSummary(BaseModel):
     mean_slope: float
     max_slope: float
     min_slope: float
+    spatial_autocorrelation: Optional[Dict[str, Any]] = None
 
 
 class AnalysisResponse(BaseModel):
@@ -72,12 +76,15 @@ class CellDetailResponse(BaseModel):
     observations: List[float]
     fitted_values: List[float]
     slope: float
+    ci_lower: Optional[float] = None
+    ci_upper: Optional[float] = None
     intercept: float
     p_value: float
     q_value: float
     tau: float
     significant: bool
     direction: str
+    lisa_cluster: Optional[str] = "NS"
     evidence_record: Dict[str, Any]
 
 

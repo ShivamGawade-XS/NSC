@@ -8,6 +8,10 @@ from typing import Dict, Any, List, Optional
 import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
+import os
+import tempfile
+from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
+
 from app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -24,16 +28,20 @@ from app.schemas.analysis import (
     VariableInfo
 )
 from app.adapters.merra2 import MERRA2Adapter
+from app.adapters.nasa_power import NASAPowerAdapter
 from app.science.trend import compute_spatial_trends, mann_kendall_test, sens_slope
 from app.science.contrasts import find_contrasting_regions
 from app.science.discovery import discover_candidate_signals
 from app.science.explainer import explain_evidence_with_ai
+from app.science.export import export_to_netcdf, export_to_geojson, generate_scientific_dossier
+from app.science.compound import compute_compound_hazard
 
 router = APIRouter()
 
 # Global adapters registry
 ADAPTERS = {
-    "merra2_reanalysis": MERRA2Adapter()
+    "merra2_reanalysis": MERRA2Adapter(),
+    "nasa_power": NASAPowerAdapter()
 }
 
 # In-memory analysis cache: analysis_id -> full dataset dict & calculated grids
@@ -142,14 +150,18 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
         data_3d=data_3d
     )
 
-    # Build spatial grid points
+    # Build spatial grid points (with CI and LISA)
     grid_points: List[SpatialGridPoint] = []
     h_len, w_len = slopes.shape
+    ci_lower = trend_results.get("ci_lower", np.zeros_like(slopes))
+    ci_upper = trend_results.get("ci_upper", np.zeros_like(slopes))
+    lisa_clusters = trend_results.get("lisa_clusters", np.full_like(slopes, "NS", dtype=object))
+
     for i in range(h_len):
         for j in range(w_len):
             s = float(slopes[i, j])
             is_sig = bool(sig_fdr[i, j])
-            
+
             if is_sig and s > 0:
                 direction = "increasing"
             elif is_sig and s < 0:
@@ -161,17 +173,21 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
                 lat=float(lats[i]),
                 lon=float(lons[j]),
                 slope=round(s, 4),
+                ci_lower=round(float(ci_lower[i, j]), 4),
+                ci_upper=round(float(ci_upper[i, j]), 4),
                 p_value=round(float(p_vals[i, j]), 5),
                 q_value=round(float(q_vals[i, j]), 5),
                 is_significant_raw=bool(sig_raw[i, j]),
                 is_significant_fdr=bool(sig_fdr[i, j]),
                 direction=direction,
+                lisa_cluster=str(lisa_clusters[i, j]),
                 n_samples=int(n_samples[i, j])
             ))
 
     total_cells = h_len * w_len
     sig_raw_count = int(np.sum(sig_raw))
     sig_fdr_count = int(np.sum(sig_fdr))
+    moran_stats = trend_results.get("moran_stats", {})
 
     summary = AnalysisSummary(
         total_cells=total_cells,
@@ -179,7 +195,8 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
         significant_cells_fdr=sig_fdr_count,
         mean_slope=round(float(np.mean(slopes)), 4),
         max_slope=round(float(np.max(slopes)), 4),
-        min_slope=round(float(np.min(slopes)), 4)
+        min_slope=round(float(np.min(slopes)), 4),
+        spatial_autocorrelation=moran_stats
     )
 
     # Robust cache key incorporating bounding box and significance threshold
@@ -312,11 +329,21 @@ def get_cell_timeseries(
     mk = mann_kendall_test(series, alpha=cached["req"].alpha)
     q_val = float(cached["trend_results"]["q_values"][lat_idx, lon_idx])
 
+    # Pull pre-computed CI and LISA from spatial results
+    _ci_l_grid = cached["trend_results"].get("ci_lower")
+    _ci_u_grid = cached["trend_results"].get("ci_upper")
+    _lisa_grid = cached["trend_results"].get("lisa_clusters")
+    ci_l = round(float(_ci_l_grid[lat_idx, lon_idx]), 4) if _ci_l_grid is not None else slope
+    ci_u = round(float(_ci_u_grid[lat_idx, lon_idx]), 4) if _ci_u_grid is not None else slope
+    lisa_lbl = str(_lisa_grid[lat_idx, lon_idx]) if _lisa_grid is not None else "NS"
+
     evidence = {
         "observation": f"Calculated {mk['direction']} trend of {slope:+.3f} {raw['slope_units']}.",
         "magnitude": f"{slope:+.4f} {raw['slope_units']}",
+        "confidence_interval_95": f"[{ci_l:+.4f}, {ci_u:+.4f}] {raw['slope_units']} (Gilbert 1987)",
         "significance": f"p-value = {mk['p_value']:.4f}, FDR q-value = {q_val:.4f} (Significant: {mk['significant']})",
-        "method": "Sen's robust median-of-slopes estimator with Mann-Kendall monotonic test and Benjamini-Hochberg FDR",
+        "lisa_cluster": lisa_lbl,
+        "method": "Sen's robust median-of-slopes estimator with Mann-Kendall, Hamed-Rao autocorrelation correction, Benjamini-Hochberg FDR, and Gilbert (1987) 95% CI",
         "coverage": f"{len(series)} valid annual observations (100% complete)",
         "source": f"{raw['provenance']['source']} (DOI: {raw['provenance']['doi']})",
         "is_synthetic": raw.get("is_synthetic", False),
@@ -337,12 +364,15 @@ def get_cell_timeseries(
         observations=[round(float(v), 2) for v in series],
         fitted_values=[round(float(v), 2) for v in fitted],
         slope=round(slope, 4),
+        ci_lower=ci_l,
+        ci_upper=ci_u,
         intercept=round(intercept, 4),
         p_value=round(mk["p_value"], 5),
         q_value=round(q_val, 5),
         tau=round(mk["tau"], 4),
         significant=mk["significant"],
         direction=mk["direction"],
+        lisa_cluster=lisa_lbl,
         evidence_record=evidence
     )
 
@@ -406,3 +436,110 @@ def get_analysis_provenance(analysis_id: str) -> ProvenanceResponse:
 def explain_evidence(req: ExplainRequest) -> ExplainResponse:
     """Downstream scientific explainer: translates verified evidence into clear scientific prose via Gemini/LLM or deterministic fallback."""
     return explain_evidence_with_ai(req)
+
+
+@router.get("/analysis/{analysis_id}/export/netcdf")
+def export_analysis_netcdf(analysis_id: str):
+    """Export full spatial analysis as CF-1.8 compliant NetCDF-4 file (viewable in NASA Panoply/QGIS)."""
+    cached = ANALYSIS_CACHE.get(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+
+    raw = cached["raw_slice"]
+    grid = cached["grid"]
+    trend_results = cached["trend_results"]
+    req = cached["req"]
+
+    analysis_record = {
+        "variable": req.variable_id,
+        "units": raw.get("display_units", ""),
+        "is_synthetic": raw.get("is_synthetic", False),
+        "provenance": raw.get("provenance", {}),
+        "data_source_label": raw.get("data_source_label", ""),
+        "results": {
+            "cells": [
+                {
+                    "lat": g.lat, "lon": g.lon, "slope": g.slope,
+                    "ci_lower": g.ci_lower, "ci_upper": g.ci_upper,
+                    "p_value": g.p_value, "q_value": g.q_value,
+                    "significant": g.is_significant_fdr, "direction": g.direction,
+                    "lisa_cluster": g.lisa_cluster
+                } for g in grid
+            ]
+        }
+    }
+
+    out_dir = tempfile.mkdtemp(prefix="earthsift_")
+    nc_path = os.path.join(out_dir, f"earthsift_{analysis_id}.nc")
+    try:
+        export_to_netcdf(analysis_record, nc_path)
+        return FileResponse(
+            nc_path, media_type="application/x-netcdf",
+            filename=f"earthsift_{req.variable_id}_{req.start_year}_{req.end_year}.nc"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"NetCDF export failed: {str(e)}")
+
+
+@router.get("/analysis/{analysis_id}/export/geojson")
+def export_analysis_geojson(analysis_id: str):
+    """Export full spatial analysis as GeoJSON FeatureCollection."""
+    cached = ANALYSIS_CACHE.get(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+
+    raw = cached["raw_slice"]
+    grid = cached["grid"]
+    req = cached["req"]
+
+    analysis_record = {
+        "variable": req.variable_id,
+        "units": raw.get("display_units", ""),
+        "is_synthetic": raw.get("is_synthetic", False),
+        "data_source_label": raw.get("data_source_label", ""),
+        "results": {
+            "cells": [
+                {
+                    "lat": g.lat, "lon": g.lon, "slope": g.slope,
+                    "ci_lower": g.ci_lower, "ci_upper": g.ci_upper,
+                    "p_value": g.p_value, "q_value": g.q_value,
+                    "tau": 0.0, "significant": g.is_significant_fdr,
+                    "direction": g.direction, "lisa_cluster": g.lisa_cluster
+                } for g in grid
+            ]
+        }
+    }
+    geojson_dict = export_to_geojson(analysis_record)
+    return JSONResponse(content=geojson_dict, media_type="application/geo+json")
+
+
+@router.get("/analysis/{analysis_id}/dossier")
+def get_scientific_dossier(analysis_id: str):
+    """Generate a publication-quality NASA Climate Science Dossier in Markdown."""
+    cached = ANALYSIS_CACHE.get(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+
+    raw = cached["raw_slice"]
+    grid = cached["grid"]
+    trend_results = cached["trend_results"]
+    req = cached["req"]
+
+    slopes = [g.slope for g in grid]
+    sig_count = sum(1 for g in grid if g.is_significant_fdr)
+    moran = trend_results.get("moran_stats", {})
+
+    analysis_record = {
+        "variable": req.variable_id,
+        "units": raw.get("display_units", ""),
+        "is_synthetic": raw.get("is_synthetic", False),
+        "alpha": req.alpha,
+        "provenance": raw.get("provenance", {}),
+        "data_source_label": raw.get("data_source_label", ""),
+        "results": {
+            "cells": [{"slope": g.slope, "significant": g.is_significant_fdr} for g in grid],
+            "spatial_autocorrelation": moran
+        }
+    }
+    dossier_md = generate_scientific_dossier(analysis_record)
+    return PlainTextResponse(dossier_md, media_type="text/markdown")
