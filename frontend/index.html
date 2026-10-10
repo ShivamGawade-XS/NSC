@@ -7,7 +7,7 @@
   <meta name="description" content="Evidence-first Earth-system trend discovery platform built for the NASA Space Apps Challenge 2026." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- Vendored Local Offline Libraries (Leaflet & Chart.js) -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="vendor/leaflet.css" />
@@ -26,7 +26,7 @@
   </div>
   <!-- Toast Notification Stack -->
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>
-  <!-- Top Application Bar -->
+  <!-- Top Application Bar (Orizon SpaceX Aerospace Command HUD) -->
   <header class="app-header">
     <div class="brand">
       <div class="brand-logo">
@@ -37,11 +37,20 @@
         <p class="brand-subtitle">Be An Earth System Trend Detective • Evidence-First Discovery Engine</p>
       </div>
     </div>
+
+    <!-- Quick Preset Investigation Ribbon -->
+    <div class="preset-quick-ribbon" id="presetQuickRibbon" role="toolbar" aria-label="Quick Detective Presets">
+      <span class="ribbon-label">CASES:</span>
+      <button class="preset-pill-btn active" data-preset="case1" title="Texas & Southern Plains Thermal Acceleration (NASA POWER Verified)">🔥 Texas Heat</button>
+      <button class="preset-pill-btn" data-preset="case2" title="Southwest US Compound Aridification (Temperature + Precipitation Dual Hazard)">🌵 SW Drought</button>
+      <button class="preset-pill-btn" data-preset="case3" title="North American Continental Synoptic Footprint">🌎 Continental</button>
+      <button class="preset-pill-btn" data-preset="case4" title="Agricultural Belt Hydrological Variability">🌾 Crop Belt</button>
+    </div>
     
     <div class="header-metrics">
       <div class="metric-pill">
         <span class="pill-label">METHOD:</span>
-        <span class="pill-val">Mann-Kendall + Theil-Sen</span>
+        <span class="pill-val">Theil-Sen + Mann-Kendall</span>
       </div>
       <div class="metric-pill">
         <span class="pill-label">MULTIPLICITY:</span>
@@ -214,8 +223,21 @@
         </div>
       </div>
 
-      <!-- Map Container -->
-      <div id="trendMap" class="map-container"></div>
+      <!-- Map Container with HUD Crosshair Overlay (Fuselab Real-Time GIS) -->
+      <div class="map-viewport-wrapper">
+        <div id="mapCrosshairHud" class="map-crosshair-hud">
+          <span class="crosshair-icon">⊕</span>
+          <span class="hud-target-label">GRID TARGET:</span>
+          <span id="hudCoords" class="hud-val">Click grid cell to inspect</span>
+          <span class="hud-divider">•</span>
+          <span class="hud-rate-label">DECURENT RATE:</span>
+          <span id="hudSlope" class="hud-val">--</span>
+          <span class="hud-divider">•</span>
+          <span class="hud-sig-label">SIGNIFICANCE:</span>
+          <span id="hudSig" class="hud-val">--</span>
+        </div>
+        <div id="trendMap" class="map-container"></div>
+      </div>
 
       <!-- Map Legend -->
       <div class="map-legend">

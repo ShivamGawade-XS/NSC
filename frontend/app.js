@@ -278,7 +278,7 @@ function initMap() {
   });
 }
 
-// Initialize Chart.js Time Series
+// Initialize Chart.js Time Series (Fuselab + Shakuro Scientific CI Envelope)
 function initChart() {
   const ctx = document.getElementById("timeSeriesChart").getContext("2d");
   timeSeriesChart = new Chart(ctx, {
@@ -300,7 +300,7 @@ function initChart() {
           label: "Sen's Robust Trendline",
           data: [],
           borderColor: "#f59e0b",
-          borderWidth: 2,
+          borderWidth: 2.5,
           pointRadius: 0,
           fill: false,
           tension: 0,
@@ -309,11 +309,32 @@ function initChart() {
         {
           label: "Climatology Baseline (μ)",
           data: [],
-          borderColor: "#94a3b8",
+          borderColor: "#64748b",
           borderWidth: 1.5,
           borderDash: [5, 5],
           pointRadius: 0,
           fill: false,
+          tension: 0,
+          order: 5
+        },
+        {
+          label: "ci_lower_hidden",
+          data: [],
+          borderColor: "transparent",
+          backgroundColor: "transparent",
+          pointRadius: 0,
+          fill: false,
+          order: 4
+        },
+        {
+          label: "95% CI (Gilbert 1987)",
+          data: [],
+          borderColor: "rgba(245, 158, 11, 0.35)",
+          borderWidth: 1,
+          borderDash: [3, 3],
+          backgroundColor: "rgba(245, 158, 11, 0.12)",
+          pointRadius: 0,
+          fill: "-1",
           tension: 0,
           order: 3
         }
@@ -322,33 +343,36 @@ function initChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 300 },
+      animation: { duration: 250 },
       plugins: {
         legend: {
           display: true,
           position: "top",
           labels: {
+            filter: (item) => item.text !== "ci_lower_hidden",
             color: "#94a3b8",
             font: { size: 10, family: "Inter" },
             boxWidth: 12
           }
         },
         tooltip: {
-          backgroundColor: "rgba(14, 22, 38, 0.9)",
-          titleColor: "#38bdf8",
-          bodyColor: "#f1f5f9",
-          borderColor: "#1e2e4a",
+          backgroundColor: "rgba(10, 15, 29, 0.92)",
+          titleColor: "#00f0ff",
+          bodyColor: "#f8fafc",
+          borderColor: "rgba(0, 240, 255, 0.3)",
           borderWidth: 1,
-          padding: 8
+          padding: 8,
+          titleFont: { family: "Outfit", size: 11 },
+          bodyFont: { family: "JetBrains Mono", size: 10 }
         }
       },
       scales: {
         x: {
-          grid: { color: "rgba(30, 46, 74, 0.5)" },
+          grid: { color: "rgba(255, 255, 255, 0.05)" },
           ticks: { color: "#64748b", font: { size: 9, family: "JetBrains Mono" } }
         },
         y: {
-          grid: { color: "rgba(30, 46, 74, 0.5)" },
+          grid: { color: "rgba(255, 255, 255, 0.05)" },
           ticks: { color: "#64748b", font: { size: 9, family: "JetBrains Mono" } }
         }
       }
@@ -397,6 +421,15 @@ function renderSpatialGrid(grid, minSlope, maxSlope, maskSigOnly) {
       </div>
     `;
     marker.bindTooltip(tooltipContent, { className: "custom-map-tooltip" });
+
+    marker.on("mouseover", () => {
+      const hudCoords = document.getElementById("hudCoords");
+      if (hudCoords) hudCoords.innerText = formatCoords(cell.lat, cell.lon);
+      const hudSlope = document.getElementById("hudSlope");
+      if (hudSlope) hudSlope.innerText = `${cell.slope > 0 ? "+" : ""}${cell.slope.toFixed(4)}`;
+      const hudSig = document.getElementById("hudSig");
+      if (hudSig) hudSig.innerText = `p = ${formatPVal(cell.p_value)} (${cell.lisa_cluster || "NS"})`;
+    });
 
     marker.on("click", () => {
       selectCell(cell.lat, cell.lon);
@@ -591,6 +624,16 @@ function renderCompoundGrid(cells) {
       </div>
     `;
     marker.bindTooltip(tooltipContent, { className: "custom-map-tooltip" });
+
+    marker.on("mouseover", () => {
+      const hudCoords = document.getElementById("hudCoords");
+      if (hudCoords) hudCoords.innerText = formatCoords(cell.lat, cell.lon);
+      const hudSlope = document.getElementById("hudSlope");
+      if (hudSlope) hudSlope.innerText = `CAI: ${cell.cai !== undefined ? cell.cai.toFixed(3) : "--"}`;
+      const hudSig = document.getElementById("hudSig");
+      if (hudSig) hudSig.innerText = `Class: ${cell.hazard_type.replace(/_/g, " ")}`;
+    });
+
     gridLayerGroup.addLayer(marker);
   });
 }
@@ -767,12 +810,16 @@ async function loadCandidateSignals(analysisId) {
     candidateSignals.slice(0, 5).forEach((sig, idx) => {
       const card = document.createElement("div");
       card.className = "signal-card";
+      const scorePct = Math.min(100, Math.max(12, Math.round((sig.discovery_score || 0.5) * 50)));
       card.innerHTML = `
         <div class="signal-left">
           <span class="signal-rank">#${idx + 1}</span>
-          <div>
+          <div style="flex:1;">
             <div class="signal-coords">${formatCoords1(sig.lat, sig.lon)}</div>
-            <div class="signal-sub">${sig.direction.toUpperCase()} • Slope: ${sig.slope > 0 ? "+" : ""}${sig.slope.toFixed(3)}</div>
+            <div class="signal-sub">${sig.direction.toUpperCase()} • ${sig.slope > 0 ? "+" : ""}${sig.slope.toFixed(3)}</div>
+            <div class="signal-meter-track" title="Composite discovery score: ${sig.discovery_score.toFixed(3)}">
+              <div class="signal-meter-fill" style="width: ${scorePct}%;"></div>
+            </div>
           </div>
         </div>
         <div class="signal-score-badge" title="${sig.ranking_rationale}">
@@ -872,11 +919,25 @@ function focusContrastingRegions(pairIndex = 0) {
   vectorLine.openPopup();
 }
 
-// Render Time Series Chart (Raw vs Climatological Anomaly Mode)
+// Render Time Series Chart (Raw vs Climatological Anomaly Mode with Gilbert CI Ribbon)
 function renderTimeSeriesChart(cell) {
   if (!cell || !timeSeriesChart) return;
   const obs = cell.observations;
   const meanObs = obs.length > 0 ? (obs.reduce((sum, v) => sum + v, 0) / obs.length) : 0;
+
+  // Compute Gilbert (1987) 95% Confidence Interval Envelope Ribbon
+  let ciLower = [];
+  let ciUpper = [];
+  if (cell.ci_lower !== undefined && cell.ci_upper !== undefined && cell.fitted_values && cell.fitted_values.length > 0) {
+    const startY = cell.years[0];
+    const slopeDeltaL = ((cell.ci_lower - cell.slope) / 10.0);
+    const slopeDeltaU = ((cell.ci_upper - cell.slope) / 10.0);
+    ciLower = cell.fitted_values.map((fv, i) => Number((fv + slopeDeltaL * (cell.years[i] - startY)).toFixed(3)));
+    ciUpper = cell.fitted_values.map((fv, i) => Number((fv + slopeDeltaU * (cell.years[i] - startY)).toFixed(3)));
+  } else {
+    ciLower = cell.fitted_values || [];
+    ciUpper = cell.fitted_values || [];
+  }
 
   timeSeriesChart.data.labels = cell.years;
   if (isAnomalyMode) {
@@ -886,6 +947,8 @@ function renderTimeSeriesChart(cell) {
     timeSeriesChart.data.datasets[1].data = cell.fitted_values.map(v => Number((v - meanObs).toFixed(3)));
     timeSeriesChart.data.datasets[2].label = "Baseline Zero Reference";
     timeSeriesChart.data.datasets[2].data = cell.years.map(() => 0.0);
+    timeSeriesChart.data.datasets[3].data = ciLower.map(v => Number((v - meanObs).toFixed(3)));
+    timeSeriesChart.data.datasets[4].data = ciUpper.map(v => Number((v - meanObs).toFixed(3)));
 
     if (timeSeriesChart.options.scales && timeSeriesChart.options.scales.y) {
       timeSeriesChart.options.scales.y.title = {
@@ -902,6 +965,8 @@ function renderTimeSeriesChart(cell) {
     timeSeriesChart.data.datasets[1].data = cell.fitted_values;
     timeSeriesChart.data.datasets[2].label = `Climatology Baseline (μ = ${meanObs.toFixed(2)})`;
     timeSeriesChart.data.datasets[2].data = cell.years.map(() => Number(meanObs.toFixed(2)));
+    timeSeriesChart.data.datasets[3].data = ciLower;
+    timeSeriesChart.data.datasets[4].data = ciUpper;
 
     if (timeSeriesChart.options.scales && timeSeriesChart.options.scales.y) {
       timeSeriesChart.options.scales.y.title = {
@@ -915,7 +980,7 @@ function renderTimeSeriesChart(cell) {
   timeSeriesChart.update();
 }
 
-// Select a specific coordinate cell and update time series & evidence
+// Select a specific coordinate cell and update time series, HUD & evidence
 async function selectCell(lat, lon) {
   if (!currentAnalysisId) return;
 
@@ -926,8 +991,16 @@ async function selectCell(lat, lon) {
     const cell = await res.json();
     currentSelectedCell = cell;
 
-    // Update Time Series Chart
+    // Update Time Series Chart with CI Ribbon
     renderTimeSeriesChart(cell);
+
+    // Update Crosshair HUD (Fuselab Real-Time GIS)
+    const hudCoords = document.getElementById("hudCoords");
+    if (hudCoords) hudCoords.innerText = formatCoords(cell.lat, cell.lon);
+    const hudSlope = document.getElementById("hudSlope");
+    if (hudSlope) hudSlope.innerText = `${cell.slope > 0 ? "+" : ""}${cell.slope.toFixed(4)} ${cell.slope_units}`;
+    const hudSig = document.getElementById("hudSig");
+    if (hudSig) hudSig.innerText = `p = ${formatPVal(cell.p_value)} (q = ${formatPVal(cell.q_value)})`;
 
     // Update Header and Badges
     document.getElementById("tsCoordinateLabel").innerText = `Coordinate: ${formatCoords(cell.lat, cell.lon)}`;
@@ -1138,6 +1211,15 @@ function loadPreset(presetKey) {
       : "NASA GMAO • CF-1.6 Compliant • DOI: 10.5067/A7F0JNNUTWOB";
   }
 
+  // Sync quick preset ribbon buttons (Orizon SpaceX HUD)
+  document.querySelectorAll(".preset-pill-btn").forEach(btn => {
+    if (btn.dataset.preset === presetKey) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
+
   showToast(`Loaded: ${preset.desc}`, 'info', 4000);
 
   if (preset.isCompound) {
@@ -1151,6 +1233,16 @@ function loadPreset(presetKey) {
 window.addEventListener("DOMContentLoaded", () => {
   initMap();
   initChart();
+
+  // Quick Preset Investigation Ribbon Listeners (Orizon SpaceX HUD)
+  document.querySelectorAll(".preset-pill-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const pKey = btn.dataset.preset;
+      if (pKey) {
+        loadPreset(pKey);
+      }
+    });
+  });
 
   // Detective Case Presets Dropdown
   const presetSelect = document.getElementById("presetSelect");
