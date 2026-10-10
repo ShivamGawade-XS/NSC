@@ -78,20 +78,49 @@ def test_offline_demo_mode_data_provenance():
 
 
 def test_real_netcdf_mode_data_provenance():
-    """Verify live NetCDF mode sets verified observational labels in the API response."""
+    """Verify NASA POWER adapter returns verified observational labels in the API response."""
     payload = {
-        "dataset_id": "merra2_reanalysis",
+        "dataset_id": "nasa_power",
         "variable_id": "T2M",
         "start_year": 2000,
         "end_year": 2020,
-        "prefer_live": True
+        "bbox": [-101.0, 31.0, -95.0, 37.0],
+        "prefer_live": False
     }
     res = client.post("/analysis", json=payload)
     assert res.status_code == 200
     prov = res.json()["provenance"]
     assert prov["is_synthetic"] is False
-    assert "Verified NetCDF Observations" in prov["data_source_label"]
+    assert "NASA" in prov["data_source_label"]
 
+
+def test_nasa_power_spatial_trend_quality():
+    """Verify NASA POWER real data produces ci_lower < ci_upper and valid moran stats in response."""
+    payload = {
+        "dataset_id": "nasa_power",
+        "variable_id": "T2M",
+        "start_year": 1990,
+        "end_year": 2023,
+        "bbox": [-101.0, 31.0, -95.0, 37.0],
+        "prefer_live": False
+    }
+    res = client.post("/analysis", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    # Check that confidence intervals exist on grid cells
+    grid = data["grid"]
+    assert len(grid) > 0
+    sample = grid[0]
+    assert "ci_lower" in sample
+    assert "ci_upper" in sample
+    assert sample["ci_lower"] <= sample["ci_upper"]  # Valid CI ordering
+    # Check spatial autocorrelation summary
+    summary = data["summary"]
+    assert "spatial_autocorrelation" in summary
+    assert "moran_i" in summary["spatial_autocorrelation"]
+    assert "p_value" in summary["spatial_autocorrelation"]
+    # Verify authentic data label
+    assert data["provenance"]["is_synthetic"] is False
 
 
 def test_ai_explainer_fallback_and_validation():

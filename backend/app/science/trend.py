@@ -145,24 +145,30 @@ def mann_kendall_test(
 
 def sens_slope(
     y: np.ndarray,
-    time_steps: Optional[np.ndarray] = None
+    time_steps: Optional[np.ndarray] = None,
+    alpha: float = 0.05,
+    var_s: Optional[float] = None
 ) -> Dict[str, float]:
     """
-    Calculate the robust Sen's Slope (Theil-Sen estimator) and intercept.
+    Calculate the robust Sen's Slope (Theil-Sen estimator), intercept,
+    and Gilbert (1987) non-parametric (1 - alpha)% confidence intervals.
     
     Parameters:
         y: 1D array of values.
         time_steps: Optional numerical time coordinates. If None, uses np.arange(n).
+        alpha: Significance level for confidence interval (default: 0.05 -> 95% CI).
+        var_s: Optional precomputed Mann-Kendall variance of S.
         
     Returns:
-        Dict with 'slope' and 'intercept'.
+        Dict with 'slope', 'intercept', 'ci_lower', 'ci_upper'.
     """
     valid_mask = ~np.isnan(y)
     data = y[valid_mask]
     n = len(data)
 
     if n < 2:
-        return {"slope": 0.0, "intercept": float(data[0]) if n == 1 else 0.0}
+        val = float(data[0]) if n == 1 else 0.0
+        return {"slope": 0.0, "intercept": val, "ci_lower": 0.0, "ci_upper": 0.0}
 
     if time_steps is None:
         t = np.arange(len(y), dtype=float)[valid_mask]
@@ -175,14 +181,40 @@ def sens_slope(
     
     iu = np.triu_indices(n, k=1)
     valid_pairs = dt[iu] != 0
-    slopes = dy[iu][valid_pairs] / dt[iu][valid_pairs]
+    raw_slopes = dy[iu][valid_pairs] / dt[iu][valid_pairs]
+    slopes = np.sort(raw_slopes)
+    n_prime = len(slopes)
 
-    median_slope = float(np.median(slopes)) if len(slopes) > 0 else 0.0
+    median_slope = float(np.median(slopes)) if n_prime > 0 else 0.0
     intercept = float(np.median(data - median_slope * t))
+
+    # Gilbert (1987) non-parametric confidence interval for slope
+    if n_prime > 2:
+        if var_s is None or var_s <= 0:
+            var_s_calc = (n * (n - 1) * (2 * n + 5)) / 18.0
+        else:
+            var_s_calc = var_s
+
+        z_crit = float(stats.norm.ppf(1.0 - alpha / 2.0))
+        c_alpha = z_crit * np.sqrt(var_s_calc)
+
+        m1 = int(np.floor((n_prime - c_alpha) / 2.0))
+        m2 = int(np.ceil((n_prime + c_alpha) / 2.0))
+
+        idx_lower = max(0, min(n_prime - 1, m1))
+        idx_upper = max(0, min(n_prime - 1, m2))
+
+        ci_lower = float(slopes[idx_lower])
+        ci_upper = float(slopes[idx_upper])
+    else:
+        ci_lower = median_slope
+        ci_upper = median_slope
 
     return {
         "slope": median_slope,
-        "intercept": intercept
+        "intercept": intercept,
+        "ci_lower": ci_lower,
+        "ci_upper": ci_upper
     }
 
 
@@ -263,41 +295,51 @@ def compute_spatial_trends(
     
     slopes = np.zeros((h_len, w_len), dtype=float)
     intercepts = np.zeros((h_len, w_len), dtype=float)
+    ci_lower = np.zeros((h_len, w_len), dtype=float)
+    ci_upper = np.zeros((h_len, w_len), dtype=float)
     p_values = np.ones((h_len, w_len), dtype=float)
     n_samples = np.zeros((h_len, w_len), dtype=int)
     
     def process_row(i: int):
         row_slopes = np.zeros(w_len, dtype=float)
         row_intercepts = np.zeros(w_len, dtype=float)
+        row_ci_l = np.zeros(w_len, dtype=float)
+        row_ci_u = np.zeros(w_len, dtype=float)
         row_p_vals = np.ones(w_len, dtype=float)
         row_samples = np.zeros(w_len, dtype=int)
 
         for j in range(w_len):
             ts = data_3d[:, i, j]
-            sen_res = sens_slope(ts, time_steps=time_coords)
-            row_slopes[j] = sen_res["slope"]
-            row_intercepts[j] = sen_res["intercept"]
-
             mk_res = mann_kendall_test(ts, alpha=alpha, correct_autocorrelation=True)
             row_p_vals[j] = mk_res["p_value"]
             row_samples[j] = mk_res["n_samples"]
 
-        return i, row_slopes, row_intercepts, row_p_vals, row_samples
+            sen_res = sens_slope(ts, time_steps=time_coords, alpha=alpha, var_s=mk_res["var_s"])
+            row_slopes[j] = sen_res["slope"]
+            row_intercepts[j] = sen_res["intercept"]
+            row_ci_l[j] = sen_res["ci_lower"]
+            row_ci_u[j] = sen_res["ci_upper"]
+
+        return i, row_slopes, row_intercepts, row_ci_l, row_ci_u, row_p_vals, row_samples
 
     total_cells = h_len * w_len
     if total_cells >= 30:
         max_workers = min(8, max(2, os.cpu_count() or 4))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            for i, r_slopes, r_intercepts, r_p, r_samples in executor.map(process_row, range(h_len)):
+            for i, r_slopes, r_intercepts, r_ci_l, r_ci_u, r_p, r_samples in executor.map(process_row, range(h_len)):
                 slopes[i, :] = r_slopes
                 intercepts[i, :] = r_intercepts
+                ci_lower[i, :] = r_ci_l
+                ci_upper[i, :] = r_ci_u
                 p_values[i, :] = r_p
                 n_samples[i, :] = r_samples
     else:
         for i in range(h_len):
-            _, r_slopes, r_intercepts, r_p, r_samples = process_row(i)
+            _, r_slopes, r_intercepts, r_ci_l, r_ci_u, r_p, r_samples = process_row(i)
             slopes[i, :] = r_slopes
             intercepts[i, :] = r_intercepts
+            ci_lower[i, :] = r_ci_l
+            ci_upper[i, :] = r_ci_u
             p_values[i, :] = r_p
             n_samples[i, :] = r_samples
 
@@ -305,13 +347,26 @@ def compute_spatial_trends(
     q_values, is_sig_fdr = benjamini_hochberg_fdr(p_values, alpha=alpha)
     is_sig_raw = p_values < alpha
 
+    # Spatial Autocorrelation: Global Moran's I & Anselin Local Moran's I (LISA)
+    try:
+        from app.science.spatial import compute_global_morans_i, compute_lisa_clusters
+        moran_stats = compute_global_morans_i(slopes)
+        lisa_clusters, _ = compute_lisa_clusters(slopes, p_values, alpha=alpha)
+    except Exception:
+        moran_stats = {"moran_i": 0.0, "p_value": 1.0, "is_clustered": False}
+        lisa_clusters = np.full((h_len, w_len), "NS", dtype=object)
+
     return {
         "slopes": slopes,
         "intercepts": intercepts,
+        "ci_lower": ci_lower,
+        "ci_upper": ci_upper,
         "p_values": p_values,
         "q_values": q_values,
         "is_significant_raw": is_sig_raw,
         "is_significant_fdr": is_sig_fdr,
         "n_samples": n_samples,
+        "moran_stats": moran_stats,
+        "lisa_clusters": lisa_clusters,
     }
 

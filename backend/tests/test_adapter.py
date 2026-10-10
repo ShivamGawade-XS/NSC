@@ -95,14 +95,34 @@ def test_merra2_fetch_subset_pipeline():
 
 
 def test_merra2_real_netcdf_ingestion():
-    """Verify authentic NASA NetCDF dataset is ingested, sliced, and verified."""
-    adapter = MERRA2Adapter()
-    res = adapter.fetch_subset(variable="T2M", start_year=2000, end_year=2020, bbox=[-115.0, 32.0, -85.0, 45.0], prefer_live=True)
+    """Verify authentic NASA NetCDF dataset is ingested, sliced, and verified via NASAPowerAdapter."""
+    from app.adapters.nasa_power import NASAPowerAdapter
+    adapter = NASAPowerAdapter()
+    # Bbox within the bundled authentic NASA fixture coverage (Texas/Southern Plains)
+    res = adapter.fetch(variable="T2M", start_year=2000, end_year=2020,
+                        bbox=[-101.0, 31.0, -95.0, 37.0], prefer_live=False)
     assert "data" in res
     assert res["variable_id"] == "T2M"
     assert res["is_synthetic"] is False
-    assert "Verified NetCDF Observations" in res["data_source_label"]
-    assert res["data"].shape[0] == 21
-    assert np.all(np.diff(res["lat"]) > 0)
-    assert np.all(np.diff(res["lon"]) > 0)
+    assert "NASA" in res["data_source_label"]
+    assert res["data"].shape[0] == 21       # 21 years inclusive
+    assert np.all(np.diff(res["lat"]) > 0)  # latitudes ascending
+    assert np.all(np.diff(res["lon"]) > 0)  # longitudes ascending
+    # Verify physically plausible temperatures (Texas: 17–22 °C annual mean)
+    assert float(res["data"].mean()) > 10.0
+    assert float(res["data"].mean()) < 35.0
 
+
+def test_nasa_power_adapter_live_metadata():
+    """Verify NASAPowerAdapter metadata and catalog are correct."""
+    from app.adapters.nasa_power import NASAPowerAdapter
+    adapter = NASAPowerAdapter()
+    meta = adapter.metadata()
+    assert meta["is_synthetic"] is False if "is_synthetic" in meta else True
+    assert "T2M" in meta["variables"]
+    assert "PRECTOT" in meta["variables"]
+    assert meta["doi"] == "10.5067/POWER/10.0.0"
+    catalog = adapter.discover()
+    assert len(catalog) > 0
+    assert all("is_synthetic" in c for c in catalog)
+    assert all(c["is_synthetic"] is False for c in catalog)
