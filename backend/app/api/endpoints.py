@@ -27,6 +27,7 @@ from app.adapters.merra2 import MERRA2Adapter
 from app.science.trend import compute_spatial_trends, mann_kendall_test, sens_slope
 from app.science.contrasts import find_contrasting_regions
 from app.science.discovery import discover_candidate_signals
+from app.science.explainer import explain_evidence_with_ai
 
 router = APIRouter()
 
@@ -97,7 +98,8 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
             variable=req.variable_id,
             start_year=req.start_year,
             end_year=req.end_year,
-            bbox=req.bbox
+            bbox=req.bbox,
+            prefer_live=req.prefer_live
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -402,28 +404,5 @@ def get_analysis_provenance(analysis_id: str) -> ProvenanceResponse:
 
 @router.post("/explain", response_model=ExplainResponse)
 def explain_evidence(req: ExplainRequest) -> ExplainResponse:
-    """Downstream scientific explainer: translates verified evidence into clear scientific prose."""
-    sig_text = "statistically significant" if req.significant else "not statistically significant"
-    dir_word = "increase" if req.slope > 0 else "decrease"
-
-    summary = (
-        f"At {req.location}, {req.variable_name} demonstrated a {dir_word} of "
-        f"{req.slope:+.3f} {req.slope_units} across the period {req.time_span}."
-    )
-
-    assessment = (
-        f"The Mann-Kendall test determined this change is {sig_text} "
-        f"(p-value = {req.p_value:.4f}, FDR adjusted q-value = {req.q_value:.4f}) "
-        f"across {req.sample_count} verified temporal observations from {req.source}."
-    )
-
-    limitations = (
-        "Statistical significance confirms empirical persistence over the observed period, "
-        "but does not identify physical forcing mechanisms or guarantee future extrapolation."
-    )
-
-    return ExplainResponse(
-        summary=summary,
-        statistical_assessment=assessment,
-        limitations=limitations
-    )
+    """Downstream scientific explainer: translates verified evidence into clear scientific prose via Gemini/LLM or deterministic fallback."""
+    return explain_evidence_with_ai(req)

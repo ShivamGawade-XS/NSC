@@ -5,7 +5,7 @@
 
 [![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-2026-0B3D91?style=for-the-badge&logo=nasa)](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/)
 [![Challenge](https://img.shields.io/badge/Challenge-Be%20An%20Earth%20System%20Trend%20Detective!-blue?style=for-the-badge)](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/)
-[![Tests: 38 Passing](https://img.shields.io/badge/Tests-38%20Passing%20(100%25)-success?style=for-the-badge)](docs/TEST_PLAN.md)
+[![Tests: 40 Passing](https://img.shields.io/badge/Tests-40%20Passing%20(100%25)-success?style=for-the-badge)](docs/TEST_PLAN.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 ---
@@ -80,37 +80,44 @@ Downstream AI Explainer (Interpreting verified mathematical records only)
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Data Ingestion** | NASA Earthdata / CMR API, `earthaccess` (v0.19.0), MERRA-2 Reanalysis (`M2TMNXSLV`, `M2TMNXFLX`) |
-| **Scientific Engine** | Python 3.13 / 3.14, `numpy`, `scipy` |
-| **API & Backend** | FastAPI, Pydantic, Uvicorn |
-| **Geospatial Mapping** | Leaflet.js, CARTO Dark Matter Basemap |
-| **Data Visualization** | Chart.js Canvas Time Series |
-| **Web Shell** | Semantic HTML5, Vanilla CSS3 (Mission-Control Dark Instrument) |
-| **Testing** | pytest (36 automated unit, scientific, and application resilience tests) |
+| **Data Ingestion** | NASA Earthdata / CMR API, `earthaccess` (v0.19.0), NASA NetCDF4 / `xarray` (v2026.9), MERRA-2 Reanalysis (`M2TMNXSLV`, `M2TMNXFLX`) |
+| **Scientific Engine** | Python 3.13 / 3.14, `numpy`, `scipy` (Multithreaded Parallel Row Chunk Execution) |
+| **AI Explanation** | Google Gemini API (gemini-2.5-flash) / OpenAI with Deterministic Scientific Fallback |
+| **API & Backend** | FastAPI, Pydantic, Uvicorn (Bounded LRU Caching) |
+| **Geospatial Mapping** | Leaflet.js v1.9.4 (Canvas Renderer, 100% Offline Vendored), CARTO Dark Matter Basemap |
+| **Data Visualization** | Chart.js v4.4.1 (Dynamic Scaling, 100% Offline Vendored) |
+| **Web Shell** | Semantic HTML5, Responsive CSS3 (Mission-Control Dark Instrument with 1024px+ Ergonomics) |
+| **Deployment** | Docker, Docker Compose, Multi-stage Slim Container |
+| **Testing** | pytest (40 automated unit, scientific, NetCDF, and application resilience tests) |
 
 ---
 
 ## 🚀 Quickstart & Running Locally
 
-### 1. Install Dependencies
+### Option A: One-Command Docker Deployment (Recommended)
 ```bash
-pip install -r backend/requirements.txt
+docker compose up --build
 ```
+Open your browser at **`http://localhost:8000`** to interact with the mission-control dashboard.
 
-### 2. Run the Scientific Server & Web Instrument
+### Option B: Native Python Setup
 ```bash
-# Set Python path to backend directory and start server:
-$env:PYTHONPATH="backend"
+# 1. Install dependencies
+pip install -r backend/requirements.txt
+pip install netcdf4
+
+# 2. Run the Scientific Server & Web Instrument
+cd backend
 uvicorn app.main:app --port 8000 --reload
 ```
-Open your browser at **`http://localhost:8000`** to interact with the scientific dashboard.
+Open **`http://localhost:8000`**.
 
-### 3. Run the Automated Test Suite
+### Option C: Run the Automated Test Suite
 ```bash
-$env:PYTHONPATH="backend"
-pytest backend/tests/ -v
+cd backend
+pytest
 ```
-All **36 / 36 tests** pass covering scientific math, boundary conditions, adapter contracts, and application resilience.
+All **40 / 40 tests** pass covering real NetCDF ingestion, multi-threaded parallel trend math, boundary conditions, adapter contracts, cache collision resilience, and connected component clustering.
 
 ---
 

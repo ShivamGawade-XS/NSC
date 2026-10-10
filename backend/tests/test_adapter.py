@@ -59,7 +59,7 @@ def test_merra2_validation_invalid_bbox():
 
 def test_merra2_fetch_and_synthetic_labeling():
     adapter = MERRA2Adapter()
-    data = adapter.fetch(variable="T2M", start_year=2005, end_year=2015)
+    data = adapter.fetch(variable="T2M", start_year=2005, end_year=2015, prefer_live=False)
     
     assert data["is_synthetic"] is True
     assert "Synthetic test data" in data["data_source_label"]
@@ -70,7 +70,7 @@ def test_merra2_fetch_and_synthetic_labeling():
 
 def test_merra2_subset_and_normalize():
     adapter = MERRA2Adapter()
-    raw = adapter.fetch(variable="T2M", start_year=2000, end_year=2010, bbox=[-120.0, 30.0, -80.0, 48.0])
+    raw = adapter.fetch(variable="T2M", start_year=2000, end_year=2010, bbox=[-120.0, 30.0, -80.0, 48.0], prefer_live=False)
     sub = adapter.subset(raw, bbox=[-110.0, 32.0, -90.0, 42.0])
     norm = adapter.normalize(sub)
 
@@ -87,8 +87,22 @@ def test_merra2_subset_and_normalize():
 
 def test_merra2_fetch_subset_pipeline():
     adapter = MERRA2Adapter()
-    res = adapter.fetch_subset(variable="PRECTOT", start_year=2000, end_year=2020, bbox=[-100.0, 30.0, -80.0, 40.0])
+    res = adapter.fetch_subset(variable="PRECTOT", start_year=2000, end_year=2020, bbox=[-100.0, 30.0, -80.0, 40.0], prefer_live=False)
     assert "data" in res
     assert res["variable_id"] == "PRECTOT"
     assert res["display_units"] == "mm / day"
     assert res["is_synthetic"] is True
+
+
+def test_merra2_real_netcdf_ingestion():
+    """Verify authentic NASA NetCDF dataset is ingested, sliced, and verified."""
+    adapter = MERRA2Adapter()
+    res = adapter.fetch_subset(variable="T2M", start_year=2000, end_year=2020, bbox=[-115.0, 32.0, -85.0, 45.0], prefer_live=True)
+    assert "data" in res
+    assert res["variable_id"] == "T2M"
+    assert res["is_synthetic"] is False
+    assert "Verified NetCDF Observations" in res["data_source_label"]
+    assert res["data"].shape[0] == 21
+    assert np.all(np.diff(res["lat"]) > 0)
+    assert np.all(np.diff(res["lon"]) > 0)
+

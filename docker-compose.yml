@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  earthsift:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: earthsift-engine
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MERRA2_DATA_DIR=/app/backend/data/fixtures
+      # Optional: Add GEMINI_API_KEY or OPENAI_API_KEY for live AI explanation
+      # - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    restart: unless-stopped
