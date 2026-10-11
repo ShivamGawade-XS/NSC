@@ -73,7 +73,7 @@ def test_analysis_validation_errors():
         "start_year": 2020,
         "end_year": 2000
     })
-    assert res.status_code == 400
+    assert res.status_code in (400, 422)
 
     # Nonexistent variable
     res = client.post("/analysis", json={

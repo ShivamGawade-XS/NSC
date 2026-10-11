@@ -94,6 +94,42 @@ function getFilenameFromHeader(res, fallback) {
   return fallback;
 }
 
+// Omni-Scale Championship Endpoints
+export async function getClimateVelocity(analysisId) {
+  const res = await apiFetch(`/analysis/${analysisId}/velocity`);
+  return res.json();
+}
+
+export async function parseNLQ(query) {
+  const res = await apiFetch('/copilot/parse-query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query }),
+  });
+  return res.json();
+}
+
+export async function compareLocations(payload) {
+  const res = await apiFetch('/analysis/compare', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function exportLatex(analysisId) {
+  const res = await apiFetch(`/analysis/${analysisId}/export/latex`);
+  const filename = getFilenameFromHeader(res, `NASA_TM_${analysisId}.tex`);
+  const blob = await res.blob();
+  return { blob, filename, mime: 'application/x-latex' };
+}
+
+export async function getColabLink(analysisId) {
+  const res = await apiFetch(`/analysis/${analysisId}/export/colab`);
+  return res.json();
+}
+
 export function downloadBlob(blob, filename, mimeType) {
   const typedBlob = mimeType ? new Blob([blob], { type: mimeType }) : blob;
   const url = URL.createObjectURL(typedBlob);
@@ -108,3 +144,4 @@ export function downloadBlob(blob, filename, mimeType) {
     a.parentNode?.removeChild(a);
   }, 30000);
 }
+

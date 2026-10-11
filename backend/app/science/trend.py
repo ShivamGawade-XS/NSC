@@ -437,3 +437,133 @@ def pettitt_changepoint_test(
         "significant": bool(p_val < alpha)
     }
 
+
+def monte_carlo_ar1_significance(
+    y: np.ndarray,
+    n_simulations: int = 500,
+    alpha: float = 0.05
+) -> dict[str, Any]:
+    """
+    Monte Carlo surrogate data test guarding against spurious trends induced by red noise (AR(1) persistence).
+    Fits an AR(1) autoregressive model to detrended residuals, synthesizes N surrogate series,
+    and calculates empirical probability that the observed Sen's slope exceeds red-noise expectations.
+    """
+    valid = ~np.isnan(y)
+    data = y[valid]
+    n = len(data)
+
+    if n < 8:
+        return {
+            "ar1_coefficient": 0.0,
+            "empirical_p_value": 1.0,
+            "passes_red_noise_test": False,
+            "n_simulations": 0
+        }
+
+    # 1. Compute empirical Sen's slope of original series
+    t = np.arange(n, dtype=float)
+    orig_sen = sens_slope(data, time_steps=t)
+    observed_slope = abs(orig_sen["slope"])
+
+    # 2. Detrend series and estimate AR(1) lag-1 coefficient phi
+    residuals = data - orig_sen["slope"] * t
+    r_mean = np.mean(residuals)
+    res_cent = residuals - r_mean
+    denom = np.sum(res_cent[:-1] ** 2)
+    phi = float(np.sum(res_cent[:-1] * res_cent[1:]) / denom) if denom > 0 else 0.0
+    phi = max(-0.95, min(0.95, phi))  # Stationarity bound
+
+    # Residual innovation standard deviation
+    eps_std = float(np.std(res_cent[1:] - phi * res_cent[:-1]))
+    if eps_std <= 1e-6:
+        eps_std = 1.0
+
+    # 3. Vectorized simulation of N surrogate red-noise series
+    rng = np.random.default_rng(42)
+    # Generate white innovations: (n_simulations, n)
+    innovations = rng.normal(0.0, eps_std, size=(n_simulations, n))
+
+    surrogate_slopes = np.zeros(n_simulations)
+    for sim in range(n_simulations):
+        surr = np.zeros(n)
+        surr[0] = innovations[sim, 0]
+        for step in range(1, n):
+            surr[step] = phi * surr[step - 1] + innovations[sim, step]
+        # Quick Theil-Sen slope calculation
+        dt = t[None, :] - t[:, None]
+        dy = surr[None, :] - surr[:, None]
+        iu = np.triu_indices(n, k=1)
+        vp = dt[iu] != 0
+        slopes_pair = dy[iu][vp] / dt[iu][vp]
+        surrogate_slopes[sim] = abs(float(np.median(slopes_pair)))
+
+    # Empirical p-value: fraction of red-noise surrogates producing slope >= observed
+    exceedances = int(np.sum(surrogate_slopes >= observed_slope))
+    emp_p = float((exceedances + 1.0) / (n_simulations + 1.0))
+
+    return {
+        "ar1_coefficient": round(phi, 3),
+        "observed_abs_slope": round(observed_slope, 4),
+        "empirical_p_value": round(emp_p, 4),
+        "passes_red_noise_test": bool(emp_p < alpha),
+        "n_simulations": n_simulations
+    }
+
+
+def bootstrap_sen_confidence_interval(
+    y: np.ndarray,
+    time_steps: np.ndarray | None = None,
+    n_boot: int = 500,
+    alpha: float = 0.05
+) -> dict[str, Any]:
+    """
+    Non-parametric bootstrap confidence interval for Sen's slope.
+    Resamples paired observations (t_i, y_i) with replacement to construct empirical distribution.
+    """
+    valid = ~np.isnan(y)
+    data = y[valid]
+    n = len(data)
+
+    if n < 5:
+        base_slope = sens_slope(y, time_steps)["slope"]
+        return {
+            "bootstrap_ci_lower": base_slope,
+            "bootstrap_ci_upper": base_slope,
+            "bootstrap_std_err": 0.0,
+            "n_bootstraps": 0
+        }
+
+    t = time_steps[valid] if time_steps is not None else np.arange(n, dtype=float)
+
+    rng = np.random.default_rng(1234)
+    boot_slopes = np.zeros(n_boot)
+
+    for b in range(n_boot):
+        idx = rng.choice(n, size=n, replace=True)
+        t_b = t[idx]
+        y_b = data[idx]
+        dt = t_b[None, :] - t_b[:, None]
+        dy = y_b[None, :] - y_b[:, None]
+        iu = np.triu_indices(n, k=1)
+        vp = dt[iu] != 0
+        if np.sum(vp) > 0:
+            s_pairs = dy[iu][vp] / dt[iu][vp]
+            boot_slopes[b] = float(np.median(s_pairs))
+        else:
+            boot_slopes[b] = 0.0
+
+    lower_pct = (alpha / 2.0) * 100.0
+    upper_pct = (1.0 - alpha / 2.0) * 100.0
+
+    ci_l = float(np.percentile(boot_slopes, lower_pct))
+    ci_u = float(np.percentile(boot_slopes, upper_pct))
+    std_err = float(np.std(boot_slopes))
+
+    return {
+        "bootstrap_ci_lower": round(ci_l, 4),
+        "bootstrap_ci_upper": round(ci_u, 4),
+        "bootstrap_std_err": round(std_err, 4),
+        "n_bootstraps": n_boot
+    }
+
+

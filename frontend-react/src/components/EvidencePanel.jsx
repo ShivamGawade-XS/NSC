@@ -205,11 +205,30 @@ export default function EvidencePanel() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="mt-3 p-3 rounded-lg bg-bg-elevated border border-border-subtle text-xs text-text-secondary space-y-2"
+            className="mt-3 p-3.5 rounded-xl bg-bg-elevated border border-border-subtle text-xs text-text-secondary space-y-2.5"
           >
             {aiResult.summary && <p><strong className="text-text-main">Summary:</strong> {aiResult.summary}</p>}
             {aiResult.statistical_assessment && <p><strong className="text-text-main">Assessment:</strong> {aiResult.statistical_assessment}</p>}
             {aiResult.limitations && <p className="text-accent-anomaly/80"><strong>Caveats:</strong> {aiResult.limitations}</p>}
+
+            {/* Falsifiable Physical Hypotheses */}
+            {aiResult.physical_hypotheses && aiResult.physical_hypotheses.length > 0 && (
+              <div className="border-t border-white/10 pt-2 mt-2">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-cyan-400 font-bold block mb-1.5">
+                  🧪 Falsifiable Physical Hypotheses
+                </span>
+                <div className="space-y-1.5">
+                  {aiResult.physical_hypotheses.map((h, idx) => (
+                    <div key={idx} className="bg-black/30 p-2 rounded border border-white/5 text-[11px]">
+                      <div className="font-semibold text-white">{idx + 1}. {h.hypothesis}</div>
+                      <div className="text-zinc-400 text-[10px] mt-0.5">{h.mechanism}</div>
+                      <div className="text-[9px] text-cyan-400/80 font-mono mt-0.5">DOI: {h.doi}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2 pt-1">
               <button
                 onClick={() => navigator.clipboard.writeText(aiResult.summary || '')}
@@ -227,6 +246,69 @@ export default function EvidencePanel() {
           </motion.div>
         )}
       </div>
+
+      {/* Dual-Location Comparison Result Card */}
+      {useStore.getState().comparisonResult && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-card p-4 border-purple-500/30 bg-purple-950/10"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm">📍</span>
+            <h4 className="text-xs font-bold text-purple-300 uppercase tracking-wider font-mono">
+              Pin A vs Pin B Differential Inspector
+            </h4>
+          </div>
+          <div className="text-[11px] text-zinc-300 font-mono space-y-1.5 bg-black/40 p-2.5 rounded-lg border border-white/5">
+            <div className="flex justify-between">
+              <span className="text-cyan-400">Loc A ({useStore.getState().comparisonResult.loc_a.lat.toFixed(1)}°, {useStore.getState().comparisonResult.loc_a.lon.toFixed(1)}°):</span>
+              <span className="font-bold text-white">{useStore.getState().comparisonResult.loc_a.slope > 0 ? '+' : ''}{useStore.getState().comparisonResult.loc_a.slope}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-amber-400">Loc B ({useStore.getState().comparisonResult.loc_b.lat.toFixed(1)}°, {useStore.getState().comparisonResult.loc_b.lon.toFixed(1)}°):</span>
+              <span className="font-bold text-white">{useStore.getState().comparisonResult.loc_b.slope > 0 ? '+' : ''}{useStore.getState().comparisonResult.loc_b.slope}</span>
+            </div>
+            <div className="border-t border-white/10 pt-1 flex justify-between font-semibold">
+              <span className="text-purple-300">ΔSlope:</span>
+              <span className="text-white">{useStore.getState().comparisonResult.delta_slope > 0 ? '+' : ''}{useStore.getState().comparisonResult.delta_slope} {useStore.getState().comparisonResult.slope_units}</span>
+            </div>
+            <div className="flex justify-between text-[10px] text-zinc-400">
+              <span>Pearson Correlation r:</span>
+              <span className="text-emerald-400 font-bold">{useStore.getState().comparisonResult.cross_correlation_r}</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-purple-200/80 mt-2 italic">
+            {useStore.getState().comparisonResult.regime_divergence_summary}
+          </p>
+        </motion.div>
+      )}
+
+      {/* Climate Velocity Telemetry Card */}
+      {useStore.getState().velocityData && (
+        <div className="glass-card p-3 border-cyan-500/20 bg-cyan-950/10">
+          <div className="flex items-center justify-between text-xs font-mono">
+            <span className="text-cyan-400 font-bold flex items-center gap-1.5">
+              🧭 Climate Velocity
+            </span>
+            <span className="text-zinc-400 text-[10px]">Burrows et al. (2011)</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-2 text-center text-xs font-mono">
+            <div className="bg-black/30 p-1.5 rounded">
+              <span className="text-[9px] text-zinc-400 block">Mean Speed</span>
+              <span className="text-cyan-300 font-bold">
+                {useStore.getState().velocityData.summary?.mean_velocity_km_decade || 0} km/dec
+              </span>
+            </div>
+            <div className="bg-black/30 p-1.5 rounded">
+              <span className="text-[9px] text-zinc-400 block">P95 Speed</span>
+              <span className="text-amber-300 font-bold">
+                {useStore.getState().velocityData.summary?.p95_velocity_km_decade || 0} km/dec
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

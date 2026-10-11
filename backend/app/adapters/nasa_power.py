@@ -205,12 +205,15 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         )
 
         logger.info("Requesting live NetCDF from NASA POWER API: %s", url)
+        if not url.startswith("https://power.larc.nasa.gov/"):
+            raise ValueError(f"Untrusted URL scheme or host: {url}")
+
         try:
             req = urllib.request.Request(
                 url,
                 headers={"User-Agent": "EarthSift-NASASpaceApps/2.0 (Scientific Research Instrument)"}
             )
-            with urllib.request.urlopen(req, timeout=timeout_seconds) as response:
+            with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # nosec B310
                 if response.status == 200:
                     content = response.read()
                     if len(content) > 1024:

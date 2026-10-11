@@ -48,22 +48,34 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Center: Mission Badge */}
-        <motion.div
-          className="hidden md:flex items-center gap-3"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <span className="badge-live rounded-full px-3 py-1 text-[10px] font-semibold font-[var(--font-mono)] tracking-wide flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent-sig animate-pulse-glow" />
-            NASA SPACE APPS 2026
-          </span>
-        </motion.div>
+        {/* Center: Mission Controls & Quick Actions */}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => {
+              playTactileClick(800);
+              useStore.getState().startJudgeTour();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-500/20 border border-amber-400/50 hover:border-amber-300 text-amber-300 text-[11px] font-bold font-mono transition-all shadow-md shadow-amber-500/10 hover:scale-105"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+            🏆 Judge Tour
+          </button>
+
+          <button
+            onClick={() => {
+              playTactileClick(700);
+              useStore.getState().setNlqModalOpen(true);
+            }}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-[11px] font-mono transition-all"
+          >
+            <span>💬 NLQ Copilot</span>
+            <kbd className="text-[9px] px-1 py-0.2 rounded bg-white/10 text-zinc-400">Ctrl+K</kbd>
+          </button>
+        </div>
 
         {/* Right: UTC Clock + Status */}
         <div className="flex items-center gap-4">
-          <div className="text-right">
+          <div className="text-right hidden sm:block">
             <div className="text-xs font-[var(--font-mono)] text-accent-cyan tracking-wider tabular-nums">
               {utc}
             </div>
@@ -71,9 +83,9 @@ export default function Header() {
               Mission Clock
             </div>
           </div>
-          <div className="w-px h-6 bg-border-subtle" />
+          <div className="w-px h-6 bg-border-subtle hidden sm:block" />
           <div className="text-[10px] text-text-muted">
-            <span className="text-accent-sig">●</span> API Online
+            <span className="text-accent-sig">●</span> JPL Synced
           </div>
         </div>
       </div>

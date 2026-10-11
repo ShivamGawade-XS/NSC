@@ -27,9 +27,37 @@ const useStore = create((set, get) => ({
   showGibs: false,
   isAnomalyMode: false,
 
+  // Omni-Scale Championship Features
+  velocityData: null,
+  isVelocityMode: false,
+  showCurtainMode: false,
+  curtainSplit: 50, // 0 - 100 percentage
+  timeScrubberYear: null,
+  isTimelinePlaying: false,
+
+  // Dual-location comparison mode (Pin A vs Pin B)
+  compareMode: false,
+  comparePinA: null, // { lat, lon }
+  comparePinB: null, // { lat, lon }
+  comparisonResult: null,
+
+  // Judge Mode Autonomous Tour
+  isJudgeTourActive: false,
+  judgeTourStep: 0,
+
+  // Modals
+  nlqModalOpen: false,
+  latexModalOpen: false,
+  latexContent: '',
+  colabData: null,
+
   // Actions
   setFormField: (field, value) => set({ [field]: value }),
   setBbox: (bbox) => set({ bbox }),
+  setCurtainSplit: (val) => set({ curtainSplit: val }),
+  toggleCurtainMode: () => set((s) => ({ showCurtainMode: !s.showCurtainMode })),
+  setNlqModalOpen: (open) => set({ nlqModalOpen: open }),
+  setLatexModalOpen: (open) => set({ latexModalOpen: open }),
 
   loadPreset: (presetKey) => {
     const preset = DETECTIVE_PRESETS[presetKey];
@@ -57,7 +85,7 @@ const useStore = create((set, get) => ({
 
   executeAnalysis: async () => {
     const { dataset, variable, startYear, endYear, bbox, useFdr } = get();
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, timeScrubberYear: startYear });
 
     const payload = {
       dataset_id: dataset,
@@ -83,6 +111,12 @@ const useStore = create((set, get) => ({
         const sigData = await api.getSignals(data.analysis_id);
         signals = sigData.signals || [];
       } catch { /* signals optional */ }
+
+      // Fetch climate velocity in background
+      try {
+        const vel = await api.getClimateVelocity(data.analysis_id);
+        set({ velocityData: vel });
+      } catch { /* optional */ }
 
       set({
         analysisData: data,
@@ -172,8 +206,24 @@ const useStore = create((set, get) => ({
   },
 
   selectCell: async (lat, lon) => {
-    const { analysisId } = get();
+    const { analysisId, compareMode, comparePinA, comparePinB } = get();
     if (!analysisId) return;
+
+    if (compareMode) {
+      if (!comparePinA) {
+        set({ comparePinA: { lat, lon } });
+        return;
+      }
+      if (!comparePinB) {
+        set({ comparePinB: { lat, lon } });
+        get().runComparison({ lat: comparePinA.lat, lon: comparePinA.lon }, { lat, lon });
+        return;
+      }
+      // If both set, reset Pin A
+      set({ comparePinA: { lat, lon }, comparePinB: null, comparisonResult: null });
+      return;
+    }
+
     try {
       const cell = await api.getCellTimeseries(analysisId, lat, lon);
       set({ selectedCell: cell });
@@ -181,6 +231,55 @@ const useStore = create((set, get) => ({
       console.error('Failed to load cell:', err);
     }
   },
+
+  toggleVelocityMode: async () => {
+    const { isVelocityMode, analysisId, velocityData } = get();
+    if (!isVelocityMode && !velocityData && analysisId) {
+      try {
+        const vel = await api.getClimateVelocity(analysisId);
+        set({ velocityData: vel, isVelocityMode: true });
+        return;
+      } catch (err) {
+        console.error('Failed to load velocity vectors:', err);
+      }
+    }
+    set((s) => ({ isVelocityMode: !s.isVelocityMode }));
+  },
+
+  toggleCompareMode: () => {
+    set((s) => ({
+      compareMode: !s.compareMode,
+      comparePinA: null,
+      comparePinB: null,
+      comparisonResult: null,
+    }));
+  },
+
+  runComparison: async (pinA, pinB) => {
+    const { analysisId } = get();
+    if (!analysisId) return;
+    try {
+      const res = await api.compareLocations({
+        analysis_id: analysisId,
+        lat_a: pinA.lat,
+        lon_a: pinA.lon,
+        lat_b: pinB.lat,
+        lon_b: pinB.lon,
+      });
+      set({ comparisonResult: res });
+    } catch (err) {
+      console.error('Comparison error:', err);
+    }
+  },
+
+  // 4D Timeline Scrubbing
+  setTimeScrubberYear: (year) => set({ timeScrubberYear: year }),
+  toggleTimelinePlay: () => set((s) => ({ isTimelinePlaying: !s.isTimelinePlaying })),
+
+  // Judge Mode Tour
+  startJudgeTour: () => set({ isJudgeTourActive: true, judgeTourStep: 0 }),
+  stopJudgeTour: () => set({ isJudgeTourActive: false, judgeTourStep: 0 }),
+  nextJudgeTourStep: () => set((s) => ({ judgeTourStep: s.judgeTourStep + 1 })),
 
   toggleAnomalyMode: () => set((s) => ({ isAnomalyMode: !s.isAnomalyMode })),
   toggleLisa: () => set((s) => ({ showLisa: !s.showLisa })),

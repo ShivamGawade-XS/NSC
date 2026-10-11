@@ -40,7 +40,8 @@ class Settings:
     # Caching
     CACHE_MAX_SIZE: int = int(os.getenv("CACHE_MAX_SIZE", "256"))
 
-    # Security & Limits
+    # Security & Cryptography
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "earthsift-scientific-hmac-sha256-production-token-2026")
     MAX_BBOX_DEGREES: float = float(os.getenv("MAX_BBOX_DEGREES", "180.0"))
     DEFAULT_FDR_ALPHA: float = float(os.getenv("DEFAULT_FDR_ALPHA", "0.05"))
 
@@ -88,12 +89,11 @@ class Settings:
             if "urs.earthdata.nasa.gov" not in existing:
                 with open(netrc_file, "a", encoding="utf-8") as f:
                     f.write(f"\n{entry}")
-                if not sys.platform.startswith("win"):
-                    os.chmod(netrc_file, 0o600)
-                return True
+            if not sys.platform.startswith("win") and netrc_file.exists():
+                os.chmod(netrc_file, 0o600)
+            return True
         except Exception:
             return False
-        return False
 
 
 settings = Settings()

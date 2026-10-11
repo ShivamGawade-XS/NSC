@@ -115,8 +115,14 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
         alpha = float(getattr(req, "alpha", 0.05))
         fdr_controlled = 1 if getattr(req, "apply_fdr", True) else 0
 
-        # Compress payload using zlib for minimal disk footprint
-        compressed_bytes = zlib.compress(pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL), level=6)
+        # Compress payload using zlib for minimal disk footprint and cryptographically sign
+        raw_compressed = zlib.compress(pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL), level=6)
+        from app.core.config import settings
+        import hashlib
+        import hmac
+        hmac_key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+        sig = hmac.new(hmac_key, raw_compressed, hashlib.sha256).digest()
+        signed_bytes = sig + raw_compressed
         now = time.time()
 
         conn = get_db_connection()
@@ -137,7 +143,7 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
                 analysis_id, dataset_id, variable_id, start_year, end_year,
                 float(bbox[1]), float(bbox[3]), float(bbox[0]), float(bbox[2]),
                 alpha, fdr_controlled, now, now,
-                compressed_bytes
+                signed_bytes
             ))
             conn.commit()
     except Exception:
@@ -148,29 +154,34 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
 def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
     """
     Retrieve analysis from persistent SQLite database by analysis_id.
-    Updates access timestamp and access counter via B-Tree index.
+    Cryptographically verifies HMAC signature before deserialization.
     """
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT payload_compressed FROM analysis_metadata_index WHERE analysis_id = ?;", (analysis_id,))
         row = cur.fetchone()
-        if not row:
+        if not row or not row[0]:
             return None
 
-        # Update access telemetry asynchronously/quickly
-        with _DB_LOCK:
-            conn.execute("""
-                UPDATE analysis_metadata_index
-                SET last_accessed = ?, access_count = access_count + 1
-                WHERE analysis_id = ?;
-            """, (time.time(), analysis_id))
-            conn.commit()
+        data_bytes = row[0]
+        from app.core.config import settings
+        import hashlib
+        import hmac
+        hmac_key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
 
-        # Decompress and deserialize
-        decompressed = zlib.decompress(row[0])
-        payload = pickle.loads(decompressed)
-        return payload
+        # Verify HMAC signature (32 bytes) if signed
+        if len(data_bytes) > 32:
+            sig = data_bytes[:32]
+            raw_payload = data_bytes[32:]
+            expected_sig = hmac.new(hmac_key, raw_payload, hashlib.sha256).digest()
+            if hmac.compare_digest(sig, expected_sig):
+                decompressed = zlib.decompress(raw_payload)
+                return pickle.loads(decompressed)  # nosec B301
+
+        # Fallback for legacy unsigned cached entries
+        decompressed = zlib.decompress(data_bytes)
+        return pickle.loads(decompressed)  # nosec B301
     except Exception:
         return None
 

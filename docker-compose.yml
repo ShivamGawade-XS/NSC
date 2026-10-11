@@ -6,11 +6,23 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: earthsift-engine
+    user: "10001:10001"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     ports:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - ENVIRONMENT=production
+      - HOST=0.0.0.0
       - MERRA2_DATA_DIR=/app/backend/data/fixtures
+      - EARTHSIFT_DB_PATH=/tmp/earthdata_cache.db
       # Optional: Add GEMINI_API_KEY or OPENAI_API_KEY for live AI explanation
       # - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    tmpfs:
+      - /tmp:size=128M,mode=1777
+      - /app/backend/data:size=256M,mode=1770,uid=10001,gid=10001
     restart: unless-stopped

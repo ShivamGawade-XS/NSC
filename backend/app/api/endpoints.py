@@ -11,8 +11,10 @@ import threading
 from collections import OrderedDict
 from typing import Any
 
+from pathlib import Path
+
 import numpy as np
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from starlette.background import BackgroundTask
 
@@ -24,17 +26,25 @@ from app.schemas.analysis import (
     AnalysisSummary,
     CandidateSignal,
     CellDetailResponse,
+    ClimateVelocityResponse,
+    CompareLocationsRequest,
+    CompareLocationsResponse,
     CompoundHazardRequest,
     CompoundHazardResponse,
     ContrastsResponse,
     ExplainRequest,
     ExplainResponse,
+    LatexExportResponse,
     MapLayerResponse,
+    NLQParseRequest,
+    NLQParseResponse,
     ProvenanceResponse,
     SignalsResponse,
     SpatialGridPoint,
     VariableInfo,
+    VelocityVector,
 )
+from app.science.climate_velocity import compute_climate_velocity
 from app.science.compound import compute_compound_hazard
 from app.science.contrasts import find_contrasting_regions
 from app.science.discovery import discover_candidate_signals
@@ -43,11 +53,15 @@ from app.science.export import (
     export_to_geojson,
     export_to_netcdf,
     generate_jupyter_notebook,
+    generate_nasa_latex_memorandum,
     generate_scientific_dossier,
 )
+from app.science.nlq_parser import parse_natural_language_query
 from app.science.trend import (
+    bootstrap_sen_confidence_interval,
     compute_spatial_trends,
     mann_kendall_test,
+    monte_carlo_ar1_significance,
     pettitt_changepoint_test,
     sens_slope,
 )
@@ -62,6 +76,7 @@ ADAPTERS = {
 
 from app.core.config import Settings
 from app.core.db_cache import get_cache_db_stats, load_from_db_cache, save_to_db_cache
+from app.core.limiter import limiter
 
 # Thread-safe in-memory LRU analysis cache
 CACHE_LOCK = threading.Lock()
@@ -101,7 +116,8 @@ def set_cached_analysis(analysis_id: str, value: dict[str, Any], max_size: int |
 
 
 @router.get("/health")
-def health_check() -> dict[str, Any]:
+@limiter.limit("60/minute")
+def health_check(request: Request) -> dict[str, Any]:
     """API health, database cache status, and capabilities."""
     return {
         "status": "healthy",
@@ -118,13 +134,15 @@ def health_check() -> dict[str, Any]:
 
 
 @router.get("/datasets")
-def list_datasets() -> list[dict[str, Any]]:
+@limiter.limit("60/minute")
+def list_datasets(request: Request) -> list[dict[str, Any]]:
     """Return available NASA datasets and supported variables."""
     return [adapter.metadata() for adapter in ADAPTERS.values()]
 
 
 @router.get("/datasets/{dataset_id}")
-def get_dataset(dataset_id: str) -> dict[str, Any]:
+@limiter.limit("60/minute")
+def get_dataset(request: Request, dataset_id: str) -> dict[str, Any]:
     """Retrieve metadata for a specific dataset."""
     adapter = ADAPTERS.get(dataset_id)
     if not adapter:
@@ -133,7 +151,8 @@ def get_dataset(dataset_id: str) -> dict[str, Any]:
 
 
 @router.get("/variables", response_model=list[VariableInfo])
-def list_variables() -> list[VariableInfo]:
+@limiter.limit("60/minute")
+def list_variables(request: Request) -> list[VariableInfo]:
     """Return catalog of all supported physical variables across datasets."""
     variables: list[VariableInfo] = []
     for d_id, adapter in ADAPTERS.items():
@@ -152,7 +171,8 @@ def list_variables() -> list[VariableInfo]:
 
 
 @router.post("/analysis", response_model=AnalysisResponse)
-def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
+@limiter.limit("10/minute")
+def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse:
     """Execute spatiotemporal trend analysis across requested domain."""
     adapter = ADAPTERS.get(req.dataset_id)
     if not adapter:
@@ -325,7 +345,8 @@ def get_analysis(analysis_id: str) -> AnalysisResponse:
 
 
 @router.get("/analysis/{analysis_id}/map", response_model=MapLayerResponse)
-def get_analysis_map(analysis_id: str) -> MapLayerResponse:
+@limiter.limit("60/minute")
+def get_analysis_map(request: Request, analysis_id: str) -> MapLayerResponse:
     """Retrieve spatial grid field and map bounding boundaries."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
@@ -348,10 +369,12 @@ def get_analysis_map(analysis_id: str) -> MapLayerResponse:
 
 @router.get("/analysis/{analysis_id}/timeseries", response_model=CellDetailResponse)
 @router.get("/analysis/{analysis_id}/cell", response_model=CellDetailResponse)
+@limiter.limit("60/minute")
 def get_cell_timeseries(
+    request: Request,
     analysis_id: str,
-    lat: float | None = Query(None, description="Latitude coordinate"),
-    lon: float | None = Query(None, description="Longitude coordinate")
+    lat: float | None = Query(None, ge=-90.0, le=90.0, description="Latitude coordinate"),
+    lon: float | None = Query(None, ge=-180.0, le=180.0, description="Longitude coordinate")
 ) -> CellDetailResponse:
     """Retrieve time series, fitted trend, and structured evidence record for coordinates."""
     cached = get_cached_analysis(analysis_id)
@@ -455,7 +478,8 @@ def get_cell_timeseries(
 
 
 @router.get("/analysis/{analysis_id}/signals", response_model=SignalsResponse)
-def get_candidate_signals(analysis_id: str) -> SignalsResponse:
+@limiter.limit("60/minute")
+def get_candidate_signals(request: Request, analysis_id: str) -> SignalsResponse:
     """Discovery Engine: Return candidate signals worth investigating."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
@@ -478,7 +502,8 @@ def get_candidate_signals(analysis_id: str) -> SignalsResponse:
 
 
 @router.get("/analysis/{analysis_id}/contrasts", response_model=ContrastsResponse)
-def get_analysis_contrasts(analysis_id: str) -> ContrastsResponse:
+@limiter.limit("60/minute")
+def get_analysis_contrasts(request: Request, analysis_id: str) -> ContrastsResponse:
     """Contrast Engine: Return opposing regional trend pairs."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
@@ -495,7 +520,8 @@ def get_analysis_contrasts(analysis_id: str) -> ContrastsResponse:
 
 
 @router.get("/analysis/{analysis_id}/provenance", response_model=ProvenanceResponse)
-def get_analysis_provenance(analysis_id: str) -> ProvenanceResponse:
+@limiter.limit("60/minute")
+def get_analysis_provenance(request: Request, analysis_id: str) -> ProvenanceResponse:
     """Provenance Engine: Return full data lineage, citations, and validation metadata."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
@@ -510,13 +536,15 @@ def get_analysis_provenance(analysis_id: str) -> ProvenanceResponse:
 
 
 @router.post("/explain", response_model=ExplainResponse)
-def explain_evidence(req: ExplainRequest) -> ExplainResponse:
+@limiter.limit("20/minute")
+def explain_evidence(request: Request, req: ExplainRequest) -> ExplainResponse:
     """Downstream scientific explainer: translates verified evidence into clear scientific prose via Gemini/LLM or deterministic fallback."""
     return explain_evidence_with_ai(req)
 
 
 @router.get("/analysis/{analysis_id}/export/netcdf")
-def export_analysis_netcdf(analysis_id: str):
+@limiter.limit("5/minute")
+def export_analysis_netcdf(request: Request, analysis_id: str):
     """Export full spatial analysis as CF-1.8 compliant NetCDF-4 file (viewable in NASA Panoply/QGIS)."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
@@ -545,13 +573,16 @@ def export_analysis_netcdf(analysis_id: str):
         }
     }
 
-    out_dir = tempfile.mkdtemp(prefix="earthsift_")
-    nc_path = os.path.join(out_dir, f"earthsift_{analysis_id}.nc")
+    out_dir = Path(tempfile.mkdtemp(prefix="earthsift_")).resolve()
+    safe_id = "".join(c for c in analysis_id if c.isalnum() or c in ("-", "_")) or "export"
+    nc_path = (out_dir / f"earthsift_{safe_id}.nc").resolve()
+    if not str(nc_path).startswith(str(out_dir)):
+        raise HTTPException(status_code=400, detail="Path traversal security violation.")
     filename = f"earthsift_{req.variable_id}_{req.start_year}_{req.end_year}.nc"
     try:
-        export_to_netcdf(analysis_record, nc_path)
+        export_to_netcdf(analysis_record, str(nc_path))
         return FileResponse(
-            nc_path,
+            str(nc_path),
             media_type="application/x-netcdf",
             filename=filename,
             headers={
@@ -566,7 +597,8 @@ def export_analysis_netcdf(analysis_id: str):
 
 
 @router.get("/analysis/{analysis_id}/export/geojson")
-def export_analysis_geojson(analysis_id: str):
+@limiter.limit("5/minute")
+def export_analysis_geojson(request: Request, analysis_id: str):
     """Export full spatial analysis as GeoJSON FeatureCollection."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
@@ -606,7 +638,8 @@ def export_analysis_geojson(analysis_id: str):
 
 
 @router.get("/analysis/{analysis_id}/dossier")
-def get_scientific_dossier(analysis_id: str):
+@limiter.limit("10/minute")
+def get_scientific_dossier(request: Request, analysis_id: str):
     """Generate a publication-quality NASA Climate Science Dossier in Markdown."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
@@ -644,7 +677,8 @@ def get_scientific_dossier(analysis_id: str):
 
 
 @router.get("/analysis/{analysis_id}/export/notebook")
-def export_analysis_notebook(analysis_id: str):
+@limiter.limit("5/minute")
+def export_analysis_notebook(request: Request, analysis_id: str):
     """Export self-contained reproducible Jupyter Notebook (.ipynb) independently verifiable in Google Colab or JupyterLab."""
     import json
     cached = get_cached_analysis(analysis_id)
@@ -684,7 +718,8 @@ def export_analysis_notebook(analysis_id: str):
 
 
 @router.post("/analysis/compound", response_model=CompoundHazardResponse)
-def run_compound_hazard_analysis(req: CompoundHazardRequest) -> CompoundHazardResponse:
+@limiter.limit("10/minute")
+def run_compound_hazard_analysis(request: Request, req: CompoundHazardRequest) -> CompoundHazardResponse:
     """
     Spatiotemporal Compound Climate Hazard Engine:
     Cross-analyzes joint thermal and hydrological trends (e.g. T2M warming + PRECTOT drying)
@@ -775,5 +810,175 @@ def run_compound_hazard_analysis(req: CompoundHazardRequest) -> CompoundHazardRe
         intensification_fraction=compound_res["intensification_fraction"],
         summary=compound_res["summary"],
         hazard_distribution=dist,
-        cells=cells
+        cells=cells,
+        copula_model=compound_res.get("copula_model"),
+        max_return_period_years=compound_res.get("max_return_period_years"),
+        compound_extreme_cells=compound_res.get("compound_extreme_cells")
     )
+
+
+@router.get("/analysis/{analysis_id}/velocity", response_model=ClimateVelocityResponse)
+@limiter.limit("60/minute")
+def get_climate_velocity(request: Request, analysis_id: str) -> ClimateVelocityResponse:
+    """
+    Compute spatial climate velocity vector field (Burrows et al., Nature 2011).
+    Evaluates the speed (km/decade) and bearing (degrees) of climate isocline migration.
+    """
+    cached = get_cached_analysis(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+
+    raw = cached["raw_slice"]
+    slopes = cached["trend_results"]["slopes"]
+    lats = raw["lat"]
+    lons = raw["lon"]
+
+    vel_res = compute_climate_velocity(
+        slopes=slopes,
+        latitudes=lats,
+        longitudes=lons
+    )
+
+    vector_objs = [VelocityVector(**v) for v in vel_res["vectors"]]
+
+    return ClimateVelocityResponse(
+        analysis_id=analysis_id,
+        variable_id=raw.get("variable_id", "T2M"),
+        variable_name=raw.get("variable_name", "Temperature"),
+        units="km / decade",
+        summary=vel_res["summary"],
+        vectors=vector_objs
+    )
+
+
+@router.post("/copilot/parse-query", response_model=NLQParseResponse)
+@limiter.limit("30/minute")
+def parse_natural_language_scientific_query(request: Request, req: NLQParseRequest) -> NLQParseResponse:
+    """
+    EarthSift NLQ Semantic Copilot:
+    Translates free-form natural language queries into verified Pydantic AnalysisRequests.
+    """
+    return parse_natural_language_query(req.query)
+
+
+@router.post("/analysis/compare", response_model=CompareLocationsResponse)
+@limiter.limit("30/minute")
+def compare_analysis_locations(request: Request, req: CompareLocationsRequest) -> CompareLocationsResponse:
+    """
+    Multi-Region Difference Inspector (Pin A vs Pin B):
+    Analyzes differential trend rates, cross-correlation r, and regime phase divergence.
+    """
+    cached = get_cached_analysis(req.analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{req.analysis_id}' not found.")
+
+    raw = cached["raw_slice"]
+    data_3d = raw["data"]
+    lats = raw["lat"]
+    lons = raw["lon"]
+    years = raw["time"]
+
+    idx_lat_a = int(np.argmin(np.abs(lats - req.lat_a)))
+    idx_lon_a = int(np.argmin(np.abs(lons - req.lon_a)))
+    idx_lat_b = int(np.argmin(np.abs(lats - req.lat_b)))
+    idx_lon_b = int(np.argmin(np.abs(lons - req.lon_b)))
+
+    series_a = data_3d[:, idx_lat_a, idx_lon_a]
+    series_b = data_3d[:, idx_lat_b, idx_lon_b]
+
+    # Evaluate each cell using get_cell_timeseries logic
+    loc_a = get_cell_timeseries(request, req.analysis_id, float(lats[idx_lat_a]), float(lons[idx_lon_a]))
+    loc_b = get_cell_timeseries(request, req.analysis_id, float(lats[idx_lat_b]), float(lons[idx_lon_b]))
+
+    delta_s = round(loc_a.slope - loc_b.slope, 4)
+    rel_div = round(abs(delta_s) / max(0.001, (abs(loc_a.slope) + abs(loc_b.slope)) / 2.0) * 100.0, 1)
+
+    # Cross correlation
+    valid = ~np.isnan(series_a) & ~np.isnan(series_b)
+    if np.sum(valid) > 3 and np.std(series_a[valid]) > 1e-5 and np.std(series_b[valid]) > 1e-5:
+        r_val = float(np.corrcoef(series_a[valid], series_b[valid])[0, 1])
+    else:
+        r_val = 0.0
+
+    p_diff = round(abs(loc_a.p_value - loc_b.p_value), 4)
+
+    summary_text = (
+        f"Location A ({loc_a.lat:.1f}°, {loc_a.lon:.1f}°) trends at {loc_a.slope:+.3f} {raw['slope_units']} "
+        f"vs Location B ({loc_b.lat:.1f}°, {loc_b.lon:.1f}°) at {loc_b.slope:+.3f} {raw['slope_units']} "
+        f"(ΔSlope = {delta_s:+.3f}, Pearson r = {r_val:.2f})."
+    )
+
+    return CompareLocationsResponse(
+        analysis_id=req.analysis_id,
+        variable_name=raw["variable_name"],
+        slope_units=raw["slope_units"],
+        loc_a=loc_a,
+        loc_b=loc_b,
+        delta_slope=delta_s,
+        relative_divergence_pct=rel_div,
+        cross_correlation_r=round(r_val, 3),
+        p_value_difference=p_diff,
+        regime_divergence_summary=summary_text
+    )
+
+
+@router.get("/analysis/{analysis_id}/export/latex")
+@limiter.limit("10/minute")
+def export_analysis_latex(request: Request, analysis_id: str):
+    """Generate publication-ready NASA Technical Memorandum (TM) in LaTeX format with HMAC cryptographic verification."""
+    cached = get_cached_analysis(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+
+    raw = cached["raw_slice"]
+    grid = cached["grid"]
+    req = cached["req"]
+
+    analysis_record = {
+        "variable": req.variable_id,
+        "units": raw.get("display_units", "units"),
+        "results": {
+            "cells": [{"slope": g.slope, "significant": g.is_significant_fdr} for g in grid]
+        }
+    }
+
+    # Generate HMAC signature
+    import hashlib
+    import hmac
+    secret = getattr(Settings, "SECRET_KEY", "earthsift-secret-key-production-salt-2026").encode("utf-8")
+    sig = hmac.new(secret, analysis_id.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    latex_code = generate_nasa_latex_memorandum(analysis_record, hmac_signature=sig[:24])
+    filename = f"NASA_TM_{req.variable_id}_{req.start_year}_{req.end_year}.tex"
+
+    return PlainTextResponse(
+        latex_code,
+        media_type="application/x-latex",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+
+
+@router.get("/analysis/{analysis_id}/export/colab")
+@limiter.limit("15/minute")
+def get_colab_launcher_link(request: Request, analysis_id: str) -> dict[str, Any]:
+    """Provide 1-click Google Colab launch metadata and direct notebook open payload."""
+    cached = get_cached_analysis(analysis_id)
+    if not cached:
+        raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
+
+    req = cached["req"]
+    colab_badge_url = "https://colab.research.google.com/assets/colab-badge.svg"
+    github_colab_url = f"https://colab.research.google.com/github/ShivamGawade-XS/NSC/blob/main/notebooks/earthsift_reproducible_{req.variable_id}.ipynb"
+
+    return {
+        "analysis_id": analysis_id,
+        "variable_id": req.variable_id,
+        "colab_launcher_url": github_colab_url,
+        "badge_markdown": f"[![Open In Colab]({colab_badge_url})]({github_colab_url})",
+        "interactive_execution_ready": True,
+        "runtime": "Python 3 (Google Compute Engine GPU/TPU compatible)"
+    }
+
