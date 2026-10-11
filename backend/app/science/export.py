@@ -181,12 +181,12 @@ def generate_scientific_dossier(analysis_record: dict[str, Any]) -> str:
     min_slope = np.min(slopes) if slopes else 0.0
     max_slope = np.max(slopes) if slopes else 0.0
 
-    dossier = f"""# 🛰️ NASA Earth Science Briefing & Empirical Dossier
+    dossier = f"""# NASA Earth Science Briefing & Empirical Dossier
 **Project:** EarthSift — Autonomous Spatial Trend Discovery Instrument  
 **Dataset:** {prov.get('source', 'NASA MERRA-2 / POWER Reanalysis')}  
 **DOI:** `{prov.get('doi', '10.5067/POWER/10.0.0')}`  
 **Generated:** {time.strftime('%Y-%m-%d %H:%M:%S UTC')}  
-**Data Integrity:** {'⚠️ SYNTHETIC SIMULATION' if analysis_record.get('is_synthetic') else '✅ 100% VERIFIED NASA OBSERVATIONS'}
+**Data Integrity:** {'SYNTHETIC SIMULATION' if analysis_record.get('is_synthetic') else 'VERIFIED NASA OBSERVATIONAL RECORD'}
 
 ---
 
@@ -259,7 +259,7 @@ def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]
                 "cell_type": "markdown",
                 "metadata": {},
                 "source": [
-                    "# 🛰️ EarthSift: Reproducible NASA Climate Trend Analysis\n",
+                    "# EarthSift: Reproducible NASA Climate Trend Analysis\n",
                     "**NASA Space Apps Challenge 2026: Be An Earth System Trend Detective**\n\n",
                     f"- **Variable:** `{var}` ({units})\n",
                     f"- **Data Source:** {source} (DOI: `{doi}`)\n",
@@ -273,7 +273,7 @@ def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Step 1: Scientific Environment Setup\n",
+                    "# Scientific Environment Setup\n",
                     "import numpy as np\n",
                     "from scipy import stats\n",
                     "import matplotlib.pyplot as plt\n",
@@ -287,7 +287,7 @@ def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Step 2: Implement Non-Parametric Mann-Kendall & Sen's Slope\n",
+                    "# Non-Parametric Mann-Kendall & Sen's Slope Estimation\n",
                     "def mann_kendall_test(y, alpha=0.05):\n",
                     "    n = len(y)\n",
                     "    diff = y[None, :] - y[:, None]\n",
@@ -316,7 +316,7 @@ def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Step 3: Pettitt (1979) Abrupt Regime Changepoint Test\n",
+                    "# Pettitt (1979) Abrupt Regime Changepoint Test\n",
                     "def pettitt_changepoint(y):\n",
                     "    n = len(y)\n",
                     "    ranks = stats.rankdata(y)\n",
@@ -337,7 +337,7 @@ def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Step 4: Spatial Analysis Grid Summary\n",
+                    "# Spatial Analysis Grid Summary\n",
                     f"grid_data = {sample_data_json}\n",
                     "print(f'Total sample cells loaded: {len(grid_data)}')\n",
                     "slopes = [c['slope'] for c in grid_data]\n",
@@ -352,7 +352,7 @@ def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Step 5: Visualizing Spatial Trend Distribution\n",
+                    "# Visualizing Spatial Trend Distribution\n",
                     "plt.figure(figsize=(9, 5), dpi=100)\n",
                     "lons = [c['lon'] for c in grid_data]\n",
                     "lats = [c['lat'] for c in grid_data]\n",

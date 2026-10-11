@@ -102,10 +102,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-# 1. Security Headers & Payload Size Guard Middleware
+# Security headers and request size limiter
 class SecurityHardeningMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Enforce Request Body Size Limit (Anti-DoS / Memory exhaustion)
+        # Bound request payload size to prevent memory exhaustion
         content_length = request.headers.get("content-length")
         if content_length and int(content_length) > MAX_CONTENT_LENGTH:
             return JSONResponse(
@@ -115,7 +115,7 @@ class SecurityHardeningMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        # Inject Full Suite of OWASP Security Headers
+        # Baseline security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -125,7 +125,7 @@ class SecurityHardeningMiddleware(BaseHTTPMiddleware):
         )
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
-        # Content Security Policy (allows self, dark matter basemaps, and NASA GIBS satellite tiles)
+        # Content Security Policy for API docs and tile endpoints
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
@@ -147,7 +147,7 @@ class SecurityHardeningMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHardeningMiddleware)
 
 
-# 2. Dynamic Strict CORS Configuration
+# Cross-Origin Resource Sharing (CORS) origin whitelist
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
 if allowed_origins_env:
     allow_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]

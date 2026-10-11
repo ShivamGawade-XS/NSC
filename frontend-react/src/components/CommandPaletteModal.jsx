@@ -6,11 +6,11 @@ import * as api from '../api/client';
 import { playTactileClick, playTelemetryChime } from '../utils/audio';
 
 const SUGGESTIONS = [
-  'Show me warming in North America from 1995 to 2022 with high confidence',
-  'Mediterranean precipitation drought between 1990 and 2020',
-  'Arctic amplification warming trends from 2000 to 2024',
-  'Sahel hydrological greening trends',
-  'Global solar radiation changes'
+  'Warming trends in North America from 1995 to 2022 (high confidence)',
+  'Mediterranean precipitation deficit between 1990 and 2020',
+  'Arctic amplification surface temperature from 2000 to 2024',
+  'Sahel hydrological greening transition trends',
+  'Global surface shortwave downward radiation shifts'
 ];
 
 export default function CommandPaletteModal() {
@@ -46,15 +46,14 @@ export default function CommandPaletteModal() {
     if (!q.trim()) return;
     setIsSearching(true);
     playTactileClick(880);
-    const toastId = toast.loading('Parsing scientific intent...');
+    const toastId = toast.loading('Parsing query parameters...');
 
     try {
       const res = await api.parseNLQ(q);
       const req = res.analysis_request;
-      toast.success(res.interpreted_intent, { id: toastId, duration: 4000 });
+      toast.success(res.interpreted_intent, { id: toastId, duration: 3500 });
       playTelemetryChime();
 
-      // Populate store
       useStore.setState({
         dataset: req.dataset_id,
         variable: req.variable_id,
@@ -71,10 +70,9 @@ export default function CommandPaletteModal() {
 
       setOpen(false);
       setQuery('');
-      // Trigger execution
       useStore.getState().executeAnalysis();
     } catch (err) {
-      toast.error(`NLQ Failed: ${err.message}`, { id: toastId });
+      toast.error(`Query resolution error: ${err.message}`, { id: toastId });
     } finally {
       setIsSearching(false);
     }
@@ -84,34 +82,34 @@ export default function CommandPaletteModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: -20 }}
+          initial={{ opacity: 0, scale: 0.98, y: -10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -20 }}
-          className="w-full max-w-2xl bg-[#080d1a] border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-500/10 overflow-hidden"
+          exit={{ opacity: 0, scale: 0.98, y: -10 }}
+          className="w-full max-w-2xl bg-[#0B0E14] border border-white/15 rounded-lg shadow-2xl overflow-hidden text-white"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-white/[0.02]">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
-              <h2 className="text-sm font-semibold text-white tracking-wide font-[var(--font-mono)]">
-                NASA EARTHSIFT SEMANTIC COPILOT (NLQ)
+              <span className="w-2 h-2 rounded-full bg-blue-400" />
+              <h2 className="text-xs font-semibold tracking-wider font-mono text-zinc-200 uppercase">
+                Natural Language Spatial Query Palette
               </h2>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/10">ESC to close</span>
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/10">ESC</span>
               <button
                 onClick={() => setOpen(false)}
-                className="text-zinc-400 hover:text-white text-xs px-2 py-1"
+                className="text-zinc-400 hover:text-white px-1.5 py-0.5"
               >
-                ✕
+                Close
               </button>
             </div>
           </div>
 
           {/* Input Box */}
-          <div className="p-6">
+          <div className="p-5">
             <div className="relative">
               <input
                 ref={inputRef}
@@ -119,24 +117,24 @@ export default function CommandPaletteModal() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-                placeholder="Ask in natural language (e.g. 'Show warming in North America from 1995 to 2022')..."
-                className="w-full bg-[#040711] border border-cyan-500/40 rounded-xl px-4 py-3.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono shadow-inner"
+                placeholder="Enter spatiotemporal inquiry (e.g., 'Surface warming in North America from 1995 to 2022')..."
+                className="w-full bg-[#05070B] border border-white/20 rounded-md px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-400 font-mono"
               />
               <button
                 disabled={isSearching}
                 onClick={() => handleSubmit()}
-                className="absolute right-2 top-2 bottom-2 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-semibold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-md shadow-cyan-500/20"
+                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded transition-colors flex items-center font-mono"
               >
-                {isSearching ? 'Parsing...' : 'Execute ⏎'}
+                {isSearching ? 'Resolving...' : 'Execute'}
               </button>
             </div>
 
             {/* Suggestions */}
             <div className="mt-4">
-              <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 mb-2">
-                Example Scientific Queries
+              <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mb-2">
+                Sample Research Inquiries
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {SUGGESTIONS.map((s, idx) => (
                   <button
                     key={idx}
@@ -144,10 +142,10 @@ export default function CommandPaletteModal() {
                       setQuery(s);
                       handleSubmit(s);
                     }}
-                    className="w-full text-left text-xs text-zinc-300 hover:text-cyan-300 px-3 py-2 rounded-lg bg-white/[0.02] hover:bg-cyan-950/30 border border-white/5 hover:border-cyan-500/30 transition-all font-mono flex items-center justify-between group"
+                    className="w-full text-left text-xs text-zinc-300 hover:text-white px-3 py-2 rounded bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-white/15 transition-colors font-mono flex items-center justify-between group"
                   >
                     <span>{s}</span>
-                    <span className="text-[10px] text-zinc-500 group-hover:text-cyan-400">Run →</span>
+                    <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">&rarr;</span>
                   </button>
                 ))}
               </div>

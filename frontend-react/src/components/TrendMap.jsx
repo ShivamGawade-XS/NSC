@@ -339,17 +339,27 @@ export default function TrendMap() {
       )}
 
       {/* 4D Spatiotemporal Timeline Scrubber Dock */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-[#060a16]/90 border border-white/15 px-4 py-2 rounded-xl backdrop-blur-md shadow-xl">
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-[#0B0E14]/95 border border-white/10 px-3.5 py-1.5 rounded-md backdrop-blur-md shadow-lg text-xs font-mono">
         <button
           onClick={() => {
             playTactileClick(600);
             useStore.getState().toggleTimelinePlay();
           }}
-          className="text-xs px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30 font-mono"
+          className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 transition-colors"
         >
-          {isTimelinePlaying ? '⏸ Pause' : '▶ Play 4D'}
+          {isTimelinePlaying ? (
+            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          ) : (
+            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+          )}
+          <span>{isTimelinePlaying ? 'Pause' : 'Play 4D'}</span>
         </button>
-        <span className="text-xs font-mono text-white font-bold tracking-wider">
+        <span className="font-bold text-white tracking-wider tabular-nums">
           {timeScrubberYear || startYear}
         </span>
         <input
@@ -358,27 +368,27 @@ export default function TrendMap() {
           max={endYear}
           value={timeScrubberYear || startYear}
           onChange={(e) => useStore.getState().setTimeScrubberYear(parseInt(e.target.value, 10))}
-          className="w-32 accent-cyan-400 cursor-pointer"
+          className="w-28 accent-blue-500 cursor-pointer h-1"
         />
-        <span className="text-[10px] font-mono text-zinc-400">
+        <span className="text-[10px] text-zinc-400">
           {startYear}–{endYear}
         </span>
       </div>
 
-      {/* Bottom Floating Mission HUD Dock */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-1.5 bg-[#060a16]/90 border border-white/15 px-3 py-1.5 rounded-xl backdrop-blur-md shadow-2xl">
+      {/* Bottom Floating GIS Instrument HUD Dock */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-1.5 bg-[#0B0E14]/95 border border-white/10 px-2.5 py-1.5 rounded-md backdrop-blur-md shadow-lg">
         <button
           onClick={() => {
             playTactileClick(650);
             useStore.getState().toggleCurtainMode();
           }}
-          className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
             showCurtainMode
-              ? 'bg-amber-400 text-black font-bold shadow-md shadow-amber-400/20'
-              : 'bg-white/5 text-zinc-300 hover:text-white border border-white/10'
+              ? 'bg-amber-500 text-black font-semibold'
+              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
           }`}
         >
-          🪟 Curtain
+          Curtain Wipe
         </button>
 
         <button
@@ -386,13 +396,13 @@ export default function TrendMap() {
             playTactileClick(700);
             useStore.getState().toggleVelocityMode();
           }}
-          className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
             isVelocityMode
-              ? 'bg-cyan-400 text-black font-bold shadow-md shadow-cyan-400/20'
-              : 'bg-white/5 text-zinc-300 hover:text-white border border-white/10'
+              ? 'bg-blue-500 text-white font-semibold'
+              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
           }`}
         >
-          🧭 Velocity
+          Climate Velocity
         </button>
 
         <button
@@ -400,13 +410,13 @@ export default function TrendMap() {
             playTactileClick(750);
             useStore.getState().toggleCompareMode();
           }}
-          className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
             compareMode
-              ? 'bg-purple-400 text-black font-bold shadow-md shadow-purple-400/20'
-              : 'bg-white/5 text-zinc-300 hover:text-white border border-white/10'
+              ? 'bg-purple-600 text-white font-semibold'
+              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
           }`}
         >
-          📍 Compare A/B
+          Dual Compare
         </button>
 
         <button
@@ -414,13 +424,13 @@ export default function TrendMap() {
             playTactileClick(600);
             useStore.getState().toggleLisa();
           }}
-          className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
             showLisa
-              ? 'bg-emerald-400 text-black font-bold'
-              : 'bg-white/5 text-zinc-300 hover:text-white border border-white/10'
+              ? 'bg-emerald-600 text-white font-semibold'
+              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
           }`}
         >
-          📊 LISA
+          LISA Clusters
         </button>
 
         <button
@@ -428,13 +438,13 @@ export default function TrendMap() {
             playTactileClick(600);
             useStore.getState().toggleMask();
           }}
-          className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all ${
+          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
             maskSigOnly
-              ? 'bg-blue-400 text-black font-bold'
-              : 'bg-white/5 text-zinc-300 hover:text-white border border-white/10'
+              ? 'bg-sky-600 text-white font-semibold'
+              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
           }`}
         >
-          🎯 Sig Only
+          Significant Only
         </button>
 
         <button
@@ -442,9 +452,9 @@ export default function TrendMap() {
             playTactileClick(500);
             mapInstanceRef.current?.setView([34.0, -98.0], 5);
           }}
-          className="px-2.5 py-1 rounded text-[11px] font-mono bg-white/5 text-zinc-400 hover:text-white border border-white/10"
+          className="px-2 py-1 rounded text-xs font-mono bg-white/[0.03] text-zinc-400 hover:text-white border border-white/10 transition-colors"
         >
-          🔄 Reset
+          Reset Extent
         </button>
       </div>
 

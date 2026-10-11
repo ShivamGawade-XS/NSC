@@ -41,7 +41,10 @@ const useStore = create((set, get) => ({
   comparePinB: null, // { lat, lon }
   comparisonResult: null,
 
-  // Judge Mode Autonomous Tour
+  // Curated Regional Case Studies Tour
+  isCaseStudyTourOpen: false,
+  tourStepIndex: 0,
+  // Backward compatibility alias
   isJudgeTourActive: false,
   judgeTourStep: 0,
 
@@ -276,10 +279,14 @@ const useStore = create((set, get) => ({
   setTimeScrubberYear: (year) => set({ timeScrubberYear: year }),
   toggleTimelinePlay: () => set((s) => ({ isTimelinePlaying: !s.isTimelinePlaying })),
 
-  // Judge Mode Tour
-  startJudgeTour: () => set({ isJudgeTourActive: true, judgeTourStep: 0 }),
-  stopJudgeTour: () => set({ isJudgeTourActive: false, judgeTourStep: 0 }),
-  nextJudgeTourStep: () => set((s) => ({ judgeTourStep: s.judgeTourStep + 1 })),
+  // Curated Regional Case Studies Tour
+  openCaseStudyTour: () => set({ isCaseStudyTourOpen: true, isJudgeTourActive: true, tourStepIndex: 0, judgeTourStep: 0 }),
+  closeCaseStudyTour: () => set({ isCaseStudyTourOpen: false, isJudgeTourActive: false, tourStepIndex: 0, judgeTourStep: 0 }),
+  nextCaseStudyStep: () => set((s) => ({ tourStepIndex: s.tourStepIndex + 1, judgeTourStep: s.judgeTourStep + 1 })),
+  // Aliases
+  startJudgeTour: () => set({ isCaseStudyTourOpen: true, isJudgeTourActive: true, tourStepIndex: 0, judgeTourStep: 0 }),
+  stopJudgeTour: () => set({ isCaseStudyTourOpen: false, isJudgeTourActive: false, tourStepIndex: 0, judgeTourStep: 0 }),
+  nextJudgeTourStep: () => set((s) => ({ tourStepIndex: s.tourStepIndex + 1, judgeTourStep: s.judgeTourStep + 1 })),
 
   toggleAnomalyMode: () => set((s) => ({ isAnomalyMode: !s.isAnomalyMode })),
   toggleLisa: () => set((s) => ({ showLisa: !s.showLisa })),
