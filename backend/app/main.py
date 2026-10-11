@@ -72,9 +72,24 @@ def earthdata_auth_status():
     """Report NASA Earthdata Login authentication state."""
     return settings.get_earthdata_auth_status()
 
-# Mount frontend static web instrument
+from fastapi.responses import FileResponse
+
+# Mount frontend web instrument (prefers React build with SPA support, falls back to legacy frontend)
+react_dist_dir = Path(__file__).resolve().parent.parent.parent / "frontend-react" / "dist"
 frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"
-if frontend_dir.exists():
+
+if react_dist_dir.exists() and (react_dist_dir / "index.html").exists():
+    assets_dir = react_dist_dir / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="react_assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        file_path = react_dist_dir / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(react_dist_dir / "index.html")
+elif frontend_dir.exists():
     app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
 

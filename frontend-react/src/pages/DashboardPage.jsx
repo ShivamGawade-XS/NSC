@@ -1,0 +1,110 @@
+import { Toaster } from 'react-hot-toast';
+import Header from '../components/Header';
+import TrendMap from '../components/TrendMap';
+import TimeSeriesChart from '../components/TimeSeriesChart';
+import AnalysisPanel from '../components/AnalysisPanel';
+import SignalsList from '../components/SignalsList';
+import EvidencePanel from '../components/EvidencePanel';
+import ExportButtons from '../components/ExportButtons';
+import useStore from '../store/useStore';
+
+export default function DashboardPage() {
+  const isLoading = useStore((s) => s.isLoading);
+  const error = useStore((s) => s.error);
+  const analysisData = useStore((s) => s.analysisData);
+
+  return (
+    <div className="min-h-screen bg-bg-deep">
+      <Header />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: 'rgba(13, 13, 18, 0.95)',
+            color: '#f8fafc',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            backdropFilter: 'blur(12px)',
+            fontSize: '13px',
+            fontFamily: 'Inter, sans-serif',
+          },
+        }}
+      />
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="text-center">
+            <div className="loading-spinner mx-auto mb-4" />
+            <p className="text-sm font-semibold text-text-main mb-1">Computing Trend Analysis...</p>
+            <p className="text-xs text-text-muted">Mann-Kendall • FDR Correction • LISA Clustering</p>
+          </div>
+        </div>
+      )}
+
+      {/* Main Dashboard Grid */}
+      <main className="pt-[78px] p-4 max-w-[1920px] mx-auto">
+        {/* Map Subtitle Bar */}
+        {analysisData && !analysisData.isCompound && (
+          <div className="glass-card px-4 py-2 mb-4 flex items-center justify-between">
+            <div className="text-xs text-text-secondary font-[var(--font-mono)]">
+              {analysisData.variable_name} ({analysisData.time_span}) •{' '}
+              {analysisData.summary.significant_cells_fdr} / {analysisData.summary.total_cells} Significant Cells [FDR (q ≤ 0.05)]
+            </div>
+            {analysisData.summary?.spatial_autocorrelation && (
+              <div className="text-[10px] text-text-muted font-[var(--font-mono)]">
+                Moran's I = {analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'} (
+                {analysisData.summary.spatial_autocorrelation.interpretation})
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Error toast */}
+        {error && (
+          <div className="glass-card px-4 py-3 mb-4 border-accent-warming/30 text-xs text-accent-warming">
+            ❌ {error}
+          </div>
+        )}
+
+        {/* 3-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_360px] gap-4">
+          {/* Left: Controls */}
+          <div className="space-y-4 lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto lg:pr-2">
+            <AnalysisPanel />
+            <SignalsList />
+            <ExportButtons />
+          </div>
+
+          {/* Center: Map + Chart */}
+          <div className="space-y-4">
+            <div className="h-[50vh] min-h-[400px]">
+              <TrendMap />
+            </div>
+            <div className="glass-card p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
+                  Time Series Analysis
+                </h3>
+                {useStore.getState().selectedCell && (
+                  <span className="text-[10px] text-text-muted font-[var(--font-mono)]">
+                    {useStore.getState().selectedCell?.slope > 0 ? '+' : ''}
+                    {useStore.getState().selectedCell?.slope?.toFixed(4)}{' '}
+                    {useStore.getState().selectedCell?.slope_units}
+                  </span>
+                )}
+              </div>
+              <div className="h-[250px]">
+                <TimeSeriesChart />
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Evidence */}
+          <div className="lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto lg:pr-2">
+            <EvidencePanel />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
