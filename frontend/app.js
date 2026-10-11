@@ -154,7 +154,12 @@ function updateVariableOptions(datasetId) {
 }
 
 // Toast notification system (replaces banner hijacking)
-const TOAST_ICONS = { info: 'ℹ️', success: '✅', error: '❌', warning: '⚠️' };
+const TOAST_ICONS = {
+  info: '<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>',
+  success: '<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>',
+  error: '<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M15 9l-6 6m0-6l6 6"/></svg>',
+  warning: '<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>'
+};
 
 function showToast(message, type = 'info', durationMs = 5000) {
   const container = document.getElementById('toastContainer');
@@ -576,7 +581,7 @@ async function executeAnalysis() {
   } finally {
     hideLoadingOverlay();
     btn.disabled = false;
-    btn.innerHTML = `<span class="btn-icon">⚡</span> Run Trend Detection`;
+    btn.innerHTML = `Execute Trend Detection`;
   }
 }
 
@@ -728,16 +733,16 @@ async function executeCompoundHazardAnalysis() {
           <strong>Multivariate Risk Engine:</strong> ${data.summary}<br/>
           <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
             <span style="background:rgba(239,68,68,0.2); color:#f87171; padding:2px 6px; border-radius:4px; font-size:0.75rem;">
-              🔥 Severe Aridification: ${severeArid}
+              Severe Aridification: ${severeArid}
             </span>
             <span style="background:rgba(59,130,246,0.2); color:#60a5fa; padding:2px 6px; border-radius:4px; font-size:0.75rem;">
-              🌊 Intensification: ${hydroInten}
+              Intensification: ${hydroInten}
             </span>
             <span style="background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-size:0.75rem;">
-              🍂 Moderate Drying: ${modDrying}
+              Moderate Drying: ${modDrying}
             </span>
             <span style="background:rgba(100,116,139,0.2); color:#94a3b8; padding:2px 6px; border-radius:4px; font-size:0.75rem;">
-              ⚖️ Baseline: ${neutral}
+              Baseline: ${neutral}
             </span>
           </div>
         </div>
@@ -757,7 +762,7 @@ async function executeCompoundHazardAnalysis() {
     hideLoadingOverlay();
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = `<span class="btn-icon">🔥</span> Compound Hazard (T + P)`;
+      btn.innerHTML = `Compound Hazard Analysis (T & P)`;
     }
   }
 }
@@ -823,7 +828,7 @@ async function loadCandidateSignals(analysisId) {
           </div>
         </div>
         <div class="signal-score-badge" title="${sig.ranking_rationale}">
-          ★ ${sig.discovery_score.toFixed(3)}
+          Score: ${sig.discovery_score.toFixed(3)}
         </div>
       `;
 
@@ -1304,8 +1309,8 @@ window.addEventListener("DOMContentLoaded", () => {
       isAnomalyMode = !isAnomalyMode;
       toggleAnomalyBtn.classList.toggle("active", isAnomalyMode);
       toggleAnomalyBtn.innerHTML = isAnomalyMode
-        ? `<span class="btn-icon">✓</span> Anomaly (Δ) Active`
-        : `<span class="btn-icon">Δ</span> Anomaly Mode`;
+        ? `Anomaly Filter: Active`
+        : `Delta Anomaly Mode`;
       if (currentSelectedCell) {
         renderTimeSeriesChart(currentSelectedCell);
       }
@@ -1633,7 +1638,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (shareLinkBtn) {
     shareLinkBtn.addEventListener("click", () => {
       navigator.clipboard.writeText(window.location.href).then(() => {
-        showToast("🔗 Shareable link copied to clipboard!", "success", 3500);
+        showToast("Shareable link copied to clipboard.", "success", 3500);
       }).catch(() => {
         showToast("Share URL: " + window.location.href, "info", 5000);
       });

@@ -33,32 +33,35 @@ export default function Header() {
                 </h1>
                 <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent-cyan/10 text-accent-cyan font-mono border border-accent-cyan/20">v1.0</span>
               </div>
-              <p className="text-[10px] text-text-muted tracking-widest uppercase font-mono">
-                Earth System Trend Detective
+              <p className="text-[10px] text-zinc-400 tracking-wider uppercase font-mono">
+                Earth System Spatiotemporal Explorer
               </p>
             </div>
           </Link>
-          <div className="hidden lg:flex items-center gap-2 pl-4 border-l border-white/10">
-            <Link to="/" className="text-xs text-text-muted hover:text-text-main px-2.5 py-1 rounded transition-colors font-medium">
-              Home
+          <div className="hidden lg:flex items-center gap-1.5 pl-4 border-l border-white/10">
+            <Link to="/" className="text-xs text-zinc-400 hover:text-white px-2.5 py-1 rounded transition-colors font-medium">
+              Overview
             </Link>
-            <Link to="/dashboard" className="text-xs text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded border border-accent-cyan/20 font-medium">
-              Mission Console
+            <Link to="/dashboard" className="text-xs text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded border border-blue-500/20 font-medium">
+              Analysis Workspace
             </Link>
           </div>
         </div>
 
         {/* Center: Mission Controls & Quick Actions */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => {
               playTactileClick(800);
-              useStore.getState().startJudgeTour();
+              useStore.getState().openCaseStudyTour();
             }}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-500/20 border border-amber-400/50 hover:border-amber-300 text-amber-300 text-[11px] font-bold font-mono transition-all shadow-md shadow-amber-500/10 hover:scale-105"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 hover:border-amber-400/60 text-amber-300 text-xs font-medium font-mono transition-colors"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-            🏆 Judge Tour
+            <svg className="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+            </svg>
+            <span>Curated Case Studies</span>
           </button>
 
           <button
@@ -66,10 +69,14 @@ export default function Header() {
               playTactileClick(700);
               useStore.getState().setNlqModalOpen(true);
             }}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-[11px] font-mono transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white/[0.04] border border-white/10 hover:border-blue-400/50 text-zinc-300 text-xs font-mono transition-colors"
           >
-            <span>💬 NLQ Copilot</span>
-            <kbd className="text-[9px] px-1 py-0.2 rounded bg-white/10 text-zinc-400">Ctrl+K</kbd>
+            <svg className="w-3.5 h-3.5 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span>Query Palette</span>
+            <kbd className="text-[10px] px-1 py-0.2 rounded bg-white/10 text-zinc-400 border border-white/10">Ctrl+K</kbd>
           </button>
         </div>
 

@@ -63,10 +63,11 @@ export default function SignalsList() {
                   </div>
                 </div>
                 <div
-                  className="text-xs font-bold font-[var(--font-mono)] text-accent-anomaly shrink-0"
+                  className="text-xs font-bold font-[var(--font-mono)] text-accent-anomaly shrink-0 flex items-center gap-1.5"
                   title={sig.ranking_rationale}
                 >
-                  ★ {sig.discovery_score.toFixed(3)}
+                  <span className="text-[10px] text-text-muted font-normal uppercase tracking-wider">Score</span>
+                  <span className="tabular-nums">{sig.discovery_score.toFixed(3)}</span>
                 </div>
               </motion.button>
             );

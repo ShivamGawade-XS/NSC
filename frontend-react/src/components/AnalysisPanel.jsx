@@ -19,20 +19,20 @@ export default function AnalysisPanel() {
       {/* Quick Preset Ribbon */}
       <div>
         <div className="text-[10px] uppercase tracking-widest text-text-muted mb-2 font-semibold">
-          Quick Investigations
+          Regional Transect Presets
         </div>
         <div className="flex flex-wrap gap-2">
           {Object.entries(DETECTIVE_PRESETS).map(([key, preset]) => (
             <button
               key={key}
               onClick={() => loadPreset(key)}
-              className="preset-pill"
+              className="preset-pill font-mono text-[11px]"
               title={preset.desc}
             >
-              {key === 'case1' && '🌡️ Texas Heat'}
-              {key === 'case2' && '🔥 SW Drought'}
-              {key === 'case3' && '🌎 Continental'}
-              {key === 'case4' && '🌧️ Ag Belt'}
+              {key === 'case1' && 'Texas Thermal Basin'}
+              {key === 'case2' && 'SW Arid Transect'}
+              {key === 'case3' && 'Continental CONUS'}
+              {key === 'case4' && 'Midwest Ag Corridor'}
             </button>
           ))}
         </div>
@@ -155,24 +155,32 @@ export default function AnalysisPanel() {
         <button
           onClick={executeAnalysis}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-accent-cyan/20 to-accent-blue/20 border border-accent-cyan/30 hover:border-accent-cyan/60 text-accent-cyan rounded-lg px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md px-4 py-2.5 text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           {isLoading ? (
             <>
-              <span className="loading-spinner !w-4 !h-4 !border-2" />
+              <span className="loading-spinner !w-3.5 !h-3.5 !border-2" />
               Computing Trends...
             </>
           ) : (
-            <>⚡ Run Trend Detection</>
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+              </svg>
+              Execute Trend Detection
+            </span>
           )}
         </button>
 
         <button
           onClick={executeCompoundAnalysis}
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 bg-bg-elevated border border-border-subtle hover:border-accent-warming/40 text-text-secondary hover:text-accent-warming rounded-lg px-4 py-2 text-xs font-medium transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 bg-neutral-900 border border-neutral-800 hover:border-amber-600/50 text-neutral-300 hover:text-amber-400 rounded-md px-4 py-2 text-xs font-medium transition-all disabled:opacity-50"
         >
-          🔥 Compound Hazard (T + P)
+          <svg className="w-3.5 h-3.5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+          </svg>
+          Compound Hazard Analysis (T & P)
         </button>
       </div>
     </div>

@@ -30,21 +30,21 @@
   <header class="app-header">
     <a href="landing.html" class="brand" style="text-decoration:none;color:inherit;" title="Back to Landing Page">
       <div class="brand-logo">
-        <span class="globe-icon">🌍</span>
+        <span class="globe-icon font-mono font-bold">ES</span>
       </div>
       <div>
         <h1 class="brand-title">EarthSift <span class="badge-tag">NASA Space Apps 2026</span></h1>
-        <p class="brand-subtitle">Be An Earth System Trend Detective • Evidence-First Discovery Engine</p>
+        <p class="brand-subtitle">Spatiotemporal Climate Trend Discovery Instrument</p>
       </div>
     </a>
 
     <!-- Quick Preset Investigation Ribbon -->
-    <div class="preset-quick-ribbon" id="presetQuickRibbon" role="toolbar" aria-label="Quick Detective Presets">
+    <div class="preset-quick-ribbon" id="presetQuickRibbon" role="toolbar" aria-label="Regional Transect Presets">
       <span class="ribbon-label">CASES:</span>
-      <button class="preset-pill-btn active" data-preset="case1" title="Texas & Southern Plains Thermal Acceleration (NASA POWER Verified)">🔥 Texas Warming</button>
-      <button class="preset-pill-btn" data-preset="case2" title="Southwest US Compound Aridification (Temperature + Precipitation Dual Hazard)">🌵 Southwest Aridification</button>
-      <button class="preset-pill-btn" data-preset="case3" title="North American Continental Synoptic Footprint">🌎 Continental Footprint</button>
-      <button class="preset-pill-btn" data-preset="case4" title="Agricultural Belt Hydrological Variability">🌾 Crop Belt Dynamics</button>
+      <button class="preset-pill-btn active" data-preset="case1" title="Texas & Southern Plains Thermal Acceleration (NASA POWER Verified)">Texas Warming</button>
+      <button class="preset-pill-btn" data-preset="case2" title="Southwest US Compound Aridification (Temperature + Precipitation Dual Hazard)">Southwest Aridification</button>
+      <button class="preset-pill-btn" data-preset="case3" title="North American Continental Synoptic Footprint">Continental Footprint</button>
+      <button class="preset-pill-btn" data-preset="case4" title="Agricultural Belt Hydrological Variability">Crop Belt Dynamics</button>
     </div>
     
     <div class="header-metrics">
@@ -68,11 +68,11 @@
         <span class="pill-label">UTC:</span>
         <span class="pill-val" id="headerUtcClock">--:--:--</span>
       </div>
-      <button id="detectiveTourBtn" class="btn btn-sm btn-tour" title="Launch Interactive Detective Case Tour">
-        <span>🕵️</span> Detective Case Tour
+      <button id="detectiveTourBtn" class="btn btn-sm btn-tour" title="Launch Curated Transect Tour">
+        <span>Transect Tour</span>
       </button>
       <button id="shareLinkBtn" class="btn btn-sm btn-tour" title="Copy shareable deep-link with current coordinates and parameters">
-        <span>🔗</span> Share Link
+        <span>Share Link</span>
       </button>
       <div class="status-indicator">
         <span class="status-dot live"></span>
@@ -94,11 +94,11 @@
     <!-- LEFT: Analysis & Controls Panel -->
     <aside class="panel controls-panel">
       <div class="panel-header">
-        <h2>🔬 Investigation Controls</h2>
+        <h2>Investigation Controls</h2>
       </div>
 
       <div class="form-group preset-group">
-        <label for="presetSelect">🎯 Detective Case Presets</label>
+        <label for="presetSelect">Investigation Presets</label>
         <select id="presetSelect" class="input-control preset-control">
           <option value="case1" selected>Case 1: Texas & S. Plains Warming (NASA Verified)</option>
           <option value="case2">Case 2: Southwest US Compound Aridification (T + P)</option>
@@ -112,7 +112,7 @@
       <div class="form-group">
         <label for="datasetSelect">Dataset Provider</label>
         <select id="datasetSelect" class="input-control">
-          <option value="nasa_power" selected>🛰️ NASA POWER Reanalysis (NASA Langley LaRC)</option>
+          <option value="nasa_power" selected>NASA POWER Reanalysis (NASA Langley LaRC)</option>
           <option value="merra2_reanalysis">NASA MERRA-2 Atmospheric Reanalysis (GMAO)</option>
         </select>
         <span class="field-hint" id="datasetHint">NASA Langley Research Center • CF-1.8 Compliant • DOI: 10.5067/POWER/10.0.0</span>
@@ -149,7 +149,7 @@
       <div class="form-group">
         <label class="label-split">
           <span>Bounding Box (Geographic Region)</span>
-          <button id="clearBboxBtn" class="btn-clear-bbox" title="Clear bounding box fields">✕ Clear</button>
+          <button id="clearBboxBtn" class="btn-clear-bbox" title="Clear bounding box fields">Clear</button>
         </label>
         <div class="bbox-grid">
           <div class="bbox-row">
@@ -166,19 +166,19 @@
 
       <div class="action-buttons-group">
         <button id="runAnalysisBtn" class="btn btn-primary" title="Run analysis (Enter)">
-          <span class="btn-icon">⚡</span> Run Trend Detection
+          Execute Trend Detection
         </button>
         <button id="findInterestingBtn" class="btn btn-accent" title="Discovery Engine: Rank signals by magnitude * significance * completeness * spatial coherence">
-          <span class="btn-icon">🎯</span> Find Something Interesting
+          Rank Anomalous Signals
         </button>
         <button id="runCompoundBtn" class="btn btn-hazard" title="Run Multivariate Compound Hazard Analysis (Temperature + Precipitation Aridification Index)">
-          <span class="btn-icon">🔥</span> Compound Hazard (T + P)
+          Compound Hazard (T & P)
         </button>
       </div>
 
       <!-- Discovery Engine: Candidate Signals Box -->
       <div class="panel-section discovery-section">
-        <h3>🎯 Discovered Candidate Signals</h3>
+        <h3>Discovered Candidate Signals</h3>
         <p class="section-subtext">Ranked by composite discovery score: |slope| × significance × completeness × (1 + coherence).</p>
         <div id="signalsListContainer" class="signals-list">
           <div class="signal-loading">Run analysis to discover candidate signals...</div>
@@ -187,7 +187,7 @@
 
       <!-- Contrast Engine: Regional Divergence Summary -->
       <div class="panel-section contrast-section">
-        <h3>⚖️ Discovered Regional Divergence</h3>
+        <h3>Discovered Regional Divergence</h3>
         <div id="contrastSummaryCard" class="contrast-card">
           <div class="contrast-badge">Opposing Trends Detected</div>
           <div class="contrast-body" id="contrastContent">
@@ -229,16 +229,16 @@
           </label>
           <label class="layer-toggle">
             <input type="checkbox" id="gibsToggle" />
-            <span>🛰️ NASA Worldview</span>
+            <span>NASA Worldview</span>
           </label>
           <button id="resetViewBtn" class="btn btn-sm">Reset View</button>
         </div>
       </div>
 
-      <!-- Map Container with HUD Crosshair Overlay (Fuselab Real-Time GIS) -->
+      <!-- Map Container with HUD Crosshair Overlay -->
       <div class="map-viewport-wrapper">
         <div id="mapCrosshairHud" class="map-crosshair-hud">
-          <span class="crosshair-icon">⊕</span>
+          <span class="crosshair-icon">+</span>
           <span class="hud-target-label">GRID TARGET:</span>
           <span id="hudCoords" class="hud-val">Click grid cell to inspect</span>
           <span class="hud-divider">•</span>
@@ -249,11 +249,11 @@
           <span id="hudSig" class="hud-val">--</span>
         </div>
         <div id="trendMap" class="map-container"></div>
-        <!-- SpaceX Map Floating Dock -->
+        <!-- Map Floating Dock -->
         <div class="map-floating-dock" id="mapFloatingDock">
           <button class="dock-pill active" id="dock2dBtn">2D Grid</button>
-          <button class="dock-pill" id="dockGibsBtn">🛰️ Satellite (GIBS)</button>
-          <button class="dock-pill" id="dockHotspotsBtn">🔥 Hotspots</button>
+          <button class="dock-pill" id="dockGibsBtn">Satellite (GIBS)</button>
+          <button class="dock-pill" id="dockHotspotsBtn">Hotspots</button>
           <button class="dock-pill live-pill" id="dockLiveBtn"><span class="beacon-dot"></span> Live NASA Feed</button>
           <span class="dock-time" id="dockUtcTime">--:--:-- UTC</span>
         </div>
@@ -274,7 +274,7 @@
         </div>
         <div class="moran-summary" id="moranSummary">
           <div class="moran-header">
-            <span class="moran-icon">🌐</span>
+            <span class="moran-icon">[I]</span>
             <span class="moran-title">Spatial Autocorrelation</span>
           </div>
           <div id="moranScore" class="moran-value">Moran's I = -- (Awaiting analysis)</div>
@@ -285,7 +285,7 @@
       <div class="timeseries-section">
         <div class="ts-header">
           <div>
-            <h4>📈 Coordinate Observation Record & Sen's Trendline</h4>
+            <h4>Coordinate Observation Record & Sen's Trendline</h4>
             <span id="tsCoordinateLabel" class="ts-sub">Selected Cell: 35.00°N, -95.00°W</span>
           </div>
           <div class="ts-stats">
@@ -307,7 +307,7 @@
     <!-- RIGHT: Scientific Evidence & Verification Panel -->
     <aside class="panel evidence-panel">
       <div class="panel-header">
-        <h2>📋 Scientific Evidence Inspector</h2>
+        <h2>Scientific Evidence Inspector</h2>
         <span class="badge-pill">Axiom 1: Inspectable Truth</span>
       </div>
 
@@ -352,13 +352,13 @@
         <div class="spacex-anomaly-card" id="spacexAnomalyCard">
           <div class="anomaly-card-header">
             <div class="anomaly-icon-box">
-              <span class="anomaly-icon">⚠️</span>
+              <span class="anomaly-icon font-mono font-bold">!</span>
             </div>
             <div class="anomaly-title-box">
               <div class="anomaly-title">CLIMATE ANOMALY DETECTED</div>
               <div class="anomaly-sub" id="anomalySubText">Monotonic Thermal Drift Confirmed</div>
             </div>
-            <button class="anomaly-dismiss-btn" id="dismissAnomalyBtn" title="Dismiss">✕</button>
+            <button class="anomaly-dismiss-btn" id="dismissAnomalyBtn" title="Dismiss">&times;</button>
           </div>
           <div class="anomaly-metrics">
             <div class="anom-metric-row">
@@ -391,7 +391,7 @@
           </div>
           <div class="anomaly-actions">
             <button class="btn-anom-action secondary" id="anomDismissBtn">Dismiss</button>
-            <button class="btn-anom-action primary" id="anomRespondBtn">⚡ Inspect Finding</button>
+            <button class="btn-anom-action primary" id="anomRespondBtn">Inspect Finding</button>
           </div>
         </div>
         <div class="evidence-card">
@@ -463,38 +463,38 @@
           <div class="ev-sub" id="evDataRegimeLabel">Data Regime: Synthetic test data — not NASA observations.</div>
         </div>
 
-        <!-- Downstream AI Explainer Integration (Shakuro Minimalist Obsidian Aerospace) -->
+        <!-- Downstream Physical Mechanism Briefing -->
         <div class="ai-explainer-section">
           <div class="ai-header">
-            <h3>🤖 Downstream AI Explainer</h3>
+            <h3>Physical Mechanism Briefing</h3>
             <span class="ai-pill">Zero Hallucination Grounding</span>
           </div>
           <p class="ai-desc">Translates only the verified evidence record into plain scientific English.</p>
           <button id="askAiBtn" class="btn btn-secondary">
-            <span>✨</span> Explain Finding with AI
+            Retrieve Mechanism Briefing
           </button>
           <div id="aiOutputBox" class="ai-box hidden">
             <div class="ai-loader" id="aiLoader">Generating deterministic interpretation...</div>
             <div class="ai-content" id="aiContentText"></div>
             <div class="ai-actions hidden" id="aiActions">
-              <button id="copyAiBtn" class="btn-ai-action" title="Copy explanation to clipboard">📋 Copy</button>
-              <button id="dismissAiBtn" class="btn-ai-action btn-ai-dismiss" title="Dismiss explanation">✕ Dismiss</button>
+              <button id="copyAiBtn" class="btn-ai-action" title="Copy explanation to clipboard">Copy Briefing</button>
+              <button id="dismissAiBtn" class="btn-ai-action btn-ai-dismiss" title="Dismiss explanation">Dismiss</button>
             </div>
           </div>
         </div>
         <!-- Export & Dossier Actions -->
         <div class="export-actions">
           <button id="exportNetcdfBtn" class="btn btn-sm btn-export" title="Export as CF-1.8 NetCDF-4 binary granule (.nc) — viewable in NASA Panoply, QGIS, or Python xarray">
-            <span class="file-badge nc">📦 .NC</span> NetCDF-4
+            <span class="file-badge nc">.NC</span> NetCDF-4
           </button>
           <button id="exportGeojsonBtn" class="btn btn-sm btn-export" title="Export as GeoJSON FeatureCollection (.geojson) — viewable in QGIS, ArcGIS, or geojson.io">
-            <span class="file-badge geojson">🗺️ .GEOJSON</span> GIS Layer
+            <span class="file-badge geojson">.GEOJSON</span> GIS Layer
           </button>
           <button id="exportDossierBtn" class="btn btn-sm btn-export" title="Export NASA Climate Science Dossier (.md) — Markdown publication report">
-            <span class="file-badge md">📄 .MD</span> Dossier
+            <span class="file-badge md">.MD</span> Dossier
           </button>
           <button id="exportNotebookBtn" class="btn btn-sm btn-export" title="Export reproducible Jupyter Notebook (.ipynb) — open in Google Colab, JupyterLab, or VS Code">
-            <span class="file-badge ipynb">📓 .IPYNB</span> Notebook
+            <span class="file-badge ipynb">.IPYNB</span> Notebook
           </button>
         </div>
       </div>
@@ -502,46 +502,45 @@
 
   </main>
 
-  <!-- Interactive Detective Tour Modal -->
+  <!-- Curated Case Studies Modal -->
   <div id="tourModal" class="modal-backdrop hidden">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title">
-          <span class="modal-icon">🕵️</span>
-          <h3>NASA Earth System Trend Detective Tour</h3>
+          <h3>NASA Earth System Transect Studies</h3>
         </div>
         <button id="closeTourBtn" class="btn-close" aria-label="Close Tour">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="tour-intro">Welcome, Detective! Follow the 4 core investigative clues to examine how multi-decadal climate signals are rigorously verified from NASA satellite observations.</p>
+        <p class="tour-intro">Explore 4 curated transects demonstrating how multi-decadal climate signals are rigorously verified from NASA satellite observations.</p>
         
         <div class="tour-steps-grid">
           <div class="tour-step-card" id="tourStep1">
-            <div class="step-num">CLUE 1</div>
+            <div class="step-num">TRANSECT 1</div>
             <h4>Empirical Monotonic Drift</h4>
             <p>Ordinary linear regressions (OLS) assume normally distributed noise and constant variance. EarthSift deploys <strong>Sen's median-of-slopes</strong> and the non-parametric <strong>Mann-Kendall test</strong> to discover real physical signals immune to extreme sensor outliers.</p>
-            <button class="btn btn-sm btn-accent step-action" data-case="case1">⚡ Inspect Texas Thermal Signal</button>
+            <button class="btn btn-sm btn-accent step-action" data-case="case1">Inspect Texas Thermal Signal</button>
           </div>
 
           <div class="tour-step-card" id="tourStep2">
-            <div class="step-num">CLUE 2</div>
+            <div class="step-num">TRANSECT 2</div>
             <h4>The Red Noise Trap</h4>
             <p>Climate inertia creates serial persistence that fools standard trend tests into declaring false positives. EarthSift applies <strong>Hamed & Rao (1998) variance correction</strong> on detrended residuals to verify true physical trends.</p>
-            <button class="btn btn-sm btn-accent step-action" data-case="case3">⚡ Test Autocorrelation Correction</button>
+            <button class="btn btn-sm btn-accent step-action" data-case="case3">Test Autocorrelation Correction</button>
           </div>
 
           <div class="tour-step-card" id="tourStep3">
-            <div class="step-num">CLUE 3</div>
+            <div class="step-num">TRANSECT 3</div>
             <h4>Spatial Regimes (Anselin LISA)</h4>
             <p>Isolated pixel anomalies could be noise. Using <strong>Local Indicators of Spatial Association (LISA)</strong> and <strong>Cliff & Ord Moran's I</strong>, EarthSift isolates contiguous High-High (Hotspots) and Low-Low (Refugia) spatial clusters.</p>
-            <button class="btn btn-sm btn-accent step-action" data-case="lisa">⚡ View LISA Hotspots</button>
+            <button class="btn btn-sm btn-accent step-action" data-case="lisa">View LISA Hotspots</button>
           </div>
 
           <div class="tour-step-card" id="tourStep4">
-            <div class="step-num">CLUE 4</div>
+            <div class="step-num">TRANSECT 4</div>
             <h4>Dual Compound Hazards (T + P)</h4>
             <p>Heatwaves alone are dangerous; heat combined with precipitation decline creates catastrophic aridification. EarthSift's <strong>Compound Aridification Index (CAI)</strong> cross-analyzes multivariate divergence.</p>
-            <button class="btn btn-sm btn-accent step-action" data-case="case2">⚡ Run Compound Hazard Engine</button>
+            <button class="btn btn-sm btn-accent step-action" data-case="case2">Run Compound Hazard Engine</button>
           </div>
         </div>
       </div>

@@ -1,12 +1,11 @@
 """
-EarthSift — Comprehensive Security Hardening Test Suite
-Verifies defense-in-depth security controls across all 6 tiers:
-1. Dynamic Strict CORS & OWASP Headers
-2. SlowAPI Rate Limiting & Anti-DoS Payload Guards
-3. Pydantic v2 Boundary Validation & Path Traversal Prevention
-4. Zero Secret Leakage & HMAC-SHA256 Cryptographic Cache Verification
-5. Error Masking & Uniform JSON Error Structures
-6. Container/Environment Security
+EarthSift — Security Regression Test Suite
+Verifies defense-in-depth security controls:
+- CORS policy and OWASP security headers
+- Rate limiting and request payload bounds
+- Pydantic boundary validation and path traversal sanitization
+- Credential masking and HMAC-SHA256 signature verification
+- Error serialization and traceback suppression
 """
 
 import logging
@@ -26,9 +25,7 @@ from limits import parse
 client = TestClient(app)
 
 
-# ============================================================================
-# TIER 1: HTTP Defense, Secure Headers & Network Boundary
-# ============================================================================
+# --- Network Boundary & Headers ---
 
 def test_dynamic_strict_cors_headers():
     """Verify CORS headers are strictly enforced for trusted origins."""
@@ -70,9 +67,7 @@ def test_owasp_security_headers_injected_on_all_responses():
     assert "frame-ancestors 'none'" in csp
 
 
-# ============================================================================
-# TIER 2: Rate Limiting & Denial-of-Service (DoS) Mitigation
-# ============================================================================
+# --- Rate Limiting & DoS Mitigation ---
 
 def test_payload_size_limit_guard_blocks_dos():
     """Verify request payloads exceeding 2MB are rejected with HTTP 413."""
@@ -109,9 +104,7 @@ def test_custom_rate_limit_exceeded_handler_rfc_compliance():
     assert "Rate limit exceeded" in body["detail"]
 
 
-# ============================================================================
-# TIER 3: Input Boundary Validation & Injection Prevention
-# ============================================================================
+# --- Boundary Validation & Traversal Guards ---
 
 @pytest.mark.parametrize("invalid_bbox,reason", [
     ([-200.0, 30.0, -90.0, 40.0], "Longitude out of range [-180, 180]"),
@@ -214,9 +207,7 @@ def test_hmac_sha256_cache_tamper_detection():
         conn.execute("DELETE FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
 
 
-# ============================================================================
-# TIER 4: Credential Scrubbing & NetRC Isolation
-# ============================================================================
+# --- Credential Scrubbing & NetRC Isolation ---
 
 def test_sensitive_data_logging_scrubber():
     """Verify SensitiveDataScrubber regex masks API keys, tokens, and passwords."""
@@ -261,9 +252,7 @@ def test_netrc_file_permissions_isolation(tmp_path, monkeypatch):
         assert mode == 0o600
 
 
-# ============================================================================
-# TIER 5: Error Masking & Traceback Suppression
-# ============================================================================
+# --- Error Serialization & Traceback Suppression ---
 
 def test_standardized_error_format_on_validation_failure():
     """Verify validation errors return clean, standardized JSON with detail message."""
