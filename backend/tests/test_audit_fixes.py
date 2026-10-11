@@ -10,15 +10,14 @@ Validates:
 7. AnalysisRequest use_fdr parameter propagation
 """
 
-import os
 import threading
-import pytest
-from fastapi.testclient import TestClient
-from app.main import app
+
+import numpy as np
 from app.adapters.merra2 import MERRA2Adapter
 from app.adapters.nasa_power import NASAPowerAdapter
+from app.main import app
 from app.science.spatial import compute_global_morans_i
-import numpy as np
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 

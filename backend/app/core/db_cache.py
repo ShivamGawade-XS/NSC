@@ -5,13 +5,13 @@ for computed NASA Earth-system trend analyses and coordinate time series.
 """
 
 import os
-import time
-import zlib
 import pickle
 import sqlite3
 import threading
+import time
+import zlib
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Any
 
 # Database file location
 DEFAULT_DB_DIR = Path(__file__).resolve().parents[2] / "data"
@@ -97,7 +97,7 @@ def init_db() -> None:
 init_db()
 
 
-def save_to_db_cache(analysis_id: str, payload: Dict[str, Any]) -> None:
+def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
     """
     Save analysis to persistent SQLite database with compressed payload
     and indexed query dimensions.
@@ -140,12 +140,12 @@ def save_to_db_cache(analysis_id: str, payload: Dict[str, Any]) -> None:
                 compressed_bytes
             ))
             conn.commit()
-    except Exception as exc:
+    except Exception:
         # Non-blocking logging on database write error
         pass
 
 
-def load_from_db_cache(analysis_id: str) -> Optional[Dict[str, Any]]:
+def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
     """
     Retrieve analysis from persistent SQLite database by analysis_id.
     Updates access timestamp and access counter via B-Tree index.
@@ -171,7 +171,7 @@ def load_from_db_cache(analysis_id: str) -> Optional[Dict[str, Any]]:
         decompressed = zlib.decompress(row[0])
         payload = pickle.loads(decompressed)
         return payload
-    except Exception as exc:
+    except Exception:
         return None
 
 
@@ -180,9 +180,9 @@ def find_cached_analysis_id(
     variable_id: str,
     start_year: int,
     end_year: int,
-    bbox: List[float],
+    bbox: list[float],
     alpha: float
-) -> Optional[str]:
+) -> str | None:
     """
     Leverages composite B-Tree index to discover if an equivalent analysis
     has already been computed and persisted.
@@ -214,7 +214,7 @@ def find_cached_analysis_id(
         return None
 
 
-def get_cache_db_stats() -> Dict[str, Any]:
+def get_cache_db_stats() -> dict[str, Any]:
     """Return database telemetry, record counts, and index sizes."""
     try:
         conn = get_db_connection()

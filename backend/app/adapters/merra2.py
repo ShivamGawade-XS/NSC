@@ -14,10 +14,11 @@ Implements the strict BaseDatasetAdapter contract:
 - normalize()
 """
 
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
+
 import numpy as np
 
 from app.adapters.base import BaseDatasetAdapter
@@ -65,7 +66,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
         }
     }
 
-    def discover(self, query: Optional[str] = None) -> List[Dict[str, Any]]:
+    def discover(self, query: str | None = None) -> list[dict[str, Any]]:
         """
         Discover collections or granules via NASA CMR.
         If live connection / earthaccess is available, queries CMR directly;
@@ -109,7 +110,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
             })
         return results
 
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         """Return dataset description and available variable catalog."""
         return {
             "dataset_id": self.DATASET_ID,
@@ -129,7 +130,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
         variable: str,
         start_year: int,
         end_year: int,
-        bbox: Optional[List[float]] = None
+        bbox: list[float] | None = None
     ) -> None:
         """
         Validate inputs against MERRA-2 specifications.
@@ -177,9 +178,9 @@ class MERRA2Adapter(BaseDatasetAdapter):
         variable: str,
         start_year: int,
         end_year: int,
-        bbox: Optional[List[float]] = None,
+        bbox: list[float] | None = None,
         prefer_live: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Fetch raw data array from NASA Earthdata stream or reproducible physical fixture.
         Must explicitly report 'is_synthetic' and 'data_source_label'.
@@ -350,9 +351,9 @@ class MERRA2Adapter(BaseDatasetAdapter):
 
     def subset(
         self,
-        raw_data: Dict[str, Any],
-        bbox: Optional[List[float]] = None
-    ) -> Dict[str, Any]:
+        raw_data: dict[str, Any],
+        bbox: list[float] | None = None
+    ) -> dict[str, Any]:
         """
         Slice data array along spatial coordinates if bbox is specified and differs.
         """
@@ -387,8 +388,8 @@ class MERRA2Adapter(BaseDatasetAdapter):
 
     def normalize(
         self,
-        subset_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        subset_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Ensure uniform ascending coordinate sorting (South to North, West to East),
         floating-point arrays, and consistency of unit labels.

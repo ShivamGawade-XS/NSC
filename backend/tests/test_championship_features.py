@@ -6,13 +6,11 @@ Tests for Championship Production Features:
 4. NASA Earthdata auth status and configuration
 """
 
-import pytest
 import numpy as np
-from fastapi.testclient import TestClient
 from app.main import app
-from app.science.trend import pettitt_changepoint_test
 from app.science.export import generate_jupyter_notebook
-from app.core.config import settings
+from app.science.trend import pettitt_changepoint_test
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 

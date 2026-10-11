@@ -21,10 +21,13 @@ export default function ExportButtons() {
   };
 
   const handleShareLink = () => {
-    navigator.clipboard.writeText(window.location.href).then(
-      () => toast.success('🔗 Link copied!'),
-      () => toast('URL: ' + window.location.href)
-    );
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => toast.success('🔗 Link copied to clipboard!'))
+        .catch(() => toast('URL: ' + window.location.href));
+    } else {
+      toast('URL: ' + window.location.href);
+    }
   };
 
   return (

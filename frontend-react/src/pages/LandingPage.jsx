@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const METRICS = [
   { label: 'NASA Observations', val: '44+ Yrs', desc: 'POWER & MERRA-2 Continuous Coverage' },

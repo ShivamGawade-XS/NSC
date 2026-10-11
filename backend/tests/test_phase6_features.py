@@ -7,9 +7,8 @@ Test Phase 6 Scientific Instrument capabilities:
 5. NASA Climate Science Dossier generation endpoint
 """
 
-import pytest
-from fastapi.testclient import TestClient
 from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 

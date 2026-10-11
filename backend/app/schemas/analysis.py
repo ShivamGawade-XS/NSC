@@ -3,7 +3,8 @@ EarthSift — Analysis Request & Response Schemas
 Typed Pydantic schemas enforcing strict API contracts and evidence integrity.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -13,7 +14,7 @@ class AnalysisRequest(BaseModel):
     variable_id: str = Field(default="T2M", description="Physical variable machine name")
     start_year: int = Field(default=2000, ge=1980, le=2024, description="Start year")
     end_year: int = Field(default=2023, ge=1980, le=2024, description="End year")
-    bbox: Optional[List[float]] = Field(
+    bbox: list[float] | None = Field(
         default=None,
         description="[min_lon, min_lat, max_lon, max_lat] bounding box"
     )
@@ -28,14 +29,14 @@ class SpatialGridPoint(BaseModel):
     lat: float
     lon: float
     slope: float
-    ci_lower: Optional[float] = None
-    ci_upper: Optional[float] = None
+    ci_lower: float | None = None
+    ci_upper: float | None = None
     p_value: float
     q_value: float
     is_significant_raw: bool
     is_significant_fdr: bool
     direction: str
-    lisa_cluster: Optional[str] = "NS"
+    lisa_cluster: str | None = "NS"
     n_samples: int
 
 
@@ -47,7 +48,7 @@ class AnalysisSummary(BaseModel):
     mean_slope: float
     max_slope: float
     min_slope: float
-    spatial_autocorrelation: Optional[Dict[str, Any]] = None
+    spatial_autocorrelation: dict[str, Any] | None = None
 
 
 class AnalysisResponse(BaseModel):
@@ -61,9 +62,9 @@ class AnalysisResponse(BaseModel):
     slope_units: str
     time_span: str
     summary: AnalysisSummary
-    grid: List[SpatialGridPoint]
-    contrasts: List[Dict[str, Any]]
-    provenance: Dict[str, Any]
+    grid: list[SpatialGridPoint]
+    contrasts: list[dict[str, Any]]
+    provenance: dict[str, Any]
 
 
 class CellDetailResponse(BaseModel):
@@ -73,22 +74,22 @@ class CellDetailResponse(BaseModel):
     variable_name: str
     display_units: str
     slope_units: str
-    years: List[int]
-    observations: List[float]
-    fitted_values: List[float]
+    years: list[int]
+    observations: list[float]
+    fitted_values: list[float]
     slope: float
-    ci_lower: Optional[float] = None
-    ci_upper: Optional[float] = None
+    ci_lower: float | None = None
+    ci_upper: float | None = None
     intercept: float
     p_value: float
     q_value: float
     tau: float
     significant: bool
     direction: str
-    lisa_cluster: Optional[str] = "NS"
-    changepoint_year: Optional[int] = None
-    changepoint_p_value: Optional[float] = None
-    evidence_record: Dict[str, Any]
+    lisa_cluster: str | None = "NS"
+    changepoint_year: int | None = None
+    changepoint_p_value: float | None = None
+    evidence_record: dict[str, Any]
 
 
 class MapLayerResponse(BaseModel):
@@ -97,9 +98,9 @@ class MapLayerResponse(BaseModel):
     variable_id: str
     variable_name: str
     slope_units: str
-    bounds: List[float]
+    bounds: list[float]
     summary: AnalysisSummary
-    grid: List[SpatialGridPoint]
+    grid: list[SpatialGridPoint]
 
 
 class CandidateSignal(BaseModel):
@@ -123,8 +124,8 @@ class SignalsResponse(BaseModel):
     analysis_id: str
     variable_name: str
     method: str
-    criteria: List[str]
-    signals: List[CandidateSignal]
+    criteria: list[str]
+    signals: list[CandidateSignal]
 
 
 class ContrastsResponse(BaseModel):
@@ -132,14 +133,14 @@ class ContrastsResponse(BaseModel):
     analysis_id: str
     variable_name: str
     contrasts_found: int
-    contrasts: List[Dict[str, Any]]
+    contrasts: list[dict[str, Any]]
 
 
 class ProvenanceResponse(BaseModel):
     """Dataset provenance and scientific reproducibility audit record."""
     analysis_id: str
     dataset_id: str
-    provenance: Dict[str, Any]
+    provenance: dict[str, Any]
 
 
 class VariableInfo(BaseModel):
@@ -182,7 +183,7 @@ class CompoundHazardRequest(BaseModel):
     precip_variable_id: str = Field(default="PRECTOT", description="Hydrological variable machine name")
     start_year: int = Field(default=2000, ge=1980, le=2024, description="Start year")
     end_year: int = Field(default=2023, ge=1980, le=2024, description="End year")
-    bbox: Optional[List[float]] = Field(default=None, description="[min_lon, min_lat, max_lon, max_lat] bounding box")
+    bbox: list[float] | None = Field(default=None, description="[min_lon, min_lat, max_lon, max_lat] bounding box")
     alpha: float = Field(default=0.05, gt=0.0, lt=0.5, description="Significance threshold")
     prefer_live: bool = Field(default=True, description="Prefer authentic NASA observations")
 
@@ -194,5 +195,5 @@ class CompoundHazardResponse(BaseModel):
     aridification_fraction: float
     intensification_fraction: float
     summary: str
-    hazard_distribution: Dict[str, int]
-    cells: List[Dict[str, Any]]
+    hazard_distribution: dict[str, int]
+    cells: list[dict[str, Any]]

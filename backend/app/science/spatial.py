@@ -6,7 +6,8 @@ Implements:
 3. Classification into High-High (Hotspots), Low-Low (Refugia), High-Low, and Low-High spatial anomalies.
 """
 
-from typing import Dict, Any, Tuple, Optional, List
+from typing import Any
+
 import numpy as np
 from scipy import stats
 
@@ -14,7 +15,7 @@ from scipy import stats
 def compute_global_morans_i(
     values_2d: np.ndarray,
     min_valid: int = 6
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Calculate Global Moran's I spatial autocorrelation on a 2D spatial grid.
 
@@ -90,7 +91,6 @@ def compute_global_morans_i(
             if nb_count_n > 0:
                 w_ij = 1.0 / nb_count_n
                 row_sum = 0.0
-                col_sum = 0.0
                 for dr in range(nb_mask_n.shape[0]):
                     for dc in range(nb_mask_n.shape[1]):
                         if nb_mask_n[dr, dc]:
@@ -137,9 +137,9 @@ def compute_global_morans_i(
 
 def compute_lisa_clusters(
     values_2d: np.ndarray,
-    p_values_2d: Optional[np.ndarray] = None,
+    p_values_2d: np.ndarray | None = None,
     alpha: float = 0.05
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute Anselin Local Indicators of Spatial Association (LISA).
 

@@ -7,7 +7,7 @@ cache policies, and runtime environment settings.
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any
 
 try:
     from dotenv import load_dotenv
@@ -33,9 +33,9 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "production")
 
     # NASA Earthdata Login (EDL)
-    EARTHDATA_USERNAME: Optional[str] = os.getenv("EARTHDATA_USERNAME")
-    EARTHDATA_PASSWORD: Optional[str] = os.getenv("EARTHDATA_PASSWORD")
-    EARTHDATA_TOKEN: Optional[str] = os.getenv("EARTHDATA_TOKEN")
+    EARTHDATA_USERNAME: str | None = os.getenv("EARTHDATA_USERNAME")
+    EARTHDATA_PASSWORD: str | None = os.getenv("EARTHDATA_PASSWORD")
+    EARTHDATA_TOKEN: str | None = os.getenv("EARTHDATA_TOKEN")
 
     # Caching
     CACHE_MAX_SIZE: int = int(os.getenv("CACHE_MAX_SIZE", "256"))
@@ -45,7 +45,7 @@ class Settings:
     DEFAULT_FDR_ALPHA: float = float(os.getenv("DEFAULT_FDR_ALPHA", "0.05"))
 
     @classmethod
-    def get_earthdata_auth_status(cls) -> Dict[str, Any]:
+    def get_earthdata_auth_status(cls) -> dict[str, Any]:
         """Check if NASA Earthdata credentials are configured."""
         if cls.EARTHDATA_TOKEN:
             return {"authenticated": True, "auth_type": "bearer_token", "message": "NASA Earthdata Bearer Token active."}

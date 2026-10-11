@@ -6,7 +6,8 @@ during the exact same temporal period.
 Uses connected component spatial clustering (8-connectivity) to isolate true regional clusters.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 import numpy as np
 from scipy import ndimage
 
@@ -18,7 +19,7 @@ def find_contrasting_regions(
     longitudes: np.ndarray,
     min_cluster_size: int = 2,
     top_k: int = 5
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Discover contrasting spatial regions with opposing significant trends.
     Uses 8-neighbor connected component labeling to isolate distinct geographic clusters.
@@ -34,7 +35,7 @@ def find_contrasting_regions(
     Returns:
         List of contrast records pairing an increasing region with a decreasing region.
     """
-    h, w = slopes.shape
+    _h, _w = slopes.shape
     
     pos_mask = (slopes > 0) & is_significant
     neg_mask = (slopes < 0) & is_significant
@@ -46,7 +47,7 @@ def find_contrasting_regions(
     pos_labeled, num_pos = ndimage.label(pos_mask, structure=struct_8)
     neg_labeled, num_neg = ndimage.label(neg_mask, structure=struct_8)
     
-    def extract_clusters(labeled_grid: np.ndarray, num_features: int, label_type: str) -> List[Dict[str, Any]]:
+    def extract_clusters(labeled_grid: np.ndarray, num_features: int, label_type: str) -> list[dict[str, Any]]:
         clusters = []
         for feat_id in range(1, num_features + 1):
             indices = np.argwhere(labeled_grid == feat_id)
@@ -60,7 +61,7 @@ def find_contrasting_regions(
             clusters.append({
                 "cluster_id": f"{label_type}_{feat_id}",
                 "type": label_type,
-                "cell_count": int(len(indices)),
+                "cell_count": len(indices),
                 "mean_slope": round(float(np.mean(region_slopes)), 4),
                 "max_slope": round(float(np.max(region_slopes)), 4),
                 "min_slope": round(float(np.min(region_slopes)), 4),
@@ -88,7 +89,7 @@ def find_contrasting_regions(
         pos_clusters = [{
             "cluster_id": "increasing_all",
             "type": "increasing",
-            "cell_count": int(len(indices)),
+            "cell_count": len(indices),
             "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
             "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
             "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
@@ -102,7 +103,7 @@ def find_contrasting_regions(
         neg_clusters = [{
             "cluster_id": "decreasing_all",
             "type": "decreasing",
-            "cell_count": int(len(indices)),
+            "cell_count": len(indices),
             "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
             "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
             "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
@@ -125,7 +126,7 @@ def find_contrasting_regions(
                     ref_clusters = [{
                         "cluster_id": "refugium_all",
                         "type": "refugium",
-                        "cell_count": int(len(indices)),
+                        "cell_count": len(indices),
                         "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
                         "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
                         "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
@@ -149,7 +150,7 @@ def find_contrasting_regions(
                     buf_clusters = [{
                         "cluster_id": "buffered_all",
                         "type": "buffered",
-                        "cell_count": int(len(indices)),
+                        "cell_count": len(indices),
                         "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
                         "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
                         "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),

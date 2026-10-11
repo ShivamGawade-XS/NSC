@@ -5,9 +5,10 @@ spanning 1980-2023 across North America with authentic GMAO climatology and tren
 """
 
 from pathlib import Path
+
 import numpy as np
 import xarray as xr
-import pandas as pd
+
 
 def build_merra2_netcdf():
     data_dir = Path(__file__).resolve().parent.parent / "data" / "fixtures"

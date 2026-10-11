@@ -12,15 +12,13 @@ Conforms to CF-1.8 & ACDD-1.3 conventions.
 Zero synthetic numbers: 100% authentic NASA observations and assimilation fields.
 """
 
-import os
-import io
-import time
 import hashlib
 import logging
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Any
+
 import numpy as np
 
 from app.adapters.base import BaseDatasetAdapter
@@ -79,7 +77,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         }
     }
 
-    def __init__(self, cache_dir: Optional[Path] = None):
+    def __init__(self, cache_dir: Path | None = None):
         if cache_dir is None:
             self.cache_dir = Path(__file__).resolve().parent.parent.parent / "data" / "nasa_granules"
         else:
@@ -87,7 +85,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.fixtures_dir = Path(__file__).resolve().parent.parent.parent / "data" / "fixtures"
 
-    def discover(self, query: Optional[str] = None) -> List[Dict[str, Any]]:
+    def discover(self, query: str | None = None) -> list[dict[str, Any]]:
         """Return collection discovery metadata and variable descriptions."""
         catalog = []
         for var, meta in self.VARIABLES.items():
@@ -107,7 +105,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             })
         return catalog
 
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         """Return authoritative NASA dataset metadata."""
         return {
             "dataset_id": self.DATASET_ID,
@@ -128,7 +126,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         variable: str,
         start_year: int,
         end_year: int,
-        bbox: Optional[List[float]] = None
+        bbox: list[float] | None = None
     ) -> None:
         """Validate input parameters against NASA POWER requirements."""
         if variable not in self.VARIABLES:
@@ -162,7 +160,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0):
                 raise ValueError("Longitude bounds must be within [-180, 180].")
 
-    def _build_granule_cache_path(self, param: str, bbox: List[float], start_year: int, end_year: int) -> Path:
+    def _build_granule_cache_path(self, param: str, bbox: list[float], start_year: int, end_year: int) -> Path:
         """Deterministic cache file path based on request signature."""
         min_lon, min_lat, max_lon, max_lat = [round(c, 2) for c in bbox]
         sig = f"{param}_{min_lat}_{max_lat}_{min_lon}_{max_lon}_{start_year}_{end_year}"
@@ -175,9 +173,9 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         variable: str,
         start_year: int,
         end_year: int,
-        bbox: List[float],
+        bbox: list[float],
         timeout_seconds: int = 25
-    ) -> Optional[Path]:
+    ) -> Path | None:
         """
         Download authentic NetCDF-4 binary directly from NASA POWER API.
         Returns Path to downloaded file if successful, None otherwise.
@@ -230,9 +228,9 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         variable: str,
         start_year: int,
         end_year: int,
-        bbox: Optional[List[float]] = None,
+        bbox: list[float] | None = None,
         prefer_live: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Fetch authentic observational data array from NASA.
         Attempts live NASA POWER NetCDF download; if offline, uses verified NASA fixture.
@@ -263,7 +261,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
 
         if not nc_path or not nc_path.exists() or not HAS_XARRAY:
             raise RuntimeError(
-                f"No authentic NASA NetCDF observations found and xarray unavailable. "
+                "No authentic NASA NetCDF observations found and xarray unavailable. "
                 "Ensure backend/data/fixtures/nasa_merra2_t2m_na.nc is present."
             )
 
@@ -282,10 +280,10 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                     target_var = candidate
                     break
             if not target_var:
-                target_var = list(ds.data_vars.keys())[0]
+                target_var = next(iter(ds.data_vars.keys()))
 
             da = ds[target_var]
-            time_coord = "time" if "time" in da.coords else list(da.coords.keys())[0]
+            time_coord = "time" if "time" in da.coords else next(iter(da.coords.keys()))
             lat_coord = "lat" if "lat" in da.coords else "latitude"
             lon_coord = "lon" if "lon" in da.coords else "longitude"
 
@@ -357,7 +355,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                 }
             }
 
-    def subset(self, raw_data: Dict[str, Any], bbox: Optional[List[float]] = None) -> Dict[str, Any]:
+    def subset(self, raw_data: dict[str, Any], bbox: list[float] | None = None) -> dict[str, Any]:
         """Subset data to exact bounding box."""
         if bbox is None:
             return raw_data
@@ -385,6 +383,6 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             "lon": lons[lon_mask]
         }
 
-    def normalize(self, subset_data: Dict[str, Any]) -> Dict[str, Any]:
+    def normalize(self, subset_data: dict[str, Any]) -> dict[str, Any]:
         """Verify sorting and NaN handling."""
         return subset_data

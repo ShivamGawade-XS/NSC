@@ -3,12 +3,12 @@ Unit tests for EarthSift SQLite persistent cache and B-Tree indexing.
 """
 
 import time
-import pytest
+
 from app.core.db_cache import (
-    save_to_db_cache,
-    load_from_db_cache,
     find_cached_analysis_id,
-    get_cache_db_stats
+    get_cache_db_stats,
+    load_from_db_cache,
+    save_to_db_cache,
 )
 from app.schemas.analysis import AnalysisRequest
 
