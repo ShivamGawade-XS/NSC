@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useStore from '../store/useStore';
-import { getTrendColor, getLISAColor, getHazardColor, formatCoords, formatPVal } from '../utils/helpers';
+import { getTrendColor, getLISAColor, getHazardColor, formatCoords } from '../utils/helpers';
 
 export default function TrendMap() {
   const mapRef = useRef(null);
@@ -19,92 +19,8 @@ export default function TrendMap() {
   const selectCell = useStore((s) => s.selectCell);
   const endYear = useStore((s) => s.endYear);
 
-  // Initialize map
-  useEffect(() => {
-    if (mapInstanceRef.current) return;
-
-    const map = L.map(mapRef.current, {
-      center: [34.0, -98.0],
-      zoom: 5,
-      minZoom: 2,
-      maxZoom: 10,
-      zoomControl: true,
-    });
-
-    L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, DeLorme, NAVTEQ | NASA Space Apps 2026',
-        maxZoom: 16,
-      }
-    ).addTo(map);
-
-    gridLayerRef.current = L.layerGroup().addTo(map);
-    contrastLayerRef.current = L.layerGroup().addTo(map);
-    mapInstanceRef.current = map;
-
-    return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-    };
-  }, []);
-
-  // Render grid when analysis data or toggles change
-  useEffect(() => {
-    if (!gridLayerRef.current || !analysisData) return;
-    gridLayerRef.current.clearLayers();
-
-    const map = mapInstanceRef.current;
-    const isCompound = analysisData.isCompound;
-
-    if (isCompound && analysisData.cells) {
-      renderCompoundGrid(analysisData.cells);
-    } else if (analysisData.grid) {
-      renderSpatialGrid(analysisData.grid);
-    }
-
-    // Fit bounds
-    const bbox = analysisData.summary?.bounding_box || analysisData.bbox;
-    if (bbox && bbox.length === 4) {
-      // Remove old domain bounds
-      if (domainBoundsRef.current && map.hasLayer(domainBoundsRef.current)) {
-        map.removeLayer(domainBoundsRef.current);
-      }
-      domainBoundsRef.current = L.rectangle(
-        [[bbox[1], bbox[0]], [bbox[3], bbox[2]]],
-        { color: '#38bdf8', weight: 1.5, dashArray: '4, 4', fill: false, interactive: false }
-      ).addTo(map);
-      map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]], { padding: [40, 40] });
-    }
-  }, [analysisData, maskSigOnly, showLisa]);
-
-  // GIBS satellite layer toggle
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    if (gibsLayerRef.current && map.hasLayer(gibsLayerRef.current)) {
-      map.removeLayer(gibsLayerRef.current);
-      gibsLayerRef.current = null;
-    }
-
-    if (showGibs) {
-      const gibsDate = `${endYear}-07-15`;
-      gibsLayerRef.current = L.tileLayer(
-        `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${gibsDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,
-        { attribution: `Imagery &copy; NASA EOSDIS GIBS (${gibsDate})`, maxZoom: 9, opacity: 0.65 }
-      ).addTo(map);
-      if (gridLayerRef.current) {
-        if (typeof gridLayerRef.current.bringToFront === 'function') {
-          gridLayerRef.current.bringToFront();
-        } else if (typeof gridLayerRef.current.eachLayer === 'function') {
-          gridLayerRef.current.eachLayer((layer) => layer.bringToFront?.());
-        }
-      }
-    }
-  }, [showGibs, endYear]);
-
   const renderSpatialGrid = useCallback((grid) => {
+    if (!analysisData?.summary) return;
     const canvasRenderer = L.canvas({ padding: 0.5 });
     const useFdr = useStore.getState().useFdr;
     const { min_slope: minSlope, max_slope: maxSlope } = analysisData.summary;
@@ -139,7 +55,7 @@ export default function TrendMap() {
       `);
 
       marker.on('click', () => selectCell(cell.lat, cell.lon));
-      gridLayerRef.current.addLayer(marker);
+      gridLayerRef.current?.addLayer(marker);
     });
   }, [analysisData, maskSigOnly, showLisa, selectCell]);
 
@@ -166,10 +82,100 @@ export default function TrendMap() {
           <strong>Temp Slope:</strong> ${cell.temp_slope !== undefined ? (cell.temp_slope > 0 ? '+' : '') + cell.temp_slope.toFixed(3) + ' °C/dec' : 'N/A'}
         </div>
       `);
-
-      gridLayerRef.current.addLayer(marker);
+      marker.on('click', () => useStore.getState().selectCompoundCell(cell));
+      gridLayerRef.current?.addLayer(marker);
     });
   }, []);
+
+  // Initialize map
+  useEffect(() => {
+    const container = mapRef.current;
+    if (mapInstanceRef.current || !container) return;
+
+    const map = L.map(container, {
+      center: [34.0, -98.0],
+      zoom: 5,
+      minZoom: 2,
+      maxZoom: 10,
+      zoomControl: true,
+    });
+
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, DeLorme, NAVTEQ | NASA Space Apps 2026',
+        maxZoom: 16,
+      }
+    ).addTo(map);
+
+    gridLayerRef.current = L.layerGroup().addTo(map);
+    contrastLayerRef.current = L.layerGroup().addTo(map);
+    mapInstanceRef.current = map;
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+      if (container) {
+        delete container._leaflet_id;
+      }
+    };
+  }, []);
+
+  // Render grid when analysis data or toggles change
+  useEffect(() => {
+    if (!gridLayerRef.current || !analysisData) return;
+    gridLayerRef.current.clearLayers();
+
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const isCompound = analysisData.isCompound;
+
+    if (isCompound && analysisData.cells) {
+      renderCompoundGrid(analysisData.cells);
+    } else if (analysisData.grid) {
+      renderSpatialGrid(analysisData.grid);
+    }
+
+    // Fit bounds
+    const bbox = analysisData.summary?.bounding_box || analysisData.bbox;
+    if (bbox && bbox.length === 4) {
+      if (domainBoundsRef.current && map.hasLayer(domainBoundsRef.current)) {
+        map.removeLayer(domainBoundsRef.current);
+      }
+      domainBoundsRef.current = L.rectangle(
+        [[bbox[1], bbox[0]], [bbox[3], bbox[2]]],
+        { color: '#38bdf8', weight: 1.5, dashArray: '4, 4', fill: false, interactive: false }
+      ).addTo(map);
+      map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]], { padding: [40, 40] });
+    }
+  }, [analysisData, maskSigOnly, showLisa, renderSpatialGrid, renderCompoundGrid]);
+
+  // GIBS satellite layer toggle
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (gibsLayerRef.current && map.hasLayer(gibsLayerRef.current)) {
+      map.removeLayer(gibsLayerRef.current);
+      gibsLayerRef.current = null;
+    }
+
+    if (showGibs) {
+      const gibsDate = `${endYear}-07-15`;
+      gibsLayerRef.current = L.tileLayer(
+        `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${gibsDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,
+        { attribution: `Imagery &copy; NASA EOSDIS GIBS (${gibsDate})`, maxZoom: 9, opacity: 0.65 }
+      ).addTo(map);
+
+      if (gridLayerRef.current) {
+        if (typeof gridLayerRef.current.bringToFront === 'function') {
+          gridLayerRef.current.bringToFront();
+        } else if (typeof gridLayerRef.current.eachLayer === 'function') {
+          gridLayerRef.current.eachLayer((layer) => layer.bringToFront?.());
+        }
+      }
+    }
+  }, [showGibs, endYear]);
 
   return (
     <div className="relative w-full h-full rounded-xl overflow-hidden border border-border-subtle">

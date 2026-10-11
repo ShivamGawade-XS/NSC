@@ -5,10 +5,10 @@ Integrates live Gemini / OpenAI API with strict zero-hallucination guardrails
 and a guaranteed deterministic scientific template fallback.
 """
 
-import os
 import json
 import logging
-from typing import Dict, Any, Optional
+import os
+
 import httpx
 
 from app.schemas.analysis import ExplainRequest, ExplainResponse

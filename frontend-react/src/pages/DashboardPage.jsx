@@ -48,7 +48,7 @@ export default function DashboardPage() {
           <div className="glass-card px-4 py-2 mb-4 flex items-center justify-between">
             <div className="text-xs text-text-secondary font-[var(--font-mono)]">
               {analysisData.variable_name} ({analysisData.time_span}) •{' '}
-              {analysisData.summary.significant_cells_fdr} / {analysisData.summary.total_cells} Significant Cells [FDR (q ≤ 0.05)]
+              {analysisData.summary?.significant_cells_fdr ?? 0} / {analysisData.summary?.total_cells ?? 0} Significant Cells [FDR (q ≤ 0.05)]
             </div>
             {analysisData.summary?.spatial_autocorrelation && (
               <div className="text-[10px] text-text-muted font-[var(--font-mono)]">
@@ -56,6 +56,18 @@ export default function DashboardPage() {
                 {analysisData.summary.spatial_autocorrelation.interpretation})
               </div>
             )}
+          </div>
+        )}
+
+        {analysisData && analysisData.isCompound && (
+          <div className="glass-card px-4 py-2.5 mb-4 flex items-center justify-between border-amber-500/20 bg-amber-950/10">
+            <div className="text-xs text-amber-200 font-[var(--font-mono)] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              Compound Hazard Analysis (T + P) • Climate Aridification Index (CAI)
+            </div>
+            <div className="text-[10px] text-zinc-400 font-[var(--font-mono)]">
+              {analysisData.cells?.length || 0} Cells Evaluated
+            </div>
           </div>
         )}
 

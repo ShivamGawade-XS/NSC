@@ -1,13 +1,14 @@
+import os
+import time
+from contextlib import asynccontextmanager
+from pathlib import Path
+
+import psutil
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-from app.api.endpoints import router as api_router
 
-import time
-import psutil
-import os
-from contextlib import asynccontextmanager
+from app.api.endpoints import router as api_router
 from app.core.config import settings
 
 START_TIME = time.time()

@@ -10,8 +10,8 @@ Tests DatasetAdapter contract:
 - synthetic data labeling
 """
 
-import pytest
 import numpy as np
+import pytest
 from app.adapters.merra2 import MERRA2Adapter
 
 

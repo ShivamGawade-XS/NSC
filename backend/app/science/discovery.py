@@ -10,7 +10,8 @@ Formula:
   discovery_score = |slope| * significance_weight * completeness * (1.0 + spatial_coherence)
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 import numpy as np
 
 
@@ -63,8 +64,8 @@ def discover_candidate_signals(
     longitudes: np.ndarray,
     alpha: float = 0.05,
     top_n: int = 10,
-    data_3d: Optional[np.ndarray] = None
-) -> List[Dict[str, Any]]:
+    data_3d: np.ndarray | None = None
+) -> list[dict[str, Any]]:
     """
     Rank all grid cells by the transparent composite discovery formula.
     

@@ -4,7 +4,8 @@ Implements non-parametric Mann-Kendall test, Hamed & Rao (1998) autocorrelation 
 Sen's slope (Theil-Sen robust estimator), and Benjamini-Hochberg False Discovery Rate (FDR).
 """
 
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
+
 import numpy as np
 from scipy import stats
 
@@ -54,7 +55,7 @@ def mann_kendall_test(
     y: np.ndarray,
     alpha: float = 0.05,
     correct_autocorrelation: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Perform the Mann-Kendall monotonic trend test on a 1D time series.
     
@@ -92,7 +93,7 @@ def mann_kendall_test(
     s = int(np.sum(sgn[iu]))
 
     # Tie correction: find identical values
-    unique_vals, counts = np.unique(data, return_counts=True)
+    _unique_vals, counts = np.unique(data, return_counts=True)
     tie_groups = counts[counts > 1]
     tie_term = np.sum(tie_groups * (tie_groups - 1) * (2 * tie_groups + 5))
 
@@ -145,10 +146,10 @@ def mann_kendall_test(
 
 def sens_slope(
     y: np.ndarray,
-    time_steps: Optional[np.ndarray] = None,
+    time_steps: np.ndarray | None = None,
     alpha: float = 0.05,
-    var_s: Optional[float] = None
-) -> Dict[str, float]:
+    var_s: float | None = None
+) -> dict[str, float]:
     """
     Calculate the robust Sen's Slope (Theil-Sen estimator), intercept,
     and Gilbert (1987) non-parametric (1 - alpha)% confidence intervals.
@@ -221,7 +222,7 @@ def sens_slope(
 def benjamini_hochberg_fdr(
     p_values: np.ndarray,
     alpha: float = 0.05
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Apply Benjamini-Hochberg False Discovery Rate (FDR) multiplicity correction.
     
@@ -271,9 +272,9 @@ def benjamini_hochberg_fdr(
 
 def compute_spatial_trends(
     data_3d: np.ndarray,
-    time_coords: Optional[np.ndarray] = None,
+    time_coords: np.ndarray | None = None,
     alpha: float = 0.05
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Compute spatial trends across a 3D grid [time, lat, lon].
     Utilizes multi-threaded parallel chunk execution across rows for high performance.
@@ -291,7 +292,7 @@ def compute_spatial_trends(
     import os
     from concurrent.futures import ThreadPoolExecutor
 
-    t_len, h_len, w_len = data_3d.shape
+    _t_len, h_len, w_len = data_3d.shape
     
     slopes = np.zeros((h_len, w_len), dtype=float)
     intercepts = np.zeros((h_len, w_len), dtype=float)
@@ -373,9 +374,9 @@ def compute_spatial_trends(
 
 def pettitt_changepoint_test(
     y: np.ndarray,
-    time_coords: Optional[np.ndarray] = None,
+    time_coords: np.ndarray | None = None,
     alpha: float = 0.05
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Pettitt's (1979) non-parametric test for detecting a single abrupt regime changepoint
     in a continuous climate time series.

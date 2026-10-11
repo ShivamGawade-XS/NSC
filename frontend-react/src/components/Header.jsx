@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export default function Header() {
   const [utc, setUtc] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
     const tick = () => {

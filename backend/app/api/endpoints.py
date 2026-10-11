@@ -4,43 +4,53 @@ Routes for datasets, variables, trend analysis, map layers,
 time series, discovery signals, contrasts, provenance, and AI explanations.
 """
 
-from typing import Dict, Any, List, Optional
-import numpy as np
-from fastapi import APIRouter, HTTPException, Query
-
 import os
 import shutil
 import tempfile
 import threading
 from collections import OrderedDict
-from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
+from typing import Any
+
+import numpy as np
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from starlette.background import BackgroundTask
 
+from app.adapters.merra2 import MERRA2Adapter
+from app.adapters.nasa_power import NASAPowerAdapter
 from app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
-    SpatialGridPoint,
     AnalysisSummary,
+    CandidateSignal,
     CellDetailResponse,
+    CompoundHazardRequest,
+    CompoundHazardResponse,
+    ContrastsResponse,
     ExplainRequest,
     ExplainResponse,
     MapLayerResponse,
-    SignalsResponse,
-    CandidateSignal,
-    ContrastsResponse,
     ProvenanceResponse,
+    SignalsResponse,
+    SpatialGridPoint,
     VariableInfo,
-    CompoundHazardRequest,
-    CompoundHazardResponse
 )
-from app.adapters.merra2 import MERRA2Adapter
-from app.adapters.nasa_power import NASAPowerAdapter
-from app.science.trend import compute_spatial_trends, mann_kendall_test, sens_slope, pettitt_changepoint_test
+from app.science.compound import compute_compound_hazard
 from app.science.contrasts import find_contrasting_regions
 from app.science.discovery import discover_candidate_signals
 from app.science.explainer import explain_evidence_with_ai
-from app.science.export import export_to_netcdf, export_to_geojson, generate_scientific_dossier, generate_jupyter_notebook
-from app.science.compound import compute_compound_hazard
+from app.science.export import (
+    export_to_geojson,
+    export_to_netcdf,
+    generate_jupyter_notebook,
+    generate_scientific_dossier,
+)
+from app.science.trend import (
+    compute_spatial_trends,
+    mann_kendall_test,
+    pettitt_changepoint_test,
+    sens_slope,
+)
 
 router = APIRouter()
 
@@ -51,14 +61,14 @@ ADAPTERS = {
 }
 
 from app.core.config import Settings
-from app.core.db_cache import save_to_db_cache, load_from_db_cache, get_cache_db_stats
+from app.core.db_cache import get_cache_db_stats, load_from_db_cache, save_to_db_cache
 
 # Thread-safe in-memory LRU analysis cache
 CACHE_LOCK = threading.Lock()
-ANALYSIS_CACHE: OrderedDict[str, Dict[str, Any]] = OrderedDict()
+ANALYSIS_CACHE: OrderedDict[str, dict[str, Any]] = OrderedDict()
 
 
-def get_cached_analysis(analysis_id: str) -> Optional[Dict[str, Any]]:
+def get_cached_analysis(analysis_id: str) -> dict[str, Any] | None:
     """Retrieve analysis from cache with thread-safe LRU ordering and L2 SQLite fallback."""
     with CACHE_LOCK:
         if analysis_id in ANALYSIS_CACHE:
@@ -76,7 +86,7 @@ def get_cached_analysis(analysis_id: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def set_cached_analysis(analysis_id: str, value: Dict[str, Any], max_size: Optional[int] = None) -> None:
+def set_cached_analysis(analysis_id: str, value: dict[str, Any], max_size: int | None = None) -> None:
     """Store analysis in cache with thread-safe bounded LRU eviction and indexed SQLite persistence."""
     effective_max = max_size if max_size is not None else Settings.CACHE_MAX_SIZE
     with CACHE_LOCK:
@@ -91,7 +101,7 @@ def set_cached_analysis(analysis_id: str, value: Dict[str, Any], max_size: Optio
 
 
 @router.get("/health")
-def health_check() -> Dict[str, Any]:
+def health_check() -> dict[str, Any]:
     """API health, database cache status, and capabilities."""
     return {
         "status": "healthy",
@@ -108,13 +118,13 @@ def health_check() -> Dict[str, Any]:
 
 
 @router.get("/datasets")
-def list_datasets() -> List[Dict[str, Any]]:
+def list_datasets() -> list[dict[str, Any]]:
     """Return available NASA datasets and supported variables."""
     return [adapter.metadata() for adapter in ADAPTERS.values()]
 
 
 @router.get("/datasets/{dataset_id}")
-def get_dataset(dataset_id: str) -> Dict[str, Any]:
+def get_dataset(dataset_id: str) -> dict[str, Any]:
     """Retrieve metadata for a specific dataset."""
     adapter = ADAPTERS.get(dataset_id)
     if not adapter:
@@ -122,10 +132,10 @@ def get_dataset(dataset_id: str) -> Dict[str, Any]:
     return adapter.metadata()
 
 
-@router.get("/variables", response_model=List[VariableInfo])
-def list_variables() -> List[VariableInfo]:
+@router.get("/variables", response_model=list[VariableInfo])
+def list_variables() -> list[VariableInfo]:
     """Return catalog of all supported physical variables across datasets."""
-    variables: List[VariableInfo] = []
+    variables: list[VariableInfo] = []
     for d_id, adapter in ADAPTERS.items():
         meta = adapter.metadata()
         for v_id, v_info in meta["variables"].items():
@@ -206,7 +216,7 @@ def run_analysis(req: AnalysisRequest) -> AnalysisResponse:
     )
 
     # Build spatial grid points (with CI and LISA)
-    grid_points: List[SpatialGridPoint] = []
+    grid_points: list[SpatialGridPoint] = []
     h_len, w_len = slopes.shape
     ci_lower = trend_results.get("ci_lower", np.zeros_like(slopes))
     ci_upper = trend_results.get("ci_upper", np.zeros_like(slopes))
@@ -340,8 +350,8 @@ def get_analysis_map(analysis_id: str) -> MapLayerResponse:
 @router.get("/analysis/{analysis_id}/cell", response_model=CellDetailResponse)
 def get_cell_timeseries(
     analysis_id: str,
-    lat: Optional[float] = Query(None, description="Latitude coordinate"),
-    lon: Optional[float] = Query(None, description="Longitude coordinate")
+    lat: float | None = Query(None, description="Latitude coordinate"),
+    lon: float | None = Query(None, description="Longitude coordinate")
 ) -> CellDetailResponse:
     """Retrieve time series, fitted trend, and structured evidence record for coordinates."""
     cached = get_cached_analysis(analysis_id)
@@ -514,7 +524,6 @@ def export_analysis_netcdf(analysis_id: str):
 
     raw = cached["raw_slice"]
     grid = cached["grid"]
-    trend_results = cached["trend_results"]
     req = cached["req"]
 
     analysis_record = {
@@ -553,7 +562,7 @@ def export_analysis_netcdf(analysis_id: str):
         )
     except Exception as e:
         shutil.rmtree(out_dir, ignore_errors=True)
-        raise HTTPException(status_code=500, detail=f"NetCDF export failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"NetCDF export failed: {e!s}")
 
 
 @router.get("/analysis/{analysis_id}/export/geojson")
@@ -608,8 +617,6 @@ def get_scientific_dossier(analysis_id: str):
     trend_results = cached["trend_results"]
     req = cached["req"]
 
-    slopes = [g.slope for g in grid]
-    sig_count = sum(1 for g in grid if g.is_significant_fdr)
     moran = trend_results.get("moran_stats", {})
 
     analysis_record = {
@@ -700,7 +707,7 @@ def run_compound_hazard_analysis(req: CompoundHazardRequest) -> CompoundHazardRe
             prefer_live=req.prefer_live
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Temperature variable error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Temperature variable error: {e!s}")
 
     # 2. Fetch precipitation variable slice
     try:
@@ -712,7 +719,7 @@ def run_compound_hazard_analysis(req: CompoundHazardRequest) -> CompoundHazardRe
             prefer_live=req.prefer_live
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"Precipitation variable error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Precipitation variable error: {e!s}")
 
     # Compute spatial trends for both variables (scaled to decades)
     time_coords_t = (slice_t["time"] - req.start_year) / 10.0

@@ -4,7 +4,7 @@
  */
 import { create } from 'zustand';
 import * as api from '../api/client';
-import { DETECTIVE_PRESETS, DATASET_VARIABLES } from '../utils/helpers';
+import { DETECTIVE_PRESETS } from '../utils/helpers';
 
 const useStore = create((set, get) => ({
   // Analysis state
@@ -95,7 +95,7 @@ const useStore = create((set, get) => ({
       if (signals.length > 0) {
         get().selectCell(signals[0].lat, signals[0].lon);
       } else {
-        const target = data.grid.find(c => c.is_significant_fdr) || data.grid[0];
+        const target = data.grid?.find(c => c.is_significant_fdr) || data.grid?.[0];
         if (target) get().selectCell(target.lat, target.lon);
       }
     } catch (err) {
@@ -127,11 +127,48 @@ const useStore = create((set, get) => ({
       const data = await api.runCompoundAnalysis(payload);
       set({
         analysisData: { ...data, isCompound: true },
+        analysisId: data.analysis_id,
+        candidateSignals: [],
         isLoading: false,
       });
+
+      if (data.cells && data.cells.length > 0) {
+        get().selectCompoundCell(data.cells[0]);
+      }
     } catch (err) {
       set({ isLoading: false, error: err.message });
     }
+  },
+
+  selectCompoundCell: (cell) => {
+    set({
+      selectedCell: {
+        lat: cell.lat,
+        lon: cell.lon,
+        variable_name: 'Compound Hazard (T + P)',
+        display_units: 'CAI',
+        slope_units: '°C / decade',
+        slope: cell.temp_slope,
+        p_value: cell.temp_significant ? 0.01 : 0.2,
+        q_value: cell.temp_significant ? 0.01 : 0.2,
+        tau: cell.cai,
+        significant: cell.temp_significant || cell.precip_significant,
+        direction: cell.hazard_type,
+        years: [],
+        observations: [],
+        fitted_values: [],
+        lisa_cluster: cell.hazard_class,
+        evidence_record: {
+          observation: `Compound Hazard Classification: ${cell.hazard_type.replace(/_/g, ' ').toUpperCase()}`,
+          magnitude: `Temp Trend: ${cell.temp_slope > 0 ? '+' : ''}${cell.temp_slope} °C/dec | Precip: ${cell.precip_slope > 0 ? '+' : ''}${cell.precip_slope} mm/day/dec`,
+          significance: `Climate Aridification Index (CAI): ${cell.cai}`,
+          coverage: 'Joint Bivariate Spatiotemporal Grid',
+          method: 'Compound Hazard Classification & Aridification Index',
+          source: 'NASA Ingestion',
+          scientific_limitation: 'Multivariate divergence metric across observed temporal period.'
+        }
+      }
+    });
   },
 
   selectCell: async (lat, lon) => {

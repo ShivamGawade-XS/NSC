@@ -7,16 +7,17 @@ to identify compound geophysical divergence:
 - Pluvial Thermal Buffering
 """
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 import numpy as np
 
 
 def compute_compound_hazard(
     temp_slopes: np.ndarray,
     precip_slopes: np.ndarray,
-    temp_sig: Optional[np.ndarray] = None,
-    precip_sig: Optional[np.ndarray] = None
-) -> Dict[str, Any]:
+    temp_sig: np.ndarray | None = None,
+    precip_sig: np.ndarray | None = None
+) -> dict[str, Any]:
     """
     Compute multi-hazard compound divergence across matching spatial grids.
 

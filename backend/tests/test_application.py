@@ -10,10 +10,9 @@ Verifies:
 - malformed AI request handling
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from app.main import app
 from app.api.endpoints import ANALYSIS_CACHE
+from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 

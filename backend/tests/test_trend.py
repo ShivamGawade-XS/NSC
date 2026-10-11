@@ -20,10 +20,10 @@ Mathematically verifies:
 import numpy as np
 import pytest
 from app.science.trend import (
+    benjamini_hochberg_fdr,
+    compute_spatial_trends,
     mann_kendall_test,
     sens_slope,
-    benjamini_hochberg_fdr,
-    compute_spatial_trends
 )
 
 
@@ -151,16 +151,16 @@ def test_threshold_edge_p_values():
     """Verify exact behavior at the edge of significance alpha = 0.05."""
     # Single test: boundary is exactly alpha = 0.05
     p_sig = np.array([0.0499])
-    q_sig, sig_sig = benjamini_hochberg_fdr(p_sig, alpha=0.05)
+    _q_sig, sig_sig = benjamini_hochberg_fdr(p_sig, alpha=0.05)
     assert bool(sig_sig[0]) is True
 
     p_insig = np.array([0.0501])
-    q_insig, sig_insig = benjamini_hochberg_fdr(p_insig, alpha=0.05)
+    _q_insig, sig_insig = benjamini_hochberg_fdr(p_insig, alpha=0.05)
     assert bool(sig_insig[0]) is False
 
     # Multiple comparisons: m=2, rank 1 critical value is 0.05 / 2 = 0.025
     p_multi = np.array([0.020, 0.060])
-    q_multi, sig_multi = benjamini_hochberg_fdr(p_multi, alpha=0.05)
+    _q_multi, sig_multi = benjamini_hochberg_fdr(p_multi, alpha=0.05)
     assert bool(sig_multi[0]) is True
     assert bool(sig_multi[1]) is False
 

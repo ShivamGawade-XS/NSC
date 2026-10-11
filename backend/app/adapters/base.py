@@ -11,25 +11,22 @@ Interface adheres to:
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
-import numpy as np
+from typing import Any
 
 
 class BaseDatasetAdapter(ABC):
     """Abstract base class for Earth-system data providers."""
 
     @abstractmethod
-    def discover(self, query: Optional[str] = None) -> List[Dict[str, Any]]:
+    def discover(self, query: str | None = None) -> list[dict[str, Any]]:
         """Discover available collection granules, variables, or temporal bounds."""
-        pass
 
     @abstractmethod
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         """Return dataset metadata, variable definitions, and valid temporal/spatial bounds."""
-        pass
 
     # Backwards-compatibility alias for metadata()
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         """Alias for metadata()."""
         return self.metadata()
 
@@ -39,13 +36,12 @@ class BaseDatasetAdapter(ABC):
         variable: str,
         start_year: int,
         end_year: int,
-        bbox: Optional[List[float]] = None
+        bbox: list[float] | None = None
     ) -> None:
         """
         Validate input parameters against dataset capabilities.
         Raises ValueError with clear explanation if invalid.
         """
-        pass
 
     @abstractmethod
     def fetch(
@@ -53,44 +49,41 @@ class BaseDatasetAdapter(ABC):
         variable: str,
         start_year: int,
         end_year: int,
-        bbox: Optional[List[float]] = None,
+        bbox: list[float] | None = None,
         prefer_live: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Fetch raw data array from NASA Earthdata / CMR or local cached fixture.
         Must explicitly report 'is_synthetic' and 'data_source_label'.
         """
-        pass
 
     @abstractmethod
     def subset(
         self,
-        raw_data: Dict[str, Any],
-        bbox: Optional[List[float]] = None
-    ) -> Dict[str, Any]:
+        raw_data: dict[str, Any],
+        bbox: list[float] | None = None
+    ) -> dict[str, Any]:
         """
         Slice data along spatial coordinates [min_lon, min_lat, max_lon, max_lat].
         """
-        pass
 
     @abstractmethod
     def normalize(
         self,
-        subset_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        subset_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Standardize physical units, ascending coordinate sorting, and metadata schema.
         """
-        pass
 
     def fetch_subset(
         self,
         variable: str,
         start_year: int,
         end_year: int,
-        bbox: Optional[List[float]] = None,
+        bbox: list[float] | None = None,
         prefer_live: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Pipeline execution: validate -> fetch -> subset -> normalize.
         """
