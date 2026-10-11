@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import useStore from '../store/useStore';
+import { playTactileClick } from '../utils/audio';
 
 export default function Header() {
   const [utc, setUtc] = useState('');
