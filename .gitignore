@@ -4,10 +4,12 @@ __pycache__/
 *$py.class
 *.so
 
-# Environments
+# Environments & Credentials
 .env
 .env.local
 .env.*.local
+.netrc
+_netrc
 venv/
 .venv/
 env/
@@ -37,6 +39,9 @@ yarn-error.log*
 *.db
 *.db-wal
 *.db-shm
+*.sqlite
+*.sqlite3
+earthdata_cache.db*
 /data/
 cache/
 *.pdf

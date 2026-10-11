@@ -60,6 +60,36 @@ export default function ExportButtons() {
           sub=".ipynb"
           onClick={() => handleExport(api.exportNotebook, 'Jupyter Notebook')}
         />
+        <ExportBtn
+          icon="📜"
+          label="NASA TM"
+          sub=".tex / LaTeX"
+          onClick={() => {
+            if (!analysisId) {
+              toast.error('Run an analysis first.');
+              return;
+            }
+            useStore.getState().setLatexModalOpen(true);
+          }}
+        />
+        <ExportBtn
+          icon="🚀"
+          label="Colab"
+          sub="Interactive"
+          onClick={async () => {
+            if (!analysisId) {
+              toast.error('Run an analysis first.');
+              return;
+            }
+            try {
+              const res = await api.getColabLink(analysisId);
+              window.open(res.colab_launcher_url, '_blank');
+              toast.success('Launched Google Colab!');
+            } catch (err) {
+              toast.error(`Colab error: ${err.message}`);
+            }
+          }}
+        />
       </div>
       <button
         onClick={handleShareLink}

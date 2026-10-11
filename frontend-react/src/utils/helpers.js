@@ -3,6 +3,17 @@
  * Coordinate formatting, color scales, and statistical helpers.
  */
 
+// XSS sanitization helper for safe DOM and Leaflet tooltip insertion
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Coordinate formatting: proper N/S and E/W cardinal directions
 export function formatCoords(lat, lon) {
   const ns = lat >= 0 ? `${Math.abs(lat).toFixed(2)}°N` : `${Math.abs(lat).toFixed(2)}°S`;

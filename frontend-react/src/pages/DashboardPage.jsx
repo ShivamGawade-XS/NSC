@@ -6,6 +6,8 @@ import AnalysisPanel from '../components/AnalysisPanel';
 import SignalsList from '../components/SignalsList';
 import EvidencePanel from '../components/EvidencePanel';
 import ExportButtons from '../components/ExportButtons';
+import CommandPaletteModal from '../components/CommandPaletteModal';
+import LatexModal from '../components/LatexModal';
 import useStore from '../store/useStore';
 
 export default function DashboardPage() {
@@ -16,6 +18,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-bg-deep">
       <Header />
+      <CommandPaletteModal />
+      <LatexModal />
       <Toaster
         position="bottom-right"
         toastOptions={{

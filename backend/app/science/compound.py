@@ -94,14 +94,29 @@ def compute_compound_hazard(
     arid_frac = round(arid_count / max(1, n_valid), 3)
     intens_frac = round(intens_count / max(1, n_valid), 3)
 
+    # Compute Archimedean Copula Joint Multi-Hazard Return Periods
+    from app.science.copula_hazard import compute_compound_copula_return_periods
+    copula_results = compute_compound_copula_return_periods(
+        temp_slopes=temp_slopes,
+        precip_slopes=precip_slopes,
+        base_timestep_years=10.0
+    )
+
     return {
         "cai_map": cai_map,
         "hazard_classification": hazard_map,
         "aridification_fraction": arid_frac,
         "intensification_fraction": intens_frac,
+        "copula_model": copula_results.get("copula_model", {}),
+        "joint_return_periods_years": copula_results.get("joint_return_periods_years", np.full(shape, 10.0)),
+        "max_return_period_years": copula_results.get("max_return_period_years", 10.0),
+        "compound_extreme_cells": copula_results.get("compound_extreme_cells", 0),
         "total_analyzed_cells": n_valid,
         "summary": (
             f"Analyzed {n_valid} cells. Aridification regime covers {arid_frac*100:.1f}% "
-            f"of domain; hydrological intensification covers {intens_frac*100:.1f}%."
+            f"of domain; hydrological intensification covers {intens_frac*100:.1f}%. "
+            f"Archimedean Copula identified {copula_results.get('compound_extreme_cells', 0)} "
+            f"hotspots with joint compound return period > 50 years."
         )
     }
+
