@@ -8,9 +8,11 @@ import sys
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-# Disable rate limiting during automated test execution to prevent 429 in rapid test suites
+# Disable rate limiting during automated test execution or load testing
 is_test_env = (
     os.getenv("TESTING", "").lower() in ("true", "1", "yes")
+    or os.getenv("DISABLE_RATE_LIMIT", "").lower() in ("true", "1", "yes")
+    or os.getenv("LOAD_TESTING", "").lower() in ("true", "1", "yes")
     or "pytest" in sys.modules
     or any("pytest" in arg for arg in sys.argv)
 )

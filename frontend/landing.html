@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EarthSift — NASA Earth System Trend Detective</title>
   <meta name="description" content="Evidence-first Earth-system trend discovery powered by NASA datasets. Statistical rigor meets aerospace-grade visualization." />
-  <meta name="theme-color" content="#06090F" />
+  <meta name="color-scheme" content="dark" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -55,7 +55,7 @@
 
     /* HERO */
     .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:120px 40px 80px;text-align:center;}
-    .hero-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(0,240,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,0.04) 1px,transparent 1px);background-size:60px 60px;animation:gridDrift 30s linear infinite;mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,black 40%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,black 40%,transparent 100%);}
+    .hero-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(0,240,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,0.04) 1px,transparent 1px);background-size:60px 60px;animation:gridDrift 30s linear infinite;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,black 40%,transparent 100%);mask-image:radial-gradient(ellipse 80% 70% at 50% 50%,black 40%,transparent 100%);}
     @keyframes gridDrift{0%{background-position:0 0;}100%{background-position:60px 60px;}}
     .hero-glow{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.35;animation:blobFloat 12s ease-in-out infinite alternate;pointer-events:none;}
     .hero-glow.g1{width:600px;height:600px;background:radial-gradient(circle,rgba(0,240,255,0.25),transparent 70%);top:-100px;left:-150px;animation-duration:14s;}
@@ -182,6 +182,34 @@
     .footer-link:hover{color:var(--text-muted);}
     .footer-right{font-family:var(--font-mono);font-size:0.68rem;color:var(--text-subtle);letter-spacing:0.05em;}
 
+    .hero-orbit-dot{transform-origin:350px 350px;}
+    .hero-orbit-dot.dot-1{animation:orb1 18s linear infinite;}
+    .hero-orbit-dot.dot-2{animation:orb1 18s linear infinite reverse;}
+    .hero-orbit-dot.dot-3{animation:orb2 12s linear infinite;}
+    .hero-orbit-dot.dot-4{animation:orb2 12s linear infinite reverse;}
+
+    .feature-card.blue .feature-tag{color:#60A5FA;background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.2);}
+    .feature-card.amber .feature-tag{color:var(--accent-amber);background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);}
+    .feature-card.rose .feature-tag{color:var(--accent-hotspot);background:rgba(244,63,94,0.08);border-color:rgba(244,63,94,0.2);}
+    .feature-card.emerald .feature-tag{color:var(--accent-sig);background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.2);}
+    .feature-card.violet .feature-tag{color:#A78BFA;background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.2);}
+
+    .telem-value.rose{color:var(--accent-hotspot);}
+    .telem-value.cyan{color:var(--accent-cyan);}
+    .telem-value.amber{color:var(--accent-amber);}
+    .telem-value.emerald{color:var(--accent-sig);}
+
+    .telem-row:nth-child(1) .telem-bar-fill{width:84%;}
+    .telem-row:nth-child(2) .telem-bar-fill{width:61%;}
+    .telem-row:nth-child(3) .telem-bar-fill{width:38%;}
+    .telem-row:nth-child(4) .telem-bar-fill{width:78%;}
+    .telem-row:nth-child(5) .telem-bar-fill{width:94%;}
+    .telem-row:nth-child(6) .telem-bar-fill{width:22%;}
+
+    .text-center{text-align:center;}
+    .section-sub.centered{margin:0 auto;}
+    .cta-gradient-text{background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
     @media(max-width:1024px){.features-grid{grid-template-columns:repeat(2,1fr);}.method-steps{grid-template-columns:repeat(2,1fr);}.datasets-layout{grid-template-columns:1fr;}}
     @media(max-width:640px){.features-grid{grid-template-columns:1fr;}.method-steps{grid-template-columns:1fr;}.nav-links{display:none;}.section{padding:60px 20px;}.hero{padding:100px 20px 60px;}}
   </style>
@@ -211,10 +239,10 @@
       <circle cx="350" cy="350" r="280" stroke="rgba(0,240,255,0.8)" stroke-width="1" stroke-dasharray="8 12"/>
       <circle cx="350" cy="350" r="200" stroke="rgba(59,130,246,0.8)" stroke-width="1" stroke-dasharray="4 8"/>
       <circle cx="350" cy="350" r="130" stroke="rgba(0,240,255,0.8)" stroke-width="1" stroke-dasharray="3 6"/>
-      <circle cx="630" cy="350" r="5" fill="#00F0FF" opacity="0.9" style="transform-origin:350px 350px;animation:orb1 18s linear infinite"/>
-      <circle cx="70" cy="350" r="5" fill="#00F0FF" opacity="0.9" style="transform-origin:350px 350px;animation:orb1 18s linear infinite reverse"/>
-      <circle cx="350" cy="150" r="4" fill="#3B82F6" opacity="0.9" style="transform-origin:350px 350px;animation:orb2 12s linear infinite"/>
-      <circle cx="350" cy="550" r="4" fill="#3B82F6" opacity="0.9" style="transform-origin:350px 350px;animation:orb2 12s linear infinite reverse"/>
+      <circle cx="630" cy="350" r="5" fill="#00F0FF" opacity="0.9" class="hero-orbit-dot dot-1"/>
+      <circle cx="70" cy="350" r="5" fill="#00F0FF" opacity="0.9" class="hero-orbit-dot dot-2"/>
+      <circle cx="350" cy="150" r="4" fill="#3B82F6" opacity="0.9" class="hero-orbit-dot dot-3"/>
+      <circle cx="350" cy="550" r="4" fill="#3B82F6" opacity="0.9" class="hero-orbit-dot dot-4"/>
       <style>@keyframes orb1{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}@keyframes orb2{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}</style>
     </svg>
     <div class="hero-content">
@@ -267,11 +295,11 @@
     </div>
     <div class="features-grid">
       <div class="feature-card cyan"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 000 18M3 12h18"/></svg></div><h3 class="feature-title">Interactive Geospatial Map</h3><p class="feature-desc">Full-resolution Leaflet.js grid overlay with per-cell trend significance rendering. Click any 0.5° × 0.5° cell to instantly drill into 24-year time-series data.</p><span class="feature-tag">Leaflet.js • WebGL Heatmap</span></div>
-      <div class="feature-card blue"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22"/></svg></div><h3 class="feature-title">Time-Series Intelligence</h3><p class="feature-desc">Animated Chart.js time-series with Sen's slope overlay, anomaly highlights, and dual-variable correlation panels. Every chart scientifically annotated.</p><span class="feature-tag" style="color:#60A5FA;background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.2)">Chart.js • Sen's Slope</span></div>
-      <div class="feature-card amber"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.942A6.75 6.75 0 0114.39 17.25H9.61a6.75 6.75 0 01-3.84-1.008L4.2 15.3"/></svg></div><h3 class="feature-title">Statistical Engine</h3><p class="feature-desc">Non-parametric Mann-Kendall trend detection with Benjamini-Hochberg FDR correction across all grid cells simultaneously. No spurious discoveries.</p><span class="feature-tag" style="color:var(--accent-amber);background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2)">Mann-Kendall • BH-FDR</span></div>
-      <div class="feature-card rose"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></div><h3 class="feature-title">Multi-Variable Correlation</h3><p class="feature-desc">Pearson correlation heatmaps across Temperature, Precipitation, Wind Speed, Solar Flux, and Humidity simultaneously. Cross-hazard discovery built-in.</p><span class="feature-tag" style="color:var(--accent-hotspot);background:rgba(244,63,94,0.08);border-color:rgba(244,63,94,0.2)">Pearson R • 5 Variables</span></div>
-      <div class="feature-card emerald"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3"/></svg></div><h3 class="feature-title">Live NASA Data Feeds</h3><p class="feature-desc">Direct integration with NASA POWER API and MERRA-2 reanalysis. Two-tier SQLite + RAM cache ensures sub-100ms P99 latency on repeated queries.</p><span class="feature-tag" style="color:var(--accent-sig);background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.2)">NASA POWER • MERRA-2</span></div>
-      <div class="feature-card violet"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></div><h3 class="feature-title">Physical Mechanism Briefing</h3><p class="feature-desc">Auto-generated narrative for every analysis — translating p-values, slopes, and anomaly magnitudes into scientific briefings for researchers and operations.</p><span class="feature-tag" style="color:#A78BFA;background:rgba(139,92,246,0.08);border-color:rgba(139,92,246,0.2)">Mechanism Briefings • Evidence Cards</span></div>
+      <div class="feature-card blue"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22"/></svg></div><h3 class="feature-title">Time-Series Intelligence</h3><p class="feature-desc">Animated Chart.js time-series with Sen's slope overlay, anomaly highlights, and dual-variable correlation panels. Every chart scientifically annotated.</p><span class="feature-tag">Chart.js • Sen's Slope</span></div>
+      <div class="feature-card amber"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.942A6.75 6.75 0 0114.39 17.25H9.61a6.75 6.75 0 01-3.84-1.008L4.2 15.3"/></svg></div><h3 class="feature-title">Statistical Engine</h3><p class="feature-desc">Non-parametric Mann-Kendall trend detection with Benjamini-Hochberg FDR correction across all grid cells simultaneously. No spurious discoveries.</p><span class="feature-tag">Mann-Kendall • BH-FDR</span></div>
+      <div class="feature-card rose"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></div><h3 class="feature-title">Multi-Variable Correlation</h3><p class="feature-desc">Pearson correlation heatmaps across Temperature, Precipitation, Wind Speed, Solar Flux, and Humidity simultaneously. Cross-hazard discovery built-in.</p><span class="feature-tag">Pearson R • 5 Variables</span></div>
+      <div class="feature-card emerald"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3"/></svg></div><h3 class="feature-title">Live NASA Data Feeds</h3><p class="feature-desc">Direct integration with NASA POWER API and MERRA-2 reanalysis. Two-tier SQLite + RAM cache ensures sub-100ms P99 latency on repeated queries.</p><span class="feature-tag">NASA POWER • MERRA-2</span></div>
+      <div class="feature-card violet"><div class="feature-icon"><svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg></div><h3 class="feature-title">Physical Mechanism Briefing</h3><p class="feature-desc">Auto-generated narrative for every analysis — translating p-values, slopes, and anomaly magnitudes into scientific briefings for researchers and operations.</p><span class="feature-tag">Mechanism Briefings • Evidence Cards</span></div>
     </div>
   </section>
 
@@ -290,22 +318,22 @@
       <div class="telem-panel">
         <div class="telem-header"><span class="telem-title">SYS / DATA TELEMETRY</span><div class="telem-live"><span class="beacon-dot"></span>LIVE</div></div>
         <div class="telem-rows">
-          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">T2M — Surface Temperature</span><span class="telem-value" style="color:var(--accent-hotspot)">+1.84°C / decade</span></div><div class="telem-bar-bg"><div class="telem-bar-fill rose" style="width:84%"></div></div></div>
-          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">PRECTOTCORR — Precipitation</span><span class="telem-value" style="color:var(--accent-cyan)">−0.42 mm/yr</span></div><div class="telem-bar-bg"><div class="telem-bar-fill cyan" style="width:61%"></div></div></div>
-          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">WS10M — Wind Speed</span><span class="telem-value" style="color:var(--accent-amber)">+0.12 m/s / yr</span></div><div class="telem-bar-bg"><div class="telem-bar-fill amber" style="width:38%"></div></div></div>
-          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">Sig. Cells (BH-FDR q&lt;0.05)</span><span class="telem-value" style="color:var(--accent-sig)">78.3% of Grid</span></div><div class="telem-bar-bg"><div class="telem-bar-fill emerald" style="width:78%"></div></div></div>
-          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">Cache Hit Rate</span><span class="telem-value" style="color:var(--accent-cyan)">94.2%</span></div><div class="telem-bar-bg"><div class="telem-bar-fill cyan" style="width:94%"></div></div></div>
-          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">API P99 Latency</span><span class="telem-value" style="color:var(--accent-sig)">&lt;100ms</span></div><div class="telem-bar-bg"><div class="telem-bar-fill emerald" style="width:22%"></div></div></div>
+          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">T2M — Surface Temperature</span><span class="telem-value rose">+1.84°C / decade</span></div><div class="telem-bar-bg"><div class="telem-bar-fill rose"></div></div></div>
+          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">PRECTOTCORR — Precipitation</span><span class="telem-value cyan">−0.42 mm/yr</span></div><div class="telem-bar-bg"><div class="telem-bar-fill cyan"></div></div></div>
+          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">WS10M — Wind Speed</span><span class="telem-value amber">+0.12 m/s / yr</span></div><div class="telem-bar-bg"><div class="telem-bar-fill amber"></div></div></div>
+          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">Sig. Cells (BH-FDR q&lt;0.05)</span><span class="telem-value emerald">78.3% of Grid</span></div><div class="telem-bar-bg"><div class="telem-bar-fill emerald"></div></div></div>
+          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">Cache Hit Rate</span><span class="telem-value cyan">94.2%</span></div><div class="telem-bar-bg"><div class="telem-bar-fill cyan"></div></div></div>
+          <div class="telem-row"><div class="telem-row-label"><span class="telem-name">API P99 Latency</span><span class="telem-value emerald">&lt;100ms</span></div><div class="telem-bar-bg"><div class="telem-bar-fill emerald"></div></div></div>
         </div>
       </div>
     </div>
   </section>
 
   <section class="section method-section" id="methodology" aria-label="Methodology">
-    <div style="text-align:center">
+    <div class="text-center">
       <div class="section-label">// ANALYTICAL PIPELINE</div>
       <h2 class="section-title">From Raw Satellite Data<br />to Verified Evidence</h2>
-      <p class="section-sub" style="margin:0 auto">A four-stage reproducible pipeline — every result is independently verifiable and CF-1.8 exportable.</p>
+      <p class="section-sub centered">A four-stage reproducible pipeline — every result is independently verifiable and CF-1.8 exportable.</p>
     </div>
     <div class="method-steps">
       <div class="method-step"><div class="step-num">STEP 01</div><h3 class="step-title">Data Ingest</h3><p class="step-desc">NASA POWER API fetch with 0.5° spatial resolution, daily temporal resolution, 2000–2023 temporal extent. Automatic unit normalization and gap-filling.</p></div>
@@ -319,7 +347,7 @@
     <div class="cta-card">
       <div class="cta-glow" aria-hidden="true"></div>
       <div class="cta-label">// READY TO INVESTIGATE</div>
-      <h2 class="cta-title">Start Your Earth System<br /><span style="background:linear-gradient(135deg,var(--accent-cyan),var(--accent-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Investigation Now</span></h2>
+      <h2 class="cta-title">Start Your Earth System<br /><span class="cta-gradient-text">Investigation Now</span></h2>
       <p class="cta-sub">Launch the live dashboard — select a preset investigation, explore the geospatial evidence map, and drill into time-series at any point on Earth.</p>
       <div class="cta-actions">
         <a href="index.html" class="btn-primary" id="cta-launch-btn">Open Analysis Workspace</a>

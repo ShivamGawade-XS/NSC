@@ -6,6 +6,33 @@ import { getTrendColor, getLISAColor, getHazardColor, formatCoords, escapeHtml }
 import JudgeTourOverlay from './JudgeTourOverlay';
 import { playTactileClick } from '../utils/audio';
 
+const NASA_GIBS_PRESETS = [
+  {
+    id: 'MODIS_Terra_CorrectedReflectance_TrueColor',
+    name: 'MODIS Terra True-Color',
+    sub: 'NASA Terra 250m Surface Radiance',
+    badge: 'TrueColor'
+  },
+  {
+    id: 'VIIRS_SNPP_CorrectedReflectance_TrueColor',
+    name: 'VIIRS Suomi NPP True-Color',
+    sub: 'Ultra-High Res Multi-Spectral Pass',
+    badge: 'VIIRS HD'
+  },
+  {
+    id: 'MODIS_Terra_SurfaceReflectance_Bands721',
+    name: 'MODIS SWIR Bands 7-2-1',
+    sub: 'Infrared Arid Soil & Burn Scars',
+    badge: 'SWIR 721'
+  },
+  {
+    id: 'VIIRS_SNPP_DayNightBand_ENCC',
+    name: 'VIIRS Day/Night Band',
+    sub: 'Thermal & Nocturnal Radiative Flux',
+    badge: 'Nocturnal'
+  }
+];
+
 export default function TrendMap() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -14,13 +41,19 @@ export default function TrendMap() {
   const compareLayerRef = useRef(null);
   const domainBoundsRef = useRef(null);
   const gibsLayerRef = useRef(null);
+  const selectionLayerRef = useRef(null);
 
   const [mapReady, setMapReady] = useState(false);
+  const [mapInstance, setMapInstance] = useState(null);
+  const [isRasterMode, setIsRasterMode] = useState(true);
 
   const analysisData = useStore((s) => s.analysisData);
+  const selectedCell = useStore((s) => s.selectedCell);
   const maskSigOnly = useStore((s) => s.maskSigOnly);
   const showLisa = useStore((s) => s.showLisa);
   const showGibs = useStore((s) => s.showGibs);
+  const gibsLayerId = useStore((s) => s.gibsLayerId);
+  const gibsOpacity = useStore((s) => s.gibsOpacity);
   const isVelocityMode = useStore((s) => s.isVelocityMode);
   const velocityData = useStore((s) => s.velocityData);
   const showCurtainMode = useStore((s) => s.showCurtainMode);
@@ -35,27 +68,52 @@ export default function TrendMap() {
   const endYear = useStore((s) => s.endYear);
   const selectCell = useStore((s) => s.selectCell);
 
-  // 1. Render Spatial Trend Grid
+  // 1. Render Spatial Trend Grid (Continuous Raster Cells or Point Matrix)
   const renderSpatialGrid = useCallback((grid) => {
     if (!analysisData?.summary) return;
     const canvasRenderer = L.canvas({ padding: 0.5 });
     const useFdr = useStore.getState().useFdr;
     const { min_slope: minSlope, max_slope: maxSlope } = analysisData.summary;
 
+    const dLat = 0.5;
+    const dLon = 0.5;
+
+    const activeYear = timeScrubberYear || endYear || 2023;
+    const progress = (endYear && startYear && endYear > startYear)
+      ? Math.max(0.15, Math.min(1.0, (activeYear - startYear) / (endYear - startYear)))
+      : 1.0;
+
     grid.forEach((cell) => {
       const isSig = useFdr ? cell.is_significant_fdr : cell.is_significant_raw;
       if (maskSigOnly && !isSig) return;
 
       const color = showLisa ? getLISAColor(cell.lisa_cluster) : getTrendColor(cell.slope, minSlope, maxSlope);
+      const baseOpacity = isSig ? 0.90 : 0.35;
+      const dynamicFillOpacity = Math.max(0.12, baseOpacity * (0.25 + 0.75 * progress));
 
-      const marker = L.circleMarker([cell.lat, cell.lon], {
-        renderer: canvasRenderer,
-        radius: isSig ? 9 : 6,
-        fillColor: color,
-        fillOpacity: isSig ? 0.90 : 0.45,
-        color: isSig ? (showLisa ? '#ffffff' : '#38bdf8') : '#334155',
-        weight: isSig ? 1.5 : 0.8,
-      });
+      const marker = isRasterMode
+        ? L.rectangle(
+            [[cell.lat - dLat * 0.46, cell.lon - dLon * 0.46], [cell.lat + dLat * 0.46, cell.lon + dLon * 0.46]],
+            {
+              renderer: canvasRenderer,
+              fillColor: color,
+              fillOpacity: dynamicFillOpacity,
+              color: isSig ? (showLisa ? '#ffffff' : '#38bdf8') : 'transparent',
+              weight: isSig ? 1 : 0,
+            }
+          )
+        : L.circleMarker([cell.lat, cell.lon], {
+            renderer: canvasRenderer,
+            radius: isSig ? (6 + 3 * progress) : (3.5 + 2 * progress),
+            fillColor: color,
+            fillOpacity: dynamicFillOpacity,
+            color: isSig ? (showLisa ? '#ffffff' : '#38bdf8') : '#334155',
+            weight: isSig ? 1.5 : 0.8,
+          });
+
+      const accumulatedShift = cell.slope !== undefined && startYear
+        ? (cell.slope * (activeYear - startYear) / 10).toFixed(4)
+        : '0.0000';
 
       const ciText = cell.ci_lower !== undefined && cell.ci_upper !== undefined
         ? `[${cell.ci_lower > 0 ? '+' : ''}${cell.ci_lower.toFixed(3)}, ${cell.ci_upper > 0 ? '+' : ''}${cell.ci_upper.toFixed(3)}]`
@@ -67,7 +125,10 @@ export default function TrendMap() {
           <strong>Slope:</strong> ${cell.slope > 0 ? '+' : ''}${cell.slope.toFixed(4)}<br/>
           <strong>95% CI:</strong> ${escapeHtml(ciText)}<br/>
           <strong>LISA:</strong> ${escapeHtml(cell.lisa_cluster || 'NS')}<br/>
-          <strong>p-val:</strong> ${cell.p_value.toFixed(4)} | <strong>FDR q:</strong> ${cell.q_value !== undefined ? cell.q_value.toFixed(4) : 'N/A'}
+          <strong>p-val:</strong> ${cell.p_value.toFixed(4)} | <strong>FDR q:</strong> ${cell.q_value !== undefined ? cell.q_value.toFixed(4) : 'N/A'}<br/>
+          <span style="color: #38bdf8; display: inline-block; margin-top: 3px; padding-top: 3px; border-top: 1px solid rgba(255,255,255,0.15);">
+            <strong>4D Epoch (${activeYear}):</strong> Net Shift: ${accumulatedShift > 0 ? '+' : ''}${accumulatedShift} ${cell.slope_units || ''}
+          </span>
         </div>
       `);
 
@@ -77,23 +138,37 @@ export default function TrendMap() {
       });
       gridLayerRef.current?.addLayer(marker);
     });
-  }, [analysisData, maskSigOnly, showLisa, selectCell]);
+  }, [analysisData, maskSigOnly, showLisa, selectCell, isRasterMode, timeScrubberYear, startYear, endYear]);
 
   // 2. Render Compound Grid
   const renderCompoundGrid = useCallback((cells) => {
     const canvasRenderer = L.canvas({ padding: 0.5 });
+    const dLat = 0.5;
+    const dLon = 0.5;
+
     cells.forEach((cell) => {
       const color = getHazardColor(cell.hazard_type);
       const isHazard = cell.hazard_type !== 'neutral';
 
-      const marker = L.circleMarker([cell.lat, cell.lon], {
-        renderer: canvasRenderer,
-        radius: isHazard ? 8 : 5,
-        fillColor: color,
-        fillOpacity: isHazard ? 0.92 : 0.45,
-        color: isHazard ? '#ffffff' : '#334155',
-        weight: isHazard ? 1.5 : 0.8,
-      });
+      const marker = isRasterMode
+        ? L.rectangle(
+            [[cell.lat - dLat * 0.46, cell.lon - dLon * 0.46], [cell.lat + dLat * 0.46, cell.lon + dLon * 0.46]],
+            {
+              renderer: canvasRenderer,
+              fillColor: color,
+              fillOpacity: isHazard ? 0.90 : 0.35,
+              color: isHazard ? '#ffffff' : 'transparent',
+              weight: isHazard ? 1.2 : 0,
+            }
+          )
+        : L.circleMarker([cell.lat, cell.lon], {
+            renderer: canvasRenderer,
+            radius: isHazard ? 8 : 5,
+            fillColor: color,
+            fillOpacity: isHazard ? 0.92 : 0.45,
+            color: isHazard ? '#ffffff' : '#334155',
+            weight: isHazard ? 1.5 : 0.8,
+          });
 
       marker.bindTooltip(`
         <div style="font-family: Inter, sans-serif; font-size: 11px;">
@@ -109,7 +184,7 @@ export default function TrendMap() {
       });
       gridLayerRef.current?.addLayer(marker);
     });
-  }, []);
+  }, [isRasterMode]);
 
   // 3. Render Climate Velocity Vectors (Burrows et al. Nature 2011)
   const renderVelocityVectors = useCallback(() => {
@@ -199,23 +274,37 @@ export default function TrendMap() {
       zoomControl: true,
     });
 
-    L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      {
-        attribution: '&copy; Esri, NASA Space Apps 2026',
-        maxZoom: 16,
-      }
-    ).addTo(map);
+    const isDark = document.documentElement.classList.contains('dark');
+    const getTileUrl = (dark) =>
+      dark
+        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+        : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+
+    const baseTileLayer = L.tileLayer(getTileUrl(isDark), {
+      attribution: '&copy; Esri, NASA Space Apps 2026',
+      maxZoom: 16,
+    }).addTo(map);
+
+    // Dynamic theme observer for basemap tiles
+    const observer = new MutationObserver(() => {
+      const darkNow = document.documentElement.classList.contains('dark');
+      baseTileLayer.setUrl(getTileUrl(darkNow));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
     gridLayerRef.current = L.layerGroup().addTo(map);
     velocityLayerRef.current = L.layerGroup().addTo(map);
     compareLayerRef.current = L.layerGroup().addTo(map);
+    selectionLayerRef.current = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
+    setMapInstance(map);
     setMapReady(true);
 
     return () => {
+      observer.disconnect();
       map.remove();
       mapInstanceRef.current = null;
+      setMapInstance(null);
       setMapReady(false);
       if (container) delete container._leaflet_id;
     };
@@ -248,7 +337,40 @@ export default function TrendMap() {
       ).addTo(map);
       map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]], { padding: [40, 40] });
     }
-  }, [analysisData, maskSigOnly, showLisa, renderSpatialGrid, renderCompoundGrid]);
+  }, [analysisData, maskSigOnly, showLisa, timeScrubberYear, renderSpatialGrid, renderCompoundGrid]);
+
+  // Selected Cell Reticle Highlight
+  useEffect(() => {
+    if (!selectionLayerRef.current) return;
+    selectionLayerRef.current.clearLayers();
+    if (!selectedCell || selectedCell.lat === undefined || selectedCell.lon === undefined) return;
+
+    const lat = selectedCell.lat;
+    const lon = selectedCell.lon;
+
+    // Outer dashed target ring
+    const outerRing = L.circleMarker([lat, lon], {
+      radius: 13,
+      color: '#00f0ff',
+      weight: 2,
+      dashArray: '3, 3',
+      fill: false,
+      interactive: false,
+    });
+
+    // Inner bright center reticle dot
+    const innerDot = L.circleMarker([lat, lon], {
+      radius: 3.5,
+      fillColor: '#ffffff',
+      fillOpacity: 1,
+      color: '#00f0ff',
+      weight: 1.5,
+      interactive: false,
+    });
+
+    selectionLayerRef.current.addLayer(outerRing);
+    selectionLayerRef.current.addLayer(innerDot);
+  }, [selectedCell]);
 
   // Velocity update
   useEffect(() => {
@@ -271,18 +393,27 @@ export default function TrendMap() {
     }
 
     if (showGibs || showCurtainMode) {
-      const year = timeScrubberYear || endYear;
+      const year = timeScrubberYear || endYear || 2023;
       const gibsDate = `${year}-07-15`;
+      const currentLayerId = gibsLayerId || 'MODIS_Terra_CorrectedReflectance_TrueColor';
+      const currentOpacity = showCurtainMode ? 0.95 : (gibsOpacity ?? 0.70);
+
       gibsLayerRef.current = L.tileLayer(
-        `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${gibsDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,
-        { attribution: `NASA GIBS (${gibsDate})`, maxZoom: 9, opacity: showCurtainMode ? 0.95 : 0.65 }
+        `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${currentLayerId}/default/${gibsDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,
+        {
+          attribution: `NASA EOSDIS GIBS (${currentLayerId.split('_')[0]}, ${gibsDate})`,
+          maxZoom: 9,
+          opacity: currentOpacity,
+          errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+        }
       ).addTo(map);
 
       gridLayerRef.current?.bringToFront?.();
       velocityLayerRef.current?.bringToFront?.();
       compareLayerRef.current?.bringToFront?.();
+      selectionLayerRef.current?.bringToFront?.();
     }
-  }, [showGibs, showCurtainMode, timeScrubberYear, endYear]);
+  }, [showGibs, showCurtainMode, gibsLayerId, gibsOpacity, timeScrubberYear, endYear]);
 
   // 4D Timeline playback timer
   useEffect(() => {
@@ -298,12 +429,32 @@ export default function TrendMap() {
     return () => clearInterval(interval);
   }, [isTimelinePlaying, startYear, endYear]);
 
+  const handleCurtainPointerDown = (e) => {
+    e.preventDefault();
+    const container = mapRef.current;
+    if (!container) return;
+
+    const onMove = (moveEv) => {
+      const rect = container.getBoundingClientRect();
+      const pct = Math.max(5, Math.min(95, ((moveEv.clientX - rect.left) / rect.width) * 100));
+      setCurtainSplit(Math.round(pct));
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden border border-white/10 bg-[#040711] shadow-2xl">
+    <div className="relative w-full h-full rounded overflow-hidden border border-[var(--color-border-subtle)] bg-[var(--color-bg-deep)]">
       <div ref={mapRef} className="w-full h-full" style={{ minHeight: '400px' }} />
 
-      {/* Autonomous Judge Tour Overlay */}
-      {mapReady && <JudgeTourOverlay mapInstance={mapInstanceRef.current} />}
+      {/* Exemplar Transect Tour Overlay */}
+      {mapReady && mapInstance && <JudgeTourOverlay mapInstance={mapInstance} />}
 
       {/* Curtain Comparison Slider Overlay */}
       {showCurtainMode && (
@@ -314,14 +465,14 @@ export default function TrendMap() {
             backdropFilter: 'contrast(1.15) brightness(1.1)'
           }}
         >
-          <div className="absolute top-4 right-4 bg-black/80 text-cyan-400 font-mono text-[10px] px-2.5 py-1 rounded border border-cyan-500/30">
+          <div className="absolute top-3 right-3 bg-[var(--color-bg-deep)]/90 text-[var(--color-accent-blue)] font-mono text-[9px] px-2 py-0.5 rounded border border-[var(--color-accent-blue)]/30 tracking-wider">
             RIGHT: COMPUTED TREND RASTER
           </div>
         </div>
       )}
 
       {showCurtainMode && (
-        <div className="absolute top-4 left-4 z-[900] bg-black/80 text-amber-300 font-mono text-[10px] px-2.5 py-1 rounded border border-amber-500/30">
+        <div className="absolute top-3 left-3 z-[900] bg-[var(--color-bg-deep)]/90 text-[#f59e0b] font-mono text-[9px] px-2 py-0.5 rounded border border-[#f59e0b]/30 tracking-wider">
           LEFT: NASA GIBS SATELLITE TILES
         </div>
       )}
@@ -329,130 +480,205 @@ export default function TrendMap() {
       {/* Curtain Slider Handle */}
       {showCurtainMode && (
         <div
-          className="absolute top-0 bottom-0 z-[1000] w-1 bg-cyan-400 cursor-ew-resize flex items-center justify-center shadow-[0_0_15px_#00f0ff]"
+          onPointerDown={handleCurtainPointerDown}
+          className="absolute top-0 bottom-0 z-[1000] w-1 bg-[var(--color-accent-blue)] cursor-ew-resize flex items-center justify-center border-x border-white/30 shadow-md"
           style={{ left: `${curtainSplit}%` }}
         >
-          <div className="w-7 h-7 rounded-full bg-cyan-400 text-black flex items-center justify-center text-xs font-bold shadow-lg pointer-events-auto">
+          <div className="w-6 h-6 rounded bg-[var(--color-accent-blue)] text-white flex items-center justify-center text-[10px] font-bold shadow pointer-events-auto select-none">
             ↔
           </div>
         </div>
       )}
 
-      {/* 4D Spatiotemporal Timeline Scrubber Dock */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-[#0B0E14]/95 border border-white/10 px-3.5 py-1.5 rounded-md backdrop-blur-md shadow-lg text-xs font-mono">
+      {/* Spatiotemporal 4D Timeline Scrubber Docked at Bottom-Left */}
+      <div className="absolute bottom-3 left-3 z-[1000] flex flex-wrap items-center gap-2.5 bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] px-3 py-2 rounded shadow-2xl backdrop-blur-md text-xs font-mono text-[var(--color-text-main)]">
         <button
+          type="button"
           onClick={() => {
             playTactileClick(600);
             useStore.getState().toggleTimelinePlay();
           }}
-          className="flex items-center gap-1.5 px-2 py-1 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 transition-colors"
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors ${
+            isTimelinePlaying
+              ? 'bg-[var(--color-accent-blue)] text-white font-bold shadow'
+              : 'bg-[var(--color-accent-blue)]/15 hover:bg-[var(--color-accent-blue)]/25 text-[var(--color-accent-blue)] border border-[var(--color-accent-blue)]/30'
+          }`}
+          title="Play continuous 4D temporal evolution of warming & aridification"
         >
           {isTimelinePlaying ? (
-            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-              <rect x="6" y="4" width="4" height="16"/>
-              <rect x="14" y="4" width="4" height="16"/>
+            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="6" y="4" width="4" height="16" />
+              <rect x="14" y="4" width="4" height="16" />
             </svg>
           ) : (
-            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-              <polygon points="5 3 19 12 5 21 5 3"/>
+            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
           )}
-          <span>{isTimelinePlaying ? 'Pause' : 'Play 4D'}</span>
+          <span>{isTimelinePlaying ? 'PAUSE' : 'PLAY 4D'}</span>
         </button>
-        <span className="font-bold text-white tracking-wider tabular-nums">
-          {timeScrubberYear || startYear}
-        </span>
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-[var(--color-text-secondary)]">YEAR:</span>
+          <span className="font-bold text-[var(--color-text-main)] text-sm tracking-wider tabular-nums bg-[var(--color-bg-elevated)] px-2 py-0.5 rounded border border-[var(--color-border-subtle)]">
+            {timeScrubberYear || endYear || 2023}
+          </span>
+        </div>
+
         <input
           type="range"
-          min={startYear}
-          max={endYear}
-          value={timeScrubberYear || startYear}
+          min={startYear || 2000}
+          max={endYear || 2023}
+          value={timeScrubberYear || endYear || 2023}
           onChange={(e) => useStore.getState().setTimeScrubberYear(parseInt(e.target.value, 10))}
-          className="w-28 accent-blue-500 cursor-pointer h-1"
+          className="w-32 accent-[var(--color-accent-blue)] cursor-pointer h-1.5"
+          aria-label="4D Timeline Year Scrubber"
         />
-        <span className="text-[10px] text-zinc-400">
-          {startYear}–{endYear}
-        </span>
+
+        {/* Quick Epoch Milestone Jump Buttons */}
+        <div className="hidden sm:flex items-center gap-1 border-l border-[var(--color-border-subtle)] pl-2">
+          <button
+            type="button"
+            onClick={() => useStore.getState().setTimeScrubberYear(startYear || 2000)}
+            className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
+          >
+            {startYear || 2000}
+          </button>
+          <button
+            type="button"
+            onClick={() => useStore.getState().setTimeScrubberYear(Math.round(((startYear || 2000) + (endYear || 2023)) / 2))}
+            className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
+          >
+            Mid ({Math.round(((startYear || 2000) + (endYear || 2023)) / 2)})
+          </button>
+          <button
+            type="button"
+            onClick={() => useStore.getState().setTimeScrubberYear(endYear || 2023)}
+            className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
+          >
+            {endYear || 2023}
+          </button>
+        </div>
       </div>
 
-      {/* Bottom Floating GIS Instrument HUD Dock */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-1.5 bg-[#0B0E14]/95 border border-white/10 px-2.5 py-1.5 rounded-md backdrop-blur-md shadow-lg">
+      {/* GIS Instrument Toolstrip Docked at Top-Right */}
+      <div className="absolute top-3 right-3 z-[1000] flex flex-wrap items-center gap-1.5 bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] p-1.5 rounded shadow-lg backdrop-blur-md">
         <button
-          onClick={() => {
-            playTactileClick(650);
-            useStore.getState().toggleCurtainMode();
-          }}
-          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
-            showCurtainMode
-              ? 'bg-amber-500 text-black font-semibold'
-              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
-          }`}
-        >
-          Curtain Wipe
-        </button>
-
-        <button
-          onClick={() => {
-            playTactileClick(700);
-            useStore.getState().toggleVelocityMode();
-          }}
-          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
-            isVelocityMode
-              ? 'bg-blue-500 text-white font-semibold'
-              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
-          }`}
-        >
-          Climate Velocity
-        </button>
-
-        <button
-          onClick={() => {
-            playTactileClick(750);
-            useStore.getState().toggleCompareMode();
-          }}
-          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
-            compareMode
-              ? 'bg-purple-600 text-white font-semibold'
-              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
-          }`}
-        >
-          Dual Compare
-        </button>
-
-        <button
-          onClick={() => {
-            playTactileClick(600);
-            useStore.getState().toggleLisa();
-          }}
-          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
-            showLisa
-              ? 'bg-emerald-600 text-white font-semibold'
-              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
-          }`}
-        >
-          LISA Clusters
-        </button>
-
-        <button
+          type="button"
           onClick={() => {
             playTactileClick(600);
             useStore.getState().toggleMask();
           }}
-          className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
+          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
             maskSigOnly
-              ? 'bg-sky-600 text-white font-semibold'
-              : 'bg-white/[0.03] text-zinc-300 hover:text-white border border-white/10'
+              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
           }`}
         >
           Significant Only
         </button>
 
         <button
+          type="button"
+          onClick={() => {
+            playTactileClick(600);
+            useStore.getState().toggleLisa();
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+            showLisa
+              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+          }`}
+        >
+          LISA Clusters
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick(650);
+            useStore.getState().toggleCurtainMode();
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+            showCurtainMode
+              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+          }`}
+        >
+          Curtain Wipe
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick(650);
+            useStore.getState().toggleGibs();
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 ${
+            showGibs
+              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+          }`}
+          title="Toggle NASA GIBS real-time satellite imagery overlay underneath trend grid"
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${showGibs ? 'bg-white animate-pulse' : 'bg-emerald-400'}`} />
+          NASA GIBS Satellite
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick(700);
+            useStore.getState().toggleVelocityMode();
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+            isVelocityMode
+              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+          }`}
+        >
+          Climate Velocity
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick(750);
+            useStore.getState().toggleCompareMode();
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+            compareMode
+              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+          }`}
+        >
+          Dual Compare
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick(600);
+            setIsRasterMode(!isRasterMode);
+          }}
+          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+            isRasterMode
+              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+          }`}
+          title="Toggle between contiguous raster grid and point scatter view"
+        >
+          {isRasterMode ? 'Raster Grid' : 'Point Grid'}
+        </button>
+
+        <button
+          type="button"
           onClick={() => {
             playTactileClick(500);
             mapInstanceRef.current?.setView([34.0, -98.0], 5);
           }}
-          className="px-2 py-1 rounded text-xs font-mono bg-white/[0.03] text-zinc-400 hover:text-white border border-white/10 transition-colors"
+          className="px-2 py-1 rounded text-[11px] font-mono bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)] transition-colors"
+          title="Reset map view to default extent"
         >
           Reset Extent
         </button>
@@ -460,13 +686,144 @@ export default function TrendMap() {
 
       {/* Compare Mode Prompt Banner */}
       {compareMode && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[1000] bg-purple-950/90 border border-purple-400/50 text-purple-200 text-xs px-4 py-2 rounded-xl backdrop-blur-md font-mono flex items-center gap-2 shadow-xl">
-          <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
+        <div className="absolute top-3 left-14 z-[1000] bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 text-[var(--color-text-main)] text-xs px-3.5 py-1.5 rounded backdrop-blur-md font-mono flex items-center gap-2 shadow-lg">
+          <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+          </svg>
           {!comparePinA
-            ? 'Click anywhere on map to drop Pin A (Cyan)'
+            ? 'Click anywhere on map to drop Pin A'
             : !comparePinB
-            ? 'Click second location to drop Pin B (Amber) and inspect divergence'
+            ? 'Click second location to drop Pin B and inspect divergence'
             : 'Both locations active. View differential analysis in side panel.'}
+        </div>
+      )}
+
+      {/* NASA GIBS Live Satellite Instrument Tray */}
+      {showGibs && (
+        <div className="absolute top-14 right-3 z-[1000] w-72 bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 rounded shadow-2xl backdrop-blur-md p-3 font-mono text-xs animate-in fade-in duration-200">
+          <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2 mb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="font-semibold text-[var(--color-text-main)] tracking-wider">NASA EOSDIS GIBS</span>
+            </div>
+            <span className="text-[10px] bg-[var(--color-accent-blue)]/15 text-[var(--color-accent-blue)] px-1.5 py-0.5 rounded border border-[var(--color-accent-blue)]/30 font-bold">
+              WMTS EPSG:3857
+            </span>
+          </div>
+
+          <div className="space-y-2.5">
+            <div>
+              <label className="text-[10px] text-[var(--color-text-secondary)] block mb-1">
+                SATELLITE SENSOR & PRODUCT:
+              </label>
+              <select
+                value={gibsLayerId}
+                onChange={(e) => useStore.getState().setGibsLayerId(e.target.value)}
+                className="w-full bg-[var(--color-bg-elevated)] text-[var(--color-text-main)] text-xs rounded border border-[var(--color-border-subtle)] px-2 py-1.5 focus:outline-none focus:border-[var(--color-accent-blue)]"
+              >
+                {NASA_GIBS_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.name} ({preset.badge})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
+                <span>SATELLITE OPACITY:</span>
+                <span className="text-[var(--color-text-main)] font-bold">{Math.round((gibsOpacity ?? 0.7) * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.10"
+                max="1.0"
+                step="0.05"
+                value={gibsOpacity ?? 0.7}
+                onChange={(e) => useStore.getState().setGibsOpacity(parseFloat(e.target.value))}
+                className="w-full accent-[var(--color-accent-blue)] cursor-pointer h-1.5"
+              />
+            </div>
+
+            <div className="pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between text-[9px] text-[var(--color-text-muted)]">
+              <span>CAPTURE: {timeScrubberYear || endYear || 2023}-07-15</span>
+              <span>LEVEL-9 PIXEL MATCH</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scientific Calibrated Colorbar Legend */}
+      {analysisData && (
+        <div className="absolute bottom-3 right-3 z-[1000] bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] px-3 py-2 rounded shadow-lg backdrop-blur-md text-xs font-mono text-[var(--color-text-main)] pointer-events-auto max-w-[280px]">
+          {showLisa ? (
+            <div>
+              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1.5">
+                Spatial Regimes (Anselin LISA)
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#ef4444] shrink-0" />
+                  <span className="truncate">High-High (Hotspot)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#06b6d4] shrink-0" />
+                  <span className="truncate">Low-Low (Refugia)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#f59e0b] shrink-0" />
+                  <span className="truncate">Spatial Outlier</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#64748b]/40 border border-[#64748b]/50 shrink-0" />
+                  <span className="truncate">Non-Significant</span>
+                </div>
+              </div>
+            </div>
+          ) : analysisData.isCompound ? (
+            <div>
+              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1.5">
+                Compound Hazard (CAI Index)
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#dc2626] shrink-0" />
+                  <span className="truncate">Severe Aridification</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#f59e0b] shrink-0" />
+                  <span className="truncate">Moderate Stress</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#0066ff] shrink-0" />
+                  <span className="truncate">Hydrological Shift</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#64748b]/40 border border-[#64748b]/50 shrink-0" />
+                  <span className="truncate">Neutral Baseline</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
+                <span>Theil-Sen Trend Rate</span>
+                <span>{analysisData.slope_units || '°C / dec'}</span>
+              </div>
+              <div
+                className="w-full h-2 rounded-sm mb-1"
+                style={{
+                  background: 'linear-gradient(to right, #06b6d4 0%, #38bdf8 25%, #64748b 50%, #f59e0b 75%, #ef4444 100%)'
+                }}
+              />
+              <div className="flex items-center justify-between text-[9px] text-[var(--color-text-secondary)] font-mono tabular-nums">
+                <span>{analysisData.summary?.min_slope !== undefined ? `${analysisData.summary.min_slope > 0 ? '+' : ''}${analysisData.summary.min_slope.toFixed(2)}` : '-0.50'}</span>
+                <span className="text-[var(--color-text-muted)]">0.00</span>
+                <span>{analysisData.summary?.max_slope !== undefined ? `+${analysisData.summary.max_slope.toFixed(2)}` : '+0.50'}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
