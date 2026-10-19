@@ -138,7 +138,7 @@ def mann_kendall_test(
         "z": float(z),
         "p_value": p_val,
         "tau": float(tau),
-        "significant": bool(is_sig),
+        "significant": is_sig,
         "direction": direction,
         "n_samples": n,
     }
@@ -274,7 +274,7 @@ def compute_spatial_trends(
     data_3d: np.ndarray,
     time_coords: np.ndarray | None = None,
     alpha: float = 0.05
-) -> dict[str, np.ndarray]:
+) -> dict[str, Any]:
     """
     Compute spatial trends across a 3D grid [time, lat, lon].
     Utilizes multi-threaded parallel chunk execution across rows for high performance.
@@ -434,7 +434,7 @@ def pettitt_changepoint_test(
         "changepoint_time": formatted_cp_time,
         "k_statistic": round(k_stat, 2),
         "p_value": round(p_val, 5),
-        "significant": bool(p_val < alpha)
+        "significant": p_val < alpha
     }
 
 
@@ -505,7 +505,7 @@ def monte_carlo_ar1_significance(
         "ar1_coefficient": round(phi, 3),
         "observed_abs_slope": round(observed_slope, 4),
         "empirical_p_value": round(emp_p, 4),
-        "passes_red_noise_test": bool(emp_p < alpha),
+        "passes_red_noise_test": emp_p < alpha,
         "n_simulations": n_simulations
     }
 

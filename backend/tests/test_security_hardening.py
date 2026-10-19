@@ -99,7 +99,7 @@ def test_custom_rate_limit_exceeded_handler_rfc_compliance():
     assert response.headers["Retry-After"] == "60"
     
     import json
-    body = json.loads(response.body.decode("utf-8"))
+    body = json.loads(bytes(response.body).decode("utf-8"))
     assert body["error"] == "rate_limit_exceeded"
     assert "Rate limit exceeded" in body["detail"]
 

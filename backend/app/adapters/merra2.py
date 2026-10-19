@@ -235,7 +235,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
                             sub_da = da.sel({time_coord: slice(f"{start_year}-01-01", f"{end_year}-12-31")})
                             years_arr = np.array(sub_da[time_coord].dt.year, dtype=int)
                         else:
-                            sub_da = da.sel({time_coord: slice(int(start_year), int(end_year))})
+                            sub_da = da.sel({time_coord: slice(start_year, end_year)})
                             years_arr = np.array(sub_da[time_coord].values, dtype=int)
 
                         # Spatial slicing with ascending/descending safety

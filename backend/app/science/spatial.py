@@ -130,7 +130,7 @@ def compute_global_morans_i(
         "expected_i": round(expected_i, 4),
         "z_score": round(z_score, 3),
         "p_value": float(f"{p_value:.4e}"),
-        "is_clustered": bool(p_value < 0.05 and moran_i > 0),
+        "is_clustered": (p_value < 0.05 and moran_i > 0),
         "interpretation": interpretation
     }
 

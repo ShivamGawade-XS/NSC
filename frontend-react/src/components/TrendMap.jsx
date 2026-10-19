@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import useStore from '../store/useStore';
 import { getTrendColor, getLISAColor, getHazardColor, formatCoords, escapeHtml } from '../utils/helpers';
 import JudgeTourOverlay from './JudgeTourOverlay';
+import PlanetaryGlobe3D from './PlanetaryGlobe3D';
 import { playTactileClick } from '../utils/audio';
 
 const NASA_GIBS_PRESETS = [
@@ -67,6 +68,7 @@ export default function TrendMap() {
   const startYear = useStore((s) => s.startYear);
   const endYear = useStore((s) => s.endYear);
   const selectCell = useStore((s) => s.selectCell);
+  const [showGlobe3D, setShowGlobe3D] = useState(false);
 
   // 1. Render Spatial Trend Grid (Continuous Raster Cells or Point Matrix)
   const renderSpatialGrid = useCallback((grid) => {
@@ -453,6 +455,19 @@ export default function TrendMap() {
     <div className="relative w-full h-full rounded overflow-hidden border border-[var(--color-border-subtle)] bg-[var(--color-bg-deep)]">
       <div ref={mapRef} className="w-full h-full" style={{ minHeight: '400px' }} />
 
+      {/* 3D Planetary Orthographic Globe View */}
+      {showGlobe3D && (
+        <div className="absolute inset-0 z-[1050]">
+          <PlanetaryGlobe3D
+            grid={analysisData?.grid || []}
+            bbox={analysisData?.bbox}
+            selectedCell={selectedCell}
+            onSelectCell={(lat, lon) => selectCell(lat, lon)}
+            onClose={() => setShowGlobe3D(false)}
+          />
+        </div>
+      )}
+
       {/* Exemplar Transect Tour Overlay */}
       {mapReady && mapInstance && <JudgeTourOverlay mapInstance={mapInstance} />}
 
@@ -681,6 +696,23 @@ export default function TrendMap() {
           title="Reset map view to default extent"
         >
           Reset Extent
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick(800);
+            setShowGlobe3D(!showGlobe3D);
+          }}
+          className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+            showGlobe3D
+              ? 'bg-cyan-500 text-slate-950 font-bold shadow-md'
+              : 'bg-[var(--color-bg-elevated)] text-cyan-400 hover:text-cyan-300 border border-cyan-500/40'
+          }`}
+          title="Toggle 3D Planetary Orthographic Globe View"
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-slate-950' : 'bg-cyan-400 animate-pulse'}`} />
+          <span>{showGlobe3D ? '2D GIS Map' : '3D Globe'}</span>
         </button>
       </div>
 
