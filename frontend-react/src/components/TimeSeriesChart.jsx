@@ -1,6 +1,9 @@
-import { useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Chart, registerables } from 'chart.js';
+import toast from 'react-hot-toast';
 import useStore from '../store/useStore';
+import { sonifyTimeSeries, stopSonification } from '../utils/sonification';
+import { playTactileClick } from '../utils/audio';
 
 Chart.register(...registerables);
 
@@ -70,6 +73,61 @@ export default function TimeSeriesChart() {
   const chartRef = useRef(null);
   const selectedCell = useStore((s) => s.selectedCell);
   const isAnomalyMode = useStore((s) => s.isAnomalyMode);
+
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioTelemetry, setAudioTelemetry] = useState(null);
+
+  useEffect(() => {
+    return () => stopSonification();
+  }, []);
+
+  const toggleSonification = () => {
+    if (isPlayingAudio) {
+      stopSonification();
+      setIsPlayingAudio(false);
+      setAudioTelemetry(null);
+      return;
+    }
+
+    let cell = selectedCell;
+    if (!cell) {
+      const firstSignal = useStore.getState().candidateSignals?.[0];
+      const gridCell = useStore.getState().analysisData?.grid?.[0];
+      const target = firstSignal || gridCell;
+      if (target) {
+        useStore.getState().selectCell(target.lat, target.lon);
+        toast.success('Sonifying primary candidate coordinate');
+        cell = target;
+      } else {
+        toast('Select a spatial cell on the map to sonify');
+        return;
+      }
+    }
+
+    const obs = cell?.observations || cell?.values || [];
+    const yrs = cell?.years || [];
+    if (!yrs.length || !obs.length) {
+      toast('Observations data pending for this coordinate');
+      return;
+    }
+
+    playTactileClick(700);
+    setIsPlayingAudio(true);
+
+    sonifyTimeSeries(
+      yrs,
+      obs,
+      cell.slope || cell.temp_slope || 0,
+      cell.changepoint_year,
+      {
+        onStep: (data) => setAudioTelemetry(data),
+        onEnd: () => {
+          setIsPlayingAudio(false);
+          setAudioTelemetry(null);
+        }
+      }
+    );
+  };
 
   // Create chart once
   useEffect(() => {
@@ -487,6 +545,66 @@ export default function TimeSeriesChart() {
           <span className="text-[9px] text-[var(--color-text-secondary)]">Abrupt Changepoint</span>
         </div>
       ) : null}
+
+      {/* Acoustic Climate Sonification Toolbar */}
+      <div className="flex items-center justify-between px-1 py-1 mb-1 border-b border-[var(--color-border-subtle)] text-[10px] font-mono">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleSonification}
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition-all cursor-pointer font-medium ${
+              isPlayingAudio
+                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-xs'
+                : 'bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--color-accent-blue)] border border-[var(--color-border-subtle)]'
+            }`}
+            title="Acoustic time series synthesis (Web Audio Section 508)"
+          >
+            {isPlayingAudio ? (
+              <>
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                <span>Stop Audio</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V9c0-.414.336-.75.75-.75h2.24z" />
+                </svg>
+                <span>Sonify Atmosphere 🎵</span>
+              </>
+            )}
+          </button>
+
+          {isPlayingAudio && audioTelemetry ? (
+            <div className="flex items-center gap-1.5 text-[9px] text-[var(--color-text-secondary)]">
+              <span className="font-bold text-[var(--color-accent-blue)]">{audioTelemetry.year}</span>
+              <span>•</span>
+              <span>{audioTelemetry.freq} Hz</span>
+              {audioTelemetry.isChangepoint && (
+                <span className="px-1 py-0.2 rounded bg-red-500/20 text-red-400 font-bold border border-red-500/30 animate-pulse">
+                  Regime Shift
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-[9px] text-[var(--color-text-muted)] hidden sm:inline-block">
+              Acoustic Pitch Mapping (Section 508)
+            </span>
+          )}
+        </div>
+
+        {isPlayingAudio && (
+          <div className="flex items-center gap-0.5 h-2.5">
+            {[40, 75, 55, 90, 60, 85, 45].map((h, i) => (
+              <span
+                key={i}
+                className="w-0.5 rounded-full bg-[var(--color-accent-blue)] animate-pulse"
+                style={{ height: `${h}%`, animationDelay: `${i * 100}ms` }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="flex-1 w-full relative">
         <canvas ref={canvasRef} />
       </div>

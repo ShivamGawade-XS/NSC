@@ -273,7 +273,8 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse:
     total_cells = h_len * w_len
     sig_raw_count = int(np.sum(sig_raw))
     sig_fdr_count = int(np.sum(sig_fdr))
-    moran_stats = trend_results.get("moran_stats", {})
+    moran_raw = trend_results.get("moran_stats")
+    moran_stats: dict[str, Any] | None = dict(moran_raw) if isinstance(moran_raw, dict) else None
 
     summary = AnalysisSummary(
         total_cells=total_cells,
