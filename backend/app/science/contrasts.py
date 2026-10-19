@@ -169,8 +169,10 @@ def find_contrasting_regions(
     pair_count = 0
     for pos in pos_clusters:
         for neg in neg_clusters:
-            pos_slope = float(pos["mean_slope"])
-            neg_slope = float(neg["mean_slope"])
+            pos_val = pos.get("mean_slope", 0.0)
+            neg_val = neg.get("mean_slope", 0.0)
+            pos_slope = float(pos_val) if isinstance(pos_val, (int, float)) else 0.0
+            neg_slope = float(neg_val) if isinstance(neg_val, (int, float)) else 0.0
             delta = abs(pos_slope - neg_slope)
             pair_count += 1
             is_refugium_pair = neg.get("type") == "refugium" or pos.get("type") == "buffered"
