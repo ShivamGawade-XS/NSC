@@ -1,0 +1,29 @@
+# EarthSift — Earth System Trend Detective
+> Evidence-first scientific instrument discovering statistically defensible trends in NASA Earth-system observations.
+
+## Overview
+EarthSift is an open-science platform developed for the NASA Space Apps Challenge 2026 under the theme "Be an Earth System Trend Detective". It processes raw satellite reanalysis data from NASA POWER and MERRA-2, applying non-parametric trend analytics, local spatial autocorrelation clustering, and compound hazard detection.
+
+## Core Capabilities
+- **Non-Parametric Trend Detection**: Mann-Kendall test statistic S, Theil-Sen median slope estimator, and Gilbert (1987) 95% confidence intervals resistant to extreme meteorological outliers.
+- **Multiple Hypothesis Testing Correction**: Benjamini-Hochberg False Discovery Rate (FDR) control at alpha = 0.05.
+- **Spatial Autocorrelation**: Anselin Local Moran's I (LISA) identifying High-High warming hotspots, Low-Low cooling refugia, and spatial outliers with Queen-contiguity spatial weights.
+- **Compound Hazard Analytics**: Coupled bivariate temperature and precipitation processing calculating the Climate Aridification Index (CAI).
+- **Physical Attribution**: Context-grounded scientific interpretations citing specific sensor metadata, slopes, and p-values with deterministic fallbacks.
+
+## Data Sources
+- **NASA POWER**: Prediction of Worldwide Energy Resources, NASA Langley Research Center (LaRC). Daily surface meteorology and solar irradiance at 0.5° x 0.5° spatial resolution.
+- **NASA MERRA-2**: Modern-Era Retrospective analysis for Research and Applications, Version 2, NASA Global Modeling and Assimilation Office (GMAO). 0.5° x 0.625° atmospheric reanalysis from 1980 to present.
+
+## Key Routes
+- `/`: Scientific overview, mathematical formulation, and case study presets.
+- `/dashboard`: Interactive operational GIS workspace with Leaflet map, time series confidence ribbon, and evidence inspector.
+- `/privacy`: Privacy and data governance policy.
+- `/terms`: Open-science terms of service and academic attribution requirements.
+
+## Standard Formats & Exports
+- NetCDF-4 (CF-1.8 compliant)
+- GeoJSON (RFC 7946 FeatureCollection)
+- Jupyter Notebook (.ipynb executable verification)
+- IEEE / AGU LaTeX Technical Memorandum (.tex)
+- Science Audit Dossier (Markdown)

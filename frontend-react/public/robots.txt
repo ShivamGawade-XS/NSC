@@ -1,0 +1,32 @@
+# EarthSift — NASA Earth System Trend Detective
+# Robots.txt Specification
+
+User-agent: *
+Allow: /
+Allow: /dashboard
+Allow: /privacy
+Allow: /terms
+Allow: /llms.txt
+Disallow: /api/
+Disallow: /metrics
+
+# Explicit AI Research & Search Crawlers
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+
+# Sitemaps
+Sitemap: https://earthsift.org/sitemap.xml
+

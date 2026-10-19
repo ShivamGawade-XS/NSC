@@ -1,0 +1,17 @@
+{
+  "name": "EarthSift — Earth System Trend Detective",
+  "short_name": "EarthSift",
+  "description": "Evidence-first scientific workbench discovering statistically defensible trends in NASA Earth-system data.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08090b",
+  "theme_color": "#08090b",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -10,7 +10,7 @@ const SUGGESTIONS = [
   'Mediterranean precipitation deficit between 1990 and 2020',
   'Arctic amplification surface temperature from 2000 to 2024',
   'Sahel hydrological greening transition trends',
-  'Global surface shortwave downward radiation shifts'
+  'Global surface shortwave downward radiation shifts',
 ];
 
 export default function CommandPaletteModal() {
@@ -65,7 +65,7 @@ export default function CommandPaletteModal() {
           minLat: req.bbox[1],
           maxLon: req.bbox[2],
           maxLat: req.bbox[3],
-        } : { minLon: '', minLat: '', maxLon: '', maxLat: '' }
+        } : { minLon: '', minLat: '', maxLon: '', maxLat: '' },
       });
 
       setOpen(false);
@@ -82,26 +82,24 @@ export default function CommandPaletteModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.98, y: -10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: -10 }}
-          className="w-full max-w-2xl bg-[#0B0E14] border border-white/15 rounded-lg shadow-2xl overflow-hidden text-white"
+          className="w-full max-w-2xl bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded shadow-2xl overflow-hidden text-[var(--color-text-main)]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-white/[0.02]">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-400" />
-              <h2 className="text-xs font-semibold tracking-wider font-mono text-zinc-200 uppercase">
-                Natural Language Spatial Query Palette
-              </h2>
-            </div>
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
+            <h2 className="text-xs font-semibold tracking-wider font-mono text-[var(--color-text-main)] uppercase">
+              Spatiotemporal Query Palette
+            </h2>
             <div className="flex items-center gap-2 text-xs font-mono">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/10">ESC</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-bg-surface)] text-[var(--color-text-muted)] border border-[var(--color-border-subtle)]">ESC</span>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="text-zinc-400 hover:text-white px-1.5 py-0.5"
+                className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] px-2 py-0.5 transition-colors"
               >
                 Close
               </button>
@@ -118,34 +116,36 @@ export default function CommandPaletteModal() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 placeholder="Enter spatiotemporal inquiry (e.g., 'Surface warming in North America from 1995 to 2022')..."
-                className="w-full bg-[#05070B] border border-white/20 rounded-md px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-400 font-mono"
+                className="w-full bg-[var(--color-bg-deep)] border border-[var(--color-border-subtle)] rounded px-3.5 py-2.5 text-xs text-[var(--color-text-main)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent-blue)] font-mono transition-colors"
               />
               <button
+                type="button"
                 disabled={isSearching}
                 onClick={() => handleSubmit()}
-                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded transition-colors flex items-center font-mono"
+                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 interface-btn-primary !py-1 !text-xs font-mono"
               >
                 {isSearching ? 'Resolving...' : 'Execute'}
               </button>
             </div>
 
             {/* Suggestions */}
-            <div className="mt-4">
-              <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mb-2">
+            <div className="mt-5">
+              <div className="text-[10px] uppercase font-mono tracking-wider text-[var(--color-text-muted)] mb-2.5 font-semibold">
                 Sample Research Inquiries
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {SUGGESTIONS.map((s, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => {
                       setQuery(s);
                       handleSubmit(s);
                     }}
-                    className="w-full text-left text-xs text-zinc-300 hover:text-white px-3 py-2 rounded bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-white/15 transition-colors font-mono flex items-center justify-between group"
+                    className="w-full text-left text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] px-3 py-2 rounded bg-[var(--color-bg-elevated)] hover:border-[var(--color-border-strong)] border border-[var(--color-border-subtle)] transition-all font-mono flex items-center justify-between group"
                   >
                     <span>{s}</span>
-                    <span className="text-[10px] text-zinc-500 group-hover:text-blue-400">&rarr;</span>
+                    <span className="text-[10px] text-[var(--color-text-muted)] group-hover:text-[var(--color-accent-blue)] transition-colors" aria-hidden="true">&rarr;</span>
                   </button>
                 ))}
               </div>

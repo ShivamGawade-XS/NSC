@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import TrendMap from '../components/TrendMap';
 import TimeSeriesChart from '../components/TimeSeriesChart';
 import AnalysisPanel from '../components/AnalysisPanel';
@@ -8,124 +10,151 @@ import EvidencePanel from '../components/EvidencePanel';
 import ExportButtons from '../components/ExportButtons';
 import CommandPaletteModal from '../components/CommandPaletteModal';
 import LatexModal from '../components/LatexModal';
-import JudgeTourOverlay from '../components/JudgeTourOverlay';
+import CustomDataModal from '../components/CustomDataModal';
+import PreprintModal from '../components/PreprintModal';
 import useStore from '../store/useStore';
+import { trackPageView } from '../utils/analytics';
 
 export default function DashboardPage() {
   const isLoading = useStore((s) => s.isLoading);
   const error = useStore((s) => s.error);
   const analysisData = useStore((s) => s.analysisData);
+  const selectedCell = useStore((s) => s.selectedCell);
+
+  useEffect(() => {
+    document.title = 'Analysis Workspace — EarthSift';
+    trackPageView('Analysis Workspace');
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-bg-deep">
-      <Header />
-      <JudgeTourOverlay />
-      <CommandPaletteModal />
-      <LatexModal />
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          style: {
-            background: 'rgba(13, 13, 18, 0.95)',
-            color: '#f8fafc',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-            backdropFilter: 'blur(12px)',
-            fontSize: '13px',
-            fontFamily: 'Inter, sans-serif',
-          },
-        }}
-      />
+    <div className="min-h-screen bg-[var(--color-bg-deep)] text-[var(--color-text-main)] flex flex-col justify-between transition-colors">
+      <div>
+        <Header />
+        <CommandPaletteModal />
+        <LatexModal />
+        <CustomDataModal />
+        <PreprintModal />
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'var(--color-bg-surface)',
+              color: 'var(--color-text-main)',
+              border: '1px solid var(--color-border-subtle)',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontFamily: 'Inter, sans-serif',
+            },
+          }}
+        />
 
-      {/* Loading Overlay */}
-      {isLoading && (
-        <div className="loading-overlay">
-          <div className="text-center">
-            <div className="loading-spinner mx-auto mb-4" />
-            <p className="text-sm font-semibold text-text-main mb-1">Computing Trend Analysis...</p>
-            <p className="text-xs text-text-muted">Mann-Kendall • FDR Correction • LISA Clustering</p>
-          </div>
-        </div>
-      )}
-
-      {/* Main Dashboard Grid */}
-      <main className="pt-[78px] p-4 max-w-[1920px] mx-auto">
-        {/* Map Subtitle Bar */}
-        {analysisData && !analysisData.isCompound && (
-          <div className="glass-card px-4 py-2 mb-4 flex items-center justify-between">
-            <div className="text-xs text-text-secondary font-[var(--font-mono)]">
-              {analysisData.variable_name} ({analysisData.time_span}) •{' '}
-              {analysisData.summary?.significant_cells_fdr ?? 0} / {analysisData.summary?.total_cells ?? 0} Significant Cells [FDR (q ≤ 0.05)]
+        {/* Minimal Loading Overlay */}
+        {isLoading && (
+          <div className="loading-overlay" role="status" aria-live="polite">
+            <div className="text-center p-6 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] shadow-2xl">
+              <div className="loading-spinner mx-auto mb-3" />
+              <p className="font-['Space_Grotesk'] text-sm font-semibold text-[var(--color-text-main)] mb-1">
+                Computing Statistical Analysis
+              </p>
+              <p className="text-[11px] text-[var(--color-text-secondary)] font-mono">
+                Mann-Kendall τ • Benjamini-Hochberg FDR • Anselin LISA
+              </p>
             </div>
-            {analysisData.summary?.spatial_autocorrelation && (
-              <div className="text-[10px] text-text-muted font-[var(--font-mono)]">
-                Moran's I = {analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'} (
-                {analysisData.summary.spatial_autocorrelation.interpretation})
+          </div>
+        )}
+
+        {/* Main Dashboard Container */}
+        <main className="pt-16 px-4 sm:px-6 max-w-[1920px] mx-auto pb-12">
+          {/* Page Intro Banner / Telemetry Status Strip */}
+          <section className="mb-4 pt-2">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[var(--color-border-subtle)]">
+              <div>
+                <span className="eyebrow-label block mb-1">Scientific Trend Investigation</span>
+                <h1 className="font-['Space_Grotesk'] text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-main)]">
+                  Spatiotemporal Trend Workspace
+                </h1>
               </div>
-            )}
-          </div>
-        )}
 
-        {analysisData && analysisData.isCompound && (
-          <div className="glass-card px-4 py-2.5 mb-4 flex items-center justify-between border-amber-500/20 bg-amber-950/10">
-            <div className="text-xs text-amber-200 font-[var(--font-mono)] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              Compound Hazard Analysis (T + P) • Climate Aridification Index (CAI)
-            </div>
-            <div className="text-[10px] text-zinc-400 font-[var(--font-mono)]">
-              {analysisData.cells?.length || 0} Cells Evaluated
-            </div>
-          </div>
-        )}
-
-        {/* Error toast */}
-        {error && (
-          <div className="glass-card px-4 py-3 mb-4 border-red-500/30 bg-red-950/20 text-xs text-red-300 flex items-center gap-2 rounded-md">
-            <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* 3-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_360px] gap-4">
-          {/* Left: Controls */}
-          <div className="space-y-4 lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto lg:pr-2">
-            <AnalysisPanel />
-            <SignalsList />
-            <ExportButtons />
-          </div>
-
-          {/* Center: Map + Chart */}
-          <div className="space-y-4">
-            <div className="h-[50vh] min-h-[400px]">
-              <TrendMap />
-            </div>
-            <div className="glass-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[10px] uppercase tracking-widest text-text-muted font-semibold">
-                  Time Series Analysis
-                </h3>
-                {useStore.getState().selectedCell && (
-                  <span className="text-[10px] text-text-muted font-[var(--font-mono)]">
-                    {useStore.getState().selectedCell?.slope > 0 ? '+' : ''}
-                    {useStore.getState().selectedCell?.slope?.toFixed(4)}{' '}
-                    {useStore.getState().selectedCell?.slope_units}
+              {/* Live Run Metadata Pill */}
+              {analysisData && !analysisData.isCompound && (
+                <div className="flex flex-wrap items-center gap-3 text-xs font-mono bg-[var(--color-bg-surface)] px-3.5 py-1.5 rounded border border-[var(--color-border-subtle)]">
+                  <span className="text-[var(--color-text-secondary)]">
+                    <strong className="text-[var(--color-text-main)]">{analysisData.variable_name}</strong> ({analysisData.time_span})
                   </span>
-                )}
+                  <span className="text-[var(--color-text-muted)] hidden sm:inline">•</span>
+                  <span className="text-[var(--color-accent-blue)]">
+                    {analysisData.summary?.significant_cells_fdr ?? 0} / {analysisData.summary?.total_cells ?? 0} FDR Significant (q ≤ 0.05)
+                  </span>
+                  {analysisData.summary?.spatial_autocorrelation && (
+                    <>
+                      <span className="text-[var(--color-text-muted)] hidden sm:inline">•</span>
+                      <span className="text-[var(--color-text-secondary)]">
+                        Moran’s I: <strong className="text-emerald-500 font-semibold">{analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'}</strong> ({analysisData.summary.spatial_autocorrelation.interpretation})
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {analysisData && analysisData.isCompound && (
+                <div className="flex items-center gap-2 text-xs font-mono bg-[#f59e0b]/10 text-[#f59e0b] px-3.5 py-1.5 rounded border border-[#f59e0b]/30">
+                  <span>Compound Hazard Analysis (T & P) • CAI Index Active ({analysisData.cells?.length || 0} Cells Evaluated)</span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Error Banner */}
+          {error && (
+            <div className="p-3 mb-4 border border-red-500/30 bg-red-950/20 text-xs text-red-300 flex items-center gap-2 rounded">
+              <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              <span className="font-mono">{error}</span>
+            </div>
+          )}
+
+          {/* 3-Column Architecture */}
+          <div className="grid grid-cols-1 lg:grid-cols-[330px_1fr_360px] gap-4 items-start">
+            {/* Left Column: Data Controls & Signals */}
+            <div className="space-y-4">
+              <AnalysisPanel />
+              <SignalsList />
+              <ExportButtons />
+            </div>
+
+            {/* Center Column: GIS Map & Analytical Chart */}
+            <div className="space-y-4 min-w-0">
+              <div className="h-[52vh] min-h-[420px]">
+                <TrendMap />
               </div>
-              <div className="h-[250px]">
-                <TimeSeriesChart />
+              <div className="interface-card p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="eyebrow-label">
+                    Annual Time Series & Sen's Slope
+                  </h3>
+                  {selectedCell && (
+                    <span className="text-[11px] text-[#f59e0b] font-mono tabular-nums font-semibold">
+                      Sen's Slope: {selectedCell.slope > 0 ? '+' : ''}{selectedCell.slope?.toFixed(4)} {selectedCell.slope_units}
+                    </span>
+                  )}
+                </div>
+                <div className="h-[250px]">
+                  <TimeSeriesChart />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Right: Evidence */}
-          <div className="lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto lg:pr-2">
-            <EvidencePanel />
+            {/* Right Column: Evidence & Verification */}
+            <div className="space-y-4">
+              <EvidencePanel />
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
+
+      <Footer />
     </div>
   );
 }

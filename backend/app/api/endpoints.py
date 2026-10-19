@@ -44,6 +44,7 @@ from app.schemas.analysis import (
     VariableInfo,
     VelocityVector,
 )
+from app.science.attribution import compute_event_attribution
 from app.science.climate_velocity import compute_climate_velocity
 from app.science.compound import compute_compound_hazard
 from app.science.contrasts import find_contrasting_regions
@@ -430,6 +431,14 @@ def get_cell_timeseries(
     total_obs = len(series)
     pct = (valid_obs / max(1, total_obs)) * 100
 
+    # Stott et al. (2004) / Otto et al. (2020) Fraction of Attributable Risk (FAR)
+    attribution = compute_event_attribution(
+        slope=float(slope),
+        n_years=len(years),
+        series=series,
+        alpha=cached["req"].alpha
+    )
+
     evidence = {
         "observation": f"Calculated {mk['direction']} trend of {slope:+.3f} {raw['slope_units']}.",
         "magnitude": f"{slope:+.4f} {raw['slope_units']}",
@@ -441,6 +450,7 @@ def get_cell_timeseries(
             f"Gradual monotonic drift (no abrupt changepoint, p = {cp_pval:.4f})"
         ),
         "lisa_cluster": lisa_lbl,
+        "attribution": attribution,
         "method": "Sen's robust median-of-slopes estimator with Mann-Kendall, Hamed-Rao autocorrelation correction, Benjamini-Hochberg FDR, Pettitt changepoint test, and Gilbert (1987) 95% CI",
         "coverage": f"{valid_obs} / {total_obs} valid annual observations ({pct:.1f}% complete)",
         "source": f"{raw['provenance']['source']} (DOI: {raw['provenance']['doi']})",
@@ -981,4 +991,26 @@ def get_colab_launcher_link(request: Request, analysis_id: str) -> dict[str, Any
         "interactive_execution_ready": True,
         "runtime": "Python 3 (Google Compute Engine GPU/TPU compatible)"
     }
+
+
+@router.post("/analysis/attribution")
+@limiter.limit("30/minute")
+def run_attribution_analysis(
+    request: Request,
+    payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Calculate Fraction of Attributable Risk (FAR) and Risk Ratio (RR) under Stott (2004) framework."""
+    slope = float(payload.get("slope", 0.15))
+    n_years = int(payload.get("n_years", 24))
+    series = payload.get("series")
+    alpha = float(payload.get("alpha", 0.05))
+    threshold_percentile = float(payload.get("threshold_percentile", 90.0))
+
+    return compute_event_attribution(
+        slope=slope,
+        n_years=n_years,
+        series=series,
+        alpha=alpha,
+        threshold_percentile=threshold_percentile
+    )
 

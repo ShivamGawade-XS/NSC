@@ -27,10 +27,11 @@ async def benchmark_endpoint(
     semaphore = asyncio.Semaphore(concurrency)
     latencies: List[float] = []
     errors: int = 0
+    throttles_429: int = 0
     status_codes: Dict[int, int] = {}
 
     async def single_worker():
-        nonlocal errors
+        nonlocal errors, throttles_429
         async with semaphore:
             start_t = time.perf_counter()
             try:
@@ -40,7 +41,9 @@ async def benchmark_endpoint(
                     resp = await client.post(url, json=json_data, timeout=30.0)
                 elapsed_ms = (time.perf_counter() - start_t) * 1000.0
                 status_codes[resp.status_code] = status_codes.get(resp.status_code, 0) + 1
-                if resp.status_code >= 400:
+                if resp.status_code == 429:
+                    throttles_429 += 1
+                elif resp.status_code >= 400:
                     errors += 1
                 else:
                     latencies.append(elapsed_ms)
@@ -62,7 +65,9 @@ async def benchmark_endpoint(
             "p50_ms": 0.0,
             "p95_ms": 0.0,
             "p99_ms": 0.0,
-            "errors": errors
+            "errors": errors,
+            "throttles_429": throttles_429,
+            "status_codes": status_codes
         }
 
     arr = np.array(latencies)
@@ -80,6 +85,7 @@ async def benchmark_endpoint(
         "p99_ms": round(float(np.percentile(arr, 99)), 2),
         "max_ms": round(float(np.max(arr)), 2),
         "errors": errors,
+        "throttles_429": throttles_429,
         "status_codes": status_codes
     }
 
@@ -119,7 +125,7 @@ async def run_load_test(base_url: str, concurrency: int = 15):
             "end_year": 2023,
             "bbox": [-102.0, 30.0, -94.0, 38.0],
             "alpha": 0.05,
-            "apply_fdr": True
+            "use_fdr": True
         }
         res_compute = await benchmark_endpoint(
             client, "POST", "/api/v1/analysis", "Theil-Sen Compute (POST)",
@@ -144,12 +150,12 @@ async def run_load_test(base_url: str, concurrency: int = 15):
 
     # Print Summary Table
     results = [res_health, res_catalog, res_compute, res_cache, res_drilldown]
-    print("\n" + "=" * 90)
-    print(f"{'Endpoint':<30} | {'Reqs':<5} | {'Succ%':<6} | {'RPS':<8} | {'P50 (ms)':<8} | {'P95 (ms)':<8} | {'P99 (ms)':<8}")
-    print("-" * 90)
+    print("\n" + "=" * 102)
+    print(f"{'Endpoint':<30} | {'Reqs':<5} | {'Succ%':<6} | {'429s':<5} | {'Errs':<5} | {'RPS':<8} | {'P50 (ms)':<8} | {'P95 (ms)':<8} | {'P99 (ms)':<8}")
+    print("-" * 102)
     for r in results:
-        print(f"{r['name']:<30} | {r['requests']:<5} | {r['success_rate']:<6}% | {r['rps']:<8} | {r['p50_ms']:<8} | {r['p95_ms']:<8} | {r['p99_ms']:<8}")
-    print("=" * 90)
+        print(f"{r['name']:<30} | {r['requests']:<5} | {r['success_rate']:<6}% | {r.get('throttles_429', 0):<5} | {r['errors']:<5} | {r['rps']:<8} | {r['p50_ms']:<8} | {r['p95_ms']:<8} | {r['p99_ms']:<8}")
+    print("=" * 102)
 
     # Generate Markdown Report
     report_path = Path(__file__).resolve().parents[1] / "LOAD_TEST_REPORT.md"

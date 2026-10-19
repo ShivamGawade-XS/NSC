@@ -109,8 +109,8 @@ html, body {
   inset: 0;
   z-index: 9999;
   background: rgba(5, 5, 7, 0.88);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -216,6 +216,7 @@ html, body {
   padding: 0 16px;
   position: relative;
   z-index: 100;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -909,8 +910,8 @@ html, body {
   left: 10px;
   z-index: 800;
   background: rgba(8, 8, 11, 0.88);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border: 1px solid var(--border-1);
   border-radius: var(--radius-xs);
   padding: 4px 10px;
@@ -1298,8 +1299,8 @@ html, body {
   inset: 0;
   z-index: 9500;
   background: rgba(5, 5, 7, 0.85);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1435,8 +1436,8 @@ html, body {
   align-items: center;
   gap: 4px;
   background: rgba(8, 8, 12, 0.90);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--border-1);
   border-radius: var(--radius-pill);
   padding: 3px 6px;
@@ -1574,6 +1575,22 @@ html, body {
   border-radius: 1px;
   transition: height 0.3s ease;
 }
+.sig-spectrum-bars .sbar:nth-child(1) { height: 35%; }
+.sig-spectrum-bars .sbar:nth-child(2) { height: 55%; }
+.sig-spectrum-bars .sbar:nth-child(3) { height: 70%; }
+.sig-spectrum-bars .sbar:nth-child(4) { height: 45%; }
+.sig-spectrum-bars .sbar:nth-child(5) { height: 85%; }
+.sig-spectrum-bars .sbar:nth-child(6) { height: 60%; }
+.sig-spectrum-bars .sbar:nth-child(7) { height: 90%; }
+.sig-spectrum-bars .sbar:nth-child(8) { height: 75%; }
+.sig-spectrum-bars .sbar:nth-child(9) { height: 100%; }
+.sig-spectrum-bars .sbar:nth-child(10) { height: 80%; }
+.sig-spectrum-bars .sbar:nth-child(11) { height: 65%; }
+.sig-spectrum-bars .sbar:nth-child(12) { height: 85%; }
+.sig-spectrum-bars .sbar:nth-child(13) { height: 95%; }
+.sig-spectrum-bars .sbar:nth-child(14) { height: 70%; }
+.sig-spectrum-bars .sbar:nth-child(15) { height: 80%; }
+.sig-spectrum-bars .sbar:nth-child(16) { height: 50%; }
 
 /* SpaceX Anomaly Alert Card (Exact Match to Reference Screenshot) */
 .spacex-anomaly-card {
@@ -1673,6 +1690,9 @@ html, body {
   background: var(--accent-green);
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
 }
+#anomDriftBar { width: 84%; }
+#anomConfBar { width: 98%; }
+#anomCoherenceBar { width: 76%; }
 .anomaly-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

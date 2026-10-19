@@ -1,14 +1,78 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EarthSift — Earth System Trend Detective</title>
-    <meta name="description" content="Evidence-first climate trend discovery powered by live NASA observations. Mann-Kendall trend detection, Anselin LISA spatial clustering, and compound hazard analysis." />
-    <meta name="theme-color" content="#050507" />
+    
+    <!-- Security & Force HTTPS -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    
+    <!-- Canonical & SEO Metadata -->
+    <link rel="canonical" href="https://earthsift.org/" />
+    <meta name="description" content="Operational evidence-first climate trend discovery powered by continuous NASA Earth observations. Non-parametric Mann-Kendall trend detection, Anselin LISA spatial clustering, and multivariate compound hazard analytics." />
+    <meta name="keywords" content="NASA Space Apps 2026, Earth System, Climate Trends, Mann-Kendall, Sen Slope, LISA Autocorrelation, NASA POWER, MERRA-2, Climate Aridification Index, CF-1.8 NetCDF" />
+    <meta name="author" content="Shivam Gawade" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph / Facebook / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://earthsift.org/" />
+    <meta property="og:title" content="EarthSift — Earth System Trend Detective" />
+    <meta property="og:description" content="Discover statistically defensible trends in NASA MERRA-2 and POWER observations with non-parametric Mann-Kendall tests, Anselin LISA spatial regimes, and CF-1.8 NetCDF reproducibility." />
+    <meta property="og:image" content="https://earthsift.org/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="EarthSift Earth System Trend Detective interface card" />
+    <meta property="og:site_name" content="EarthSift" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="EarthSift — Earth System Trend Detective" />
+    <meta name="twitter:description" content="Discover statistically defensible trends in NASA MERRA-2 and POWER observations with non-parametric Mann-Kendall tests and Anselin LISA clustering." />
+    <meta name="twitter:image" content="https://earthsift.org/og-image.png" />
+    <meta name="twitter:image:alt" content="EarthSift Earth System Trend Detective interface card" />
+
+    <!-- Icons & Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Google Fonts Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Schema.org JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "EarthSift",
+      "applicationCategory": "ScientificApplication",
+      "operatingSystem": "Web",
+      "description": "Evidence-first scientific workbench discovering statistically defensible trends in NASA Earth-system data through Mann-Kendall non-parametric testing, Anselin LISA clustering, and compound climate hazard detection.",
+      "url": "https://earthsift.org/",
+      "image": "https://earthsift.org/og-image.png",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "creator": {
+        "@type": "Person",
+        "name": "Shivam Gawade"
+      },
+      "citation": [
+        "https://doi.org/10.5067/POWER/10.0.0",
+        "https://doi.org/10.5067/A7F0JNNUTWOB"
+      ]
+    }
+    </script>
   </head>
-  <body>
+  <body class="bg-[var(--color-bg-deep)] text-[var(--color-text-main)] antialiased selection:bg-[var(--color-accent-blue)]/20 selection:text-[var(--color-accent-blue)]">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
