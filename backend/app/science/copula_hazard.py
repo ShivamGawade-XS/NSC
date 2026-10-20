@@ -44,17 +44,25 @@ def fit_bivariate_copula(
     tau = float(tau_res.statistic) if not np.isnan(tau_res.statistic) else 0.0
 
     # Invert Kendall's tau to find copula parameter theta
-    if copula_type == "gumbel":
-        # Gumbel requires tau in [0, 1)
-        clamped_tau = max(0.01, min(0.95, abs(tau)))
-        theta = float(1.0 / (1.0 - clamped_tau))
-        # Upper tail dependence coefficient: lambda_U = 2 - 2^(1/theta)
-        tail_dep = float(2.0 - 2.0 ** (1.0 / theta))
-    else:  # Clayton
-        clamped_tau = max(0.01, min(0.95, abs(tau)))
-        theta = float(2.0 * clamped_tau / (1.0 - clamped_tau))
-        # Lower tail dependence coefficient: lambda_L = 2^(-1/theta)
-        tail_dep = float(2.0 ** (-1.0 / theta))
+    if tau <= 0.0:
+        if copula_type == "gumbel":
+            theta = 1.0
+            tail_dep = 0.0
+        else:  # clayton
+            theta = 0.0
+            tail_dep = 0.0
+    else:
+        clamped_tau = min(0.95, max(0.01, tau))
+        if copula_type == "gumbel":
+            # Gumbel requires tau in (0, 1): theta = 1 / (1 - tau)
+            theta = float(1.0 / (1.0 - clamped_tau))
+            # Upper tail dependence coefficient: lambda_U = 2 - 2^(1/theta)
+            tail_dep = float(2.0 - 2.0 ** (1.0 / theta))
+        else:  # Clayton
+            # Clayton requires tau in (0, 1): theta = 2 * tau / (1 - tau)
+            theta = float(2.0 * clamped_tau / (1.0 - clamped_tau))
+            # Lower tail dependence coefficient: lambda_L = 2^(-1/theta)
+            tail_dep = float(2.0 ** (-1.0 / theta))
 
     return {
         "theta": round(theta, 3),
@@ -69,6 +77,8 @@ def evaluate_gumbel_cdf(u: np.ndarray, v: np.ndarray, theta: float) -> np.ndarra
     """Evaluate bivariate Gumbel copula CDF: C(u,v) = exp(-[(-ln u)^theta + (-ln v)^theta]^(1/theta))."""
     u_safe = np.clip(u, 1e-6, 1.0 - 1e-6)
     v_safe = np.clip(v, 1e-6, 1.0 - 1e-6)
+    if theta <= 1.0 + 1e-6:
+        return u_safe * v_safe
     term = (-np.log(u_safe)) ** theta + (-np.log(v_safe)) ** theta
     return np.exp(-(term ** (1.0 / theta)))
 
@@ -120,7 +130,11 @@ def compute_compound_copula_return_periods(
 
     return_periods[valid_mask] = np.round(ret_flat, 1)
 
-    hotspot_count = int(np.sum(ret_flat > 50.0))
+    # Ensure compound_extreme_cells only counts cells where temp_slopes > 0 (warming)
+    # AND precip_slopes < 0 (drying) AND return_period > 50.0
+    p_valid_slopes = precip_slopes[valid_mask]
+    extreme_mask = (t_flat > 0.0) & (p_valid_slopes < 0.0) & (ret_flat > 50.0)
+    hotspot_count = int(np.sum(extreme_mask))
 
     return {
         "copula_model": copula_info,
