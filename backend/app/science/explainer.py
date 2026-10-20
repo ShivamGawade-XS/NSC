@@ -5,6 +5,8 @@ Integrates live Gemini / OpenAI API with strict zero-hallucination guardrails
 and a guaranteed deterministic scientific template fallback.
 """
 
+import asyncio
+import concurrent.futures
 import json
 import logging
 import os
@@ -125,11 +127,32 @@ def _clean_and_parse_json(raw: str) -> dict:
     return json.loads(text)
 
 
-def explain_evidence_with_ai(req: ExplainRequest) -> ExplainResponse:
+def _ground_evidence(req: ExplainRequest, parsed_dict: dict) -> ExplainResponse:
+    summary_text = parsed_dict.get("summary", "").strip()
+    slope_3f = f"{req.slope:.3f}"
+    slope_abs_3f = f"{abs(req.slope):.3f}"
+    if not any(s in summary_text for s in [slope_3f, slope_abs_3f, str(req.slope)]):
+        summary_text = f"{summary_text.rstrip('.')} at an estimated rate of {req.slope:+.3f} {req.slope_units}."
+    stat_text = parsed_dict.get("statistical_assessment", "").strip()
+    if not stat_text:
+        sig_str = "statistically significant" if req.significant else "not statistically significant"
+        stat_text = f"The non-parametric trend test is {sig_str} (p = {req.p_value:.4f}, FDR q = {req.q_value:.4f})."
+    limit_text = parsed_dict.get("limitations", "").strip()
+    if not limit_text:
+        limit_text = "Observations subject to reanalysis spatial grid resolution and sensor adjustments."
+    return ExplainResponse(
+        summary=summary_text,
+        statistical_assessment=stat_text,
+        limitations=limit_text
+    )
+
+
+async def explain_evidence_with_ai_async(req: ExplainRequest) -> ExplainResponse:
     """
-    Downstream scientific explainer:
-    Queries Google Gemini API or OpenAI API if credentials exist,
+    Downstream scientific explainer (asynchronous):
+    Queries Google Gemini API or OpenAI API asynchronously if credentials exist,
     strictly grounded to the input structured evidence payload.
+    Uses httpx.AsyncClient with timeout=httpx.Timeout(5.0, connect=2.0).
     Falls back to deterministic template if offline, unconfigured, or on error.
     """
     gemini_key = os.environ.get("GEMINI_API_KEY")
@@ -156,87 +179,88 @@ def explain_evidence_with_ai(req: ExplainRequest) -> ExplainResponse:
         f"4. Return ONLY a valid JSON object with keys: 'summary', 'statistical_assessment', 'limitations'."
     )
 
-    def _ground_evidence(parsed_dict: dict) -> ExplainResponse:
-        summary_text = parsed_dict.get("summary", "").strip()
-        slope_3f = f"{req.slope:.3f}"
-        slope_abs_3f = f"{abs(req.slope):.3f}"
-        if not any(s in summary_text for s in [slope_3f, slope_abs_3f, str(req.slope)]):
-            summary_text = f"{summary_text.rstrip('.')} at an estimated rate of {req.slope:+.3f} {req.slope_units}."
-        stat_text = parsed_dict.get("statistical_assessment", "").strip()
-        if not stat_text:
-            sig_str = "statistically significant" if req.significant else "not statistically significant"
-            stat_text = f"The non-parametric trend test is {sig_str} (p = {req.p_value:.4f}, FDR q = {req.q_value:.4f})."
-        limit_text = parsed_dict.get("limitations", "").strip()
-        if not limit_text:
-            limit_text = "Observations subject to reanalysis spatial grid resolution and sensor adjustments."
-        return ExplainResponse(
-            summary=summary_text,
-            statistical_assessment=stat_text,
-            limitations=limit_text
-        )
-
-    # 1. Attempt Gemini API
-    if gemini_key:
-        candidate_models = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash"]
-        for model in candidate_models:
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-                headers = {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": gemini_key
-                }
-                payload = {
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {
-                        "temperature": 0.2,
-                        "maxOutputTokens": 500,
-                        "responseMimeType": "application/json"
+    async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, connect=2.0)) as client:
+        # 1. Attempt Gemini API
+        if gemini_key:
+            candidate_models = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash"]
+            for model in candidate_models:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                    headers = {
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": gemini_key
                     }
-                }
-                with httpx.Client(timeout=10.0) as client:
-                    res = client.post(url, headers=headers, json=payload)
+                    payload = {
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {
+                            "temperature": 0.2,
+                            "maxOutputTokens": 500,
+                            "responseMimeType": "application/json"
+                        }
+                    }
+                    res = await client.post(url, headers=headers, json=payload)
                     if res.status_code == 200:
                         data = res.json()
                         candidates = data.get("candidates", [])
                         if candidates:
                             text_resp = candidates[0]["content"]["parts"][0]["text"]
                             parsed = _clean_and_parse_json(text_resp)
-                            return _ground_evidence(parsed)
+                            return _ground_evidence(req, parsed)
                     elif res.status_code in (400, 401, 403):
                         logger.warning("Gemini API rejected key/request with status %d (%s); aborting model loop.", res.status_code, res.text[:200])
                         break
                     else:
                         logger.warning("Gemini model %s returned HTTP %d: %s", model, res.status_code, res.text[:150])
-            except Exception as e:
-                logger.warning("Gemini model %s failed (%s); trying next.", model, e)
+                except Exception as e:
+                    logger.warning("Gemini model %s failed (%s); trying next.", model, e)
 
-    # 2. Attempt OpenAI API
-    if openai_key:
-        try:
-            url = "https://api.openai.com/v1/chat/completions"
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {openai_key}"
-            }
-            payload = {
-                "model": "gpt-4o-mini",
-                "messages": [
-                    {"role": "system", "content": "You are a scientific interpreter. Return strict JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.2,
-                "response_format": {"type": "json_object"}
-            }
-            with httpx.Client(timeout=8.0) as client:
-                res = client.post(url, headers=headers, json=payload)
+        # 2. Attempt OpenAI API
+        if openai_key:
+            try:
+                url = "https://api.openai.com/v1/chat/completions"
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {openai_key}"
+                }
+                payload = {
+                    "model": "gpt-4o-mini",
+                    "messages": [
+                        {"role": "system", "content": "You are a scientific interpreter. Return strict JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.2,
+                    "response_format": {"type": "json_object"}
+                }
+                res = await client.post(url, headers=headers, json=payload)
                 if res.status_code == 200:
                     data = res.json()
                     content = data["choices"][0]["message"]["content"]
                     parsed = _clean_and_parse_json(content)
-                    return _ground_evidence(parsed)
+                    return _ground_evidence(req, parsed)
                 elif res.status_code in (401, 403):
                     logger.warning("OpenAI API rejected key with HTTP %d.", res.status_code)
-        except Exception as e:
-            logger.warning("OpenAI Explainer call failed (%s); falling back to deterministic template.", e)
+            except Exception as e:
+                logger.warning("OpenAI Explainer call failed (%s); falling back to deterministic template.", e)
 
     return deterministic_fallback_explanation(req)
+
+
+def explain_evidence_with_ai(req: ExplainRequest) -> ExplainResponse:
+    """
+    Synchronous wrapper for explain_evidence_with_ai_async.
+    Maintains compatibility with synchronous callers and test suites.
+    """
+    if not os.environ.get("GEMINI_API_KEY") and not os.environ.get("OPENAI_API_KEY"):
+        return deterministic_fallback_explanation(req)
+
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(asyncio.run, explain_evidence_with_ai_async(req))
+            return future.result()
+    else:
+        return asyncio.run(explain_evidence_with_ai_async(req))
