@@ -5,6 +5,7 @@ Sen's slope (Theil-Sen robust estimator), and Benjamini-Hochberg False Discovery
 """
 
 from typing import Any
+import warnings
 
 import numpy as np
 from scipy import stats
@@ -493,56 +494,72 @@ def compute_spatial_trends(
     }
 
 
+class SpatialPettittResult(dict):
+    """
+    Result container for compute_spatial_pettitt.
+    Supports dictionary access (res['changepoint_year']), attribute access (res.changepoint_year),
+    and 2-tuple unpacking (cp_year, cp_p_val = compute_spatial_pettitt(...)).
+    """
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self[name]
+        except KeyError:
+            raise AttributeError(f"'SpatialPettittResult' object has no attribute '{name}'")
+
+    def __iter__(self):
+        return iter((self["changepoint_year"], self["changepoint_p_value"]))
+
+
 def pettitt_changepoint_test(
-    y: np.ndarray,
+    series: np.ndarray | None = None,
     time_coords: np.ndarray | None = None,
-    alpha: float = 0.05
+    alpha: float = 0.05,
+    *,
+    y: np.ndarray | None = None,
 ) -> dict[str, Any]:
     """
     Pettitt's (1979) non-parametric test for detecting a single abrupt regime changepoint
-    in a continuous climate time series.
-    
-    Formula:
-        U_t = 2 * W_t - t * (n + 1)
-        where W_t = sum(rank(y[1..t]))
-        K = max_{1 <= t < n} |U_t|
-        p ~= 2 * exp(-6 * K^2 / (n^3 + n^2))
+    in a continuous climate time series using the exact rank identity:
+        U_{t,T} = 2 * sum_{i=1}^t R_i - t * (T + 1)
+        where R_i is the rank of x_i in the sample of length T.
+        K_T = max_{1 <= t < T} |U_{t,T}|
+        p ~= 2 * exp(-6 * K_T^2 / (T^3 + T^2))
     """
-    valid_mask = ~np.isnan(y)
-    data = y[valid_mask]
-    n = len(data)
+    if series is None:
+        if y is not None:
+            series = y
+        else:
+            raise ValueError("Must provide 'series' or 'y'")
 
-    if n < 6:
+    series_arr = np.asarray(series, dtype=float)
+    valid_mask = ~np.isnan(series_arr)
+    valid_x = series_arr[valid_mask]
+    T = len(valid_x)
+
+    if T < 6 or float(np.ptp(valid_x)) < 1e-12:
         return {
             "changepoint_index": None,
             "changepoint_time": None,
             "k_statistic": 0.0,
             "p_value": 1.0,
-            "significant": False
+            "significant": False,
         }
 
-    times = time_coords[valid_mask] if time_coords is not None else np.arange(n)
+    times = np.asarray(time_coords)[valid_mask] if time_coords is not None else np.arange(len(series_arr))[valid_mask]
 
-    # Compute ranks
-    ranks = stats.rankdata(data)
-    
-    # Cumulative rank sum W_t
-    w = np.cumsum(ranks)
-    t = np.arange(1, n + 1)
-    
-    # U_t for 1 <= t < n
-    u = 2.0 * w[:-1] - t[:-1] * (n + 1)
-    abs_u = np.abs(u)
-    
-    tau_idx = int(np.argmax(abs_u))
-    k_stat = float(abs_u[tau_idx])
-    
-    # Asymptotic p-value approximation (Pettitt 1979)
-    p_val = float(2.0 * np.exp(-6.0 * (k_stat ** 2) / (n ** 3 + n ** 2)))
-    p_val = min(1.0, max(0.0, p_val))
-    
-    cp_time = times[tau_idx] if tau_idx < len(times) else None
-    
+    # Compute ranks using average method for ties
+    r = stats.rankdata(valid_x, method="average")
+    t_idx = np.arange(1, T)
+    u_t = np.abs(2.0 * np.cumsum(r[:-1]) - t_idx * (T + 1.0))
+
+    k_idx = int(np.argmax(u_t))
+    K_T = float(u_t[k_idx])
+
+    # Asymptotic p-value approximation (Pettitt 1979), clamped to [0.0, 1.0]
+    p_val = float(np.clip(2.0 * np.exp(-6.0 * (K_T ** 2) / (T ** 3 + T ** 2)), 0.0, 1.0))
+
+    cp_time = times[k_idx] if k_idx < len(times) else None
+
     formatted_cp_time = None
     if cp_time is not None:
         try:
@@ -551,12 +568,107 @@ def pettitt_changepoint_test(
             formatted_cp_time = str(cp_time)
 
     return {
-        "changepoint_index": tau_idx,
+        "changepoint_index": k_idx,
         "changepoint_time": formatted_cp_time,
-        "k_statistic": round(k_stat, 2),
+        "k_statistic": round(K_T, 2),
         "p_value": round(p_val, 5),
-        "significant": p_val < alpha
+        "significant": bool(p_val < alpha),
     }
+
+
+def compute_spatial_pettitt(
+    data_3d: np.ndarray,
+    time_coords: np.ndarray | None = None,
+    alpha: float = 0.05,
+) -> SpatialPettittResult:
+    """
+    Vectorized 3D Pettitt (1979) abrupt regime changepoint test across spatial grids.
+    Calculates changepoint_year and changepoint_p_value across the entire grid in one pass
+    without Python cell loops using cumulative sums of rank-transformed data.
+
+    Parameters:
+        data_3d: 3D array of shape (T, H, W).
+        time_coords: Optional 1D array of time steps of length T.
+        alpha: Significance threshold (default: 0.05).
+
+    Returns:
+        SpatialPettittResult dict with 'changepoint_year', 'changepoint_p_value',
+        'significant', and 'k_statistic' 2D spatial maps.
+    """
+    data = np.asarray(data_3d, dtype=float)
+    if data.ndim != 3:
+        raise ValueError(f"Expected 3D array of shape (T, H, W), got array of shape {data.shape}")
+
+    t_len, h_len, w_len = data.shape
+
+    if time_coords is None:
+        coords = np.arange(t_len)
+    else:
+        coords = np.asarray(time_coords)
+
+    if t_len < 6:
+        empty_years = np.full((h_len, w_len), np.nan)
+        empty_pvals = np.ones((h_len, w_len), dtype=float)
+        empty_sig = np.zeros((h_len, w_len), dtype=bool)
+        empty_k = np.zeros((h_len, w_len), dtype=float)
+        return SpatialPettittResult({
+            "changepoint_year": empty_years,
+            "changepoint_p_value": empty_pvals,
+            "significant": empty_sig,
+            "k_statistic": empty_k,
+        })
+
+    valid_mask = ~np.isnan(data)
+    n_valid = np.sum(valid_mask, axis=0)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        ptp = np.nanmax(data, axis=0) - np.nanmin(data, axis=0)
+
+    invalid_cells = (n_valid < 6) | (ptp < 1e-12) | np.isnan(ptp)
+
+    # Rank-transform along time axis (axis=0) using average ranks for ties
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        r = stats.rankdata(data, axis=0, method="average", nan_policy="omit")
+
+    r_clean = np.nan_to_num(r, nan=0.0)
+    cumsum_r = np.cumsum(r_clean, axis=0)
+    t_obs = np.cumsum(valid_mask, axis=0)[:-1]
+    N = np.maximum(n_valid, 1)[None, :, :]
+
+    # U_t = |2 * sum(R_i) - t * (N + 1)|
+    u_t = np.abs(2.0 * cumsum_r[:-1] - t_obs * (N + 1.0))
+    k_idx = np.argmax(u_t, axis=0)  # shape (H, W)
+    k_stat = np.max(u_t, axis=0)    # shape (H, W)
+
+    # Asymptotic p-value: p ~= 2 * exp(-6 * K^2 / (N^3 + N^2))
+    n_2d = np.maximum(n_valid, 1).astype(float)
+    denom = n_2d ** 3 + n_2d ** 2
+    with np.errstate(all="ignore"):
+        p_vals = 2.0 * np.exp(-6.0 * (k_stat ** 2) / denom)
+    p_vals = np.clip(p_vals, 0.0, 1.0)
+    p_vals[invalid_cells] = 1.0
+    k_stat[invalid_cells] = 0.0
+
+    cp_year_raw = coords[k_idx]
+    if np.issubdtype(coords.dtype, np.number):
+        if np.any(invalid_cells):
+            cp_year = cp_year_raw.astype(float)
+            cp_year[invalid_cells] = np.nan
+        else:
+            cp_year = cp_year_raw
+    else:
+        cp_year = np.where(invalid_cells, None, cp_year_raw)
+
+    is_sig = (p_vals < alpha) & (~invalid_cells)
+
+    return SpatialPettittResult({
+        "changepoint_year": cp_year,
+        "changepoint_p_value": p_vals,
+        "significant": is_sig,
+        "k_statistic": k_stat,
+    })
 
 
 def monte_carlo_ar1_significance(
