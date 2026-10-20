@@ -187,6 +187,14 @@ def test_hmac_sha256_cache_tamper_detection():
     assert loaded is not None
     assert loaded["data"] == "original_authentic_data"
     
+    # Verify access_count telemetry was persisted upon cache hit
+    conn = sqlite3.connect(str(DB_PATH))
+    with conn:
+        cur = conn.cursor()
+        cur.execute("SELECT access_count FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
+        acc_count = cur.fetchone()[0]
+        assert acc_count == 2, f"Expected access_count to increment to 2, got {acc_count}"
+
     # Now simulate an attacker tampering with the payload in SQLite
     conn = sqlite3.connect(str(DB_PATH))
     with conn:
@@ -200,6 +208,12 @@ def test_hmac_sha256_cache_tamper_detection():
     # Verify cryptographic HMAC verification catches the tamper and refuses to deserialize
     tampered_load = load_from_db_cache(test_analysis_id)
     assert tampered_load is None, "Insecure deserialization: tampered payload was not rejected!"
+
+    # Simulate an attacker injecting a truncated payload <= 32 bytes
+    with conn:
+        conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (b"short_malicious_chunk", test_analysis_id))
+    short_load = load_from_db_cache(test_analysis_id)
+    assert short_load is None, "Insecure deserialization: short payload (<=32 bytes) was not rejected!"
     
     # Clean up test entry
     conn = sqlite3.connect(str(DB_PATH))
