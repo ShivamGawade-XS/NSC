@@ -14,6 +14,7 @@ Zero synthetic numbers: 100% authentic NASA observations and assimilation fields
 
 import hashlib
 import logging
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -174,10 +175,11 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         start_year: int,
         end_year: int,
         bbox: list[float],
-        timeout_seconds: int = 25
+        timeout_seconds: float = 12.0
     ) -> Path | None:
         """
         Download authentic NetCDF-4 binary directly from NASA POWER API.
+        Includes exponential backoff retries on HTTP 429/502/503/504 and strict timeout.
         Returns Path to downloaded file if successful, None otherwise.
         """
         nasa_param = self.VARIABLES[variable]["nasa_param"]
@@ -208,21 +210,39 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         if not url.startswith("https://power.larc.nasa.gov/"):
             raise ValueError(f"Untrusted URL scheme or host: {url}")
 
-        try:
-            req = urllib.request.Request(
-                url,
-                headers={"User-Agent": "EarthSift-NASASpaceApps/2.0 (Scientific Research Instrument)"}
-            )
-            with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # nosec B310
-                if response.status == 200:
-                    content = response.read()
-                    if len(content) > 1024:
-                        with open(cache_target, "wb") as f:
-                            f.write(content)
-                        logger.info("Successfully ingested and cached authentic NASA NetCDF (%d bytes).", len(content))
-                        return cache_target
-        except Exception as e:
-            logger.warning("NASA POWER live download failed (%s). Checking offline authentic fixtures.", e)
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            try:
+                req = urllib.request.Request(
+                    url,
+                    headers={"User-Agent": "EarthSift-NASASpaceApps/2.0 (Scientific Research Instrument)"}
+                )
+                with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # nosec B310
+                    if response.status == 200:
+                        content = response.read()
+                        if len(content) > 1024:
+                            with open(cache_target, "wb") as f:
+                                f.write(content)
+                            logger.info("Successfully ingested and cached authentic NASA NetCDF (%d bytes).", len(content))
+                            return cache_target
+                break
+            except urllib.error.HTTPError as e:
+                if e.code in (429, 502, 503, 504) and attempt < max_retries:
+                    backoff = 1.0 * (2 ** attempt)
+                    logger.warning(
+                        "NASA POWER API returned HTTP %d on attempt %d; retrying in %.1fs...",
+                        e.code, attempt + 1, backoff
+                    )
+                    time.sleep(backoff)
+                    continue
+                logger.warning(
+                    "NASA POWER live download failed with HTTP %d: %s. Checking offline authentic fixtures.",
+                    e.code, e
+                )
+                break
+            except Exception as e:
+                logger.warning("NASA POWER live download failed (%s). Checking offline authentic fixtures.", e)
+                break
 
         return None
 
@@ -243,7 +263,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             bbox = self.DEFAULT_BBOX
 
         min_lon, min_lat, max_lon, max_lat = bbox
-        was_clamped = ((max_lat - min_lat) > 9.9) or ((max_lon - min_lon) > 9.9)
+        was_clamped = ((max_lat - min_lat) > 10.0 - 1e-6) or ((max_lon - min_lon) > 10.0 - 1e-6)
         var_meta = self.VARIABLES[variable]
         nasa_param = var_meta["nasa_param"]
 
@@ -268,14 +288,14 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                 "Ensure backend/data/fixtures/nasa_merra2_t2m_na.nc is present."
             )
 
-        # 3. Read authentic NASA NetCDF with xarray
-        engine = "h5netcdf"
-        try:
-            ds = xr.open_dataset(nc_path, engine=engine)
-        except Exception:
-            ds = xr.open_dataset(nc_path)
+        # 3. Read authentic NASA NetCDF with xarray using strict context manager
+        def _open_dataset(path: Path):
+            try:
+                return xr.open_dataset(path, engine="h5netcdf")
+            except Exception:
+                return xr.open_dataset(path)
 
-        with ds:
+        with _open_dataset(nc_path) as ds:
             # Locate variable
             target_var = None
             for candidate in [nasa_param, variable, "T2M", "PRECTOTCORR", "PRECTOT"]:
@@ -307,12 +327,14 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                 else:
                     years_arr = np.array(sub_da[time_coord].values, dtype=int)
 
-            # Spatial slice with latitude ascending / descending safety
+            # Spatial slice with latitude ascending / descending safety (slicing full requested bbox)
             lat_vals = ds[lat_coord].values
             lat_slice = slice(float(min_lat), float(max_lat)) if lat_vals[0] < lat_vals[-1] else slice(float(max_lat), float(min_lat))
             lon_slice = slice(float(min_lon), float(max_lon))
 
             sub_da = sub_da.sel({lat_coord: lat_slice, lon_coord: lon_slice})
+            # In-memory load to ensure underlying file descriptor is closed on context exit
+            sub_da = sub_da.load()
             raw_vals = np.asarray(sub_da.values, dtype=float)
 
             # Ensure latitude is strictly ascending
