@@ -336,3 +336,50 @@ def test_explain_evidence_async_and_sync():
     assert "0.45" in res_sync.summary
     assert res_sync.statistical_assessment is not None
 
+
+def test_ground_evidence_guardrails_and_citations():
+    """Verify _ground_evidence attaches hypotheses, verifies p/q values, and enforces Guardrail #4."""
+    from app.schemas.analysis import ExplainRequest
+    from app.science.explainer import _ground_evidence
+
+    req = ExplainRequest(
+        variable_name="Surface Skin Temperature",
+        location="Arctic [75.0°N, 40.0°W]",
+        time_span="2000 - 2024",
+        slope=0.45,
+        slope_units="deg C / decade",
+        p_value=0.0012,
+        q_value=0.0024,
+        significant=True,
+        direction="increasing",
+        sample_count=25,
+        source="NASA MERRA-2"
+    )
+
+    llm_output = {
+        "summary": "Arctic warming observed at 0.45 deg C / decade with a 99% probability of persistence.",
+        "statistical_assessment": "There is a 95% chance that this trend is real without mentioning exact p-values.",
+        "limitations": "Sensor drift may exist with a 10% chance."
+    }
+
+    res = _ground_evidence(req, llm_output)
+
+    # 1. Hypotheses and citations are attached
+    assert res.physical_hypotheses is not None
+    assert len(res.physical_hypotheses) > 0
+    assert res.bibtex_citations is not None
+    assert len(res.bibtex_citations) > 0
+
+    # 2. Verified p/q values appended when omitted by LLM
+    assert "0.0012" in res.statistical_assessment
+    assert "0.0024" in res.statistical_assessment
+    assert "Verified Mann-Kendall p = 0.0012" in res.statistical_assessment
+
+    # 3. Guardrail #4 enforced (% probability / % chance replaced)
+    assert "% probability" not in res.summary.lower()
+    assert "% chance" not in res.statistical_assessment.lower()
+    assert "% chance" not in res.limitations.lower()
+    assert "statistical significance level" in res.summary
+    assert "statistical significance level" in res.statistical_assessment
+    assert "statistical significance level" in res.limitations
+
