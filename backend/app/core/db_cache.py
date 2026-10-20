@@ -4,15 +4,24 @@ Provides L2 persistent caching, database indexing, and query optimization
 for computed NASA Earth-system trend analyses and coordinate time series.
 """
 
+import hashlib
+import hmac
+import json
 import logging
 import os
-import pickle
 import sqlite3
 import threading
 import time
+import types
 import zlib
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
+import numpy as np
+from pydantic import BaseModel
+
+from app.core.config import settings
+from app.schemas.analysis import AnalysisRequest, AnalysisSummary
 
 logger = logging.getLogger("earthsift.db_cache")
 
@@ -100,6 +109,63 @@ def init_db() -> None:
 init_db()
 
 
+def _serialize_cache_payload(payload: dict[str, Any]) -> bytes:
+    """
+    Deterministic JSON encoder preventing CWE-502 insecure deserialization.
+    Transforms Pydantic models, NumPy arrays, and scalars into schema-tagged JSON.
+    """
+    def _default_encoder(obj: Any) -> Any:
+        if isinstance(obj, AnalysisRequest):
+            return {"__pydantic_AnalysisRequest__": obj.model_dump()}
+        if isinstance(obj, AnalysisSummary):
+            return {"__pydantic_AnalysisSummary__": obj.model_dump()}
+        if isinstance(obj, BaseModel):
+            return {f"__pydantic_{obj.__class__.__name__}__": obj.model_dump()}
+        if isinstance(obj, types.SimpleNamespace):
+            return {"__simple_namespace__": vars(obj)}
+        if isinstance(obj, np.ndarray):
+            return {
+                "__ndarray__": obj.tolist(),
+                "dtype": str(obj.dtype),
+                "shape": list(obj.shape)
+            }
+        if isinstance(obj, np.generic):
+            return obj.item()
+        if isinstance(obj, (bytes, bytearray)):
+            return {"__bytes__": obj.hex()}
+        if isinstance(obj, Path):
+            return str(obj)
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+    return json.dumps(payload, default=_default_encoder, sort_keys=True).encode("utf-8")
+
+
+def _deserialize_cache_payload(raw_bytes: bytes) -> dict[str, Any]:
+    """
+    Secure JSON decoder reconstructing Pydantic models and NumPy arrays
+    from schema-tagged dictionaries without executing arbitrary code.
+    """
+    def _object_hook(d: dict[str, Any]) -> Any:
+        if "__pydantic_AnalysisRequest__" in d:
+            return AnalysisRequest(**d["__pydantic_AnalysisRequest__"])
+        if "__pydantic_AnalysisSummary__" in d:
+            return AnalysisSummary(**d["__pydantic_AnalysisSummary__"])
+        if "__ndarray__" in d:
+            arr = np.array(d["__ndarray__"], dtype=d.get("dtype"))
+            shape = d.get("shape")
+            if shape is not None:
+                arr = arr.reshape(shape)
+            return arr
+        if "__simple_namespace__" in d:
+            return types.SimpleNamespace(**d["__simple_namespace__"])
+        if "__bytes__" in d:
+            return bytes.fromhex(d["__bytes__"])
+        return d
+
+    text = raw_bytes.decode("utf-8")
+    return cast(dict[str, Any], json.loads(text, object_hook=_object_hook))
+
+
 def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
     """
     Save analysis to persistent SQLite database with compressed payload
@@ -119,10 +185,8 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
         fdr_controlled = 1 if getattr(req, "apply_fdr", True) else 0
 
         # Compress payload using zlib for minimal disk footprint and cryptographically sign
-        raw_compressed = zlib.compress(pickle.dumps(payload, protocol=pickle.HIGHEST_PROTOCOL), level=6)
-        from app.core.config import settings
-        import hashlib
-        import hmac
+        json_bytes = _serialize_cache_payload(payload)
+        raw_compressed = zlib.compress(json_bytes, level=6)
         hmac_key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
         sig = hmac.new(hmac_key, raw_compressed, hashlib.sha256).digest()
         signed_bytes = sig + raw_compressed
@@ -149,9 +213,8 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
                 signed_bytes
             ))
             conn.commit()
-    except Exception:
-        # Non-blocking logging on database write error
-        pass
+    except Exception as exc:
+        logger.error("Error saving cache for analysis_id=%s: %s", analysis_id, exc)
 
 
 def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
@@ -172,11 +235,7 @@ def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
             logger.error("Security alert: cache payload too small (<=32 bytes) for analysis_id=%s", analysis_id)
             return None
 
-        from app.core.config import settings
-        import hashlib
-        import hmac
         hmac_key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
-
         sig = data_bytes[:32]
         raw_payload = data_bytes[32:]
         expected_sig = hmac.new(hmac_key, raw_payload, hashlib.sha256).digest()
@@ -187,7 +246,7 @@ def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
 
         if hmac.compare_digest(sig, expected_sig):
             decompressed = zlib.decompress(raw_payload)
-            payload = pickle.loads(decompressed)  # nosec B301
+            payload = _deserialize_cache_payload(decompressed)
 
             with _DB_LOCK, conn:
                 conn.execute("""
