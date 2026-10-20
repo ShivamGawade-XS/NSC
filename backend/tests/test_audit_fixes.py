@@ -304,3 +304,35 @@ def test_contrast_cluster_area_weighting():
     assert cluster["bbox"] == [10.0, 0.0, 10.0, 60.0]
     assert cluster["cell_count"] == 2
 
+
+def test_explain_evidence_async_and_sync():
+    """Verify explain_evidence_with_ai_async and sync explain_evidence_with_ai."""
+    import asyncio
+    from app.schemas.analysis import ExplainRequest
+    from app.science.explainer import explain_evidence_with_ai, explain_evidence_with_ai_async
+
+    req = ExplainRequest(
+        variable_name="Surface Skin Temperature",
+        location="Arctic [75.0°N, 40.0°W]",
+        time_span="2000 - 2024",
+        slope=0.45,
+        slope_units="deg C / decade",
+        p_value=0.001,
+        q_value=0.002,
+        significant=True,
+        direction="increasing",
+        sample_count=25,
+        source="NASA MERRA-2"
+    )
+
+    # Test async version via asyncio.run
+    res_async = asyncio.run(explain_evidence_with_ai_async(req))
+    assert "0.45" in res_async.summary
+    assert res_async.statistical_assessment is not None
+    assert len(res_async.physical_hypotheses) > 0
+
+    # Test sync wrapper
+    res_sync = explain_evidence_with_ai(req)
+    assert "0.45" in res_sync.summary
+    assert res_sync.statistical_assessment is not None
+

@@ -49,7 +49,7 @@ from app.science.climate_velocity import compute_climate_velocity
 from app.science.compound import compute_compound_hazard
 from app.science.contrasts import find_contrasting_regions
 from app.science.discovery import discover_candidate_signals
-from app.science.explainer import explain_evidence_with_ai
+from app.science.explainer import explain_evidence_with_ai, explain_evidence_with_ai_async
 from app.science.export import (
     export_to_geojson,
     export_to_netcdf,
@@ -553,9 +553,9 @@ def get_analysis_provenance(request: Request, analysis_id: str) -> ProvenanceRes
 
 @router.post("/explain", response_model=ExplainResponse)
 @limiter.limit("20/minute")
-def explain_evidence(request: Request, req: ExplainRequest) -> ExplainResponse:
+async def explain_evidence(request: Request, req: ExplainRequest) -> ExplainResponse:
     """Downstream scientific explainer: translates verified evidence into clear scientific prose via Gemini/LLM or deterministic fallback."""
-    return explain_evidence_with_ai(req)
+    return await explain_evidence_with_ai_async(req)
 
 
 @router.get("/analysis/{analysis_id}/export/netcdf")
