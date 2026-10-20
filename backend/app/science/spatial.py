@@ -9,7 +9,13 @@ Implements:
 from typing import Any
 
 import numpy as np
-from scipy import stats
+from scipy import ndimage, stats
+
+QUEEN_KERNEL = np.array([
+    [1.0, 1.0, 1.0],
+    [1.0, 0.0, 1.0],
+    [1.0, 1.0, 1.0],
+], dtype=float)
 
 
 def compute_global_morans_i(
@@ -17,7 +23,9 @@ def compute_global_morans_i(
     min_valid: int = 6
 ) -> dict[str, Any]:
     """
-    Calculate Global Moran's I spatial autocorrelation on a 2D spatial grid.
+    Calculate Global Moran's I spatial autocorrelation on a 2D spatial grid
+    using 2D convolutions (scipy.ndimage.convolve) and exact asymmetric Cliff & Ord (1981)
+    weight invariants.
 
     Parameters:
         values_2d: 2D numpy array (lat x lon) of values (e.g. trend slopes).
@@ -53,53 +61,43 @@ def compute_global_morans_i(
             "interpretation": "Uniform spatial field (zero variance)."
         }
 
-    # Row-standardized Queen contiguity (8-neighbor) spatial lag
-    lag = np.zeros_like(values_2d, dtype=float)
-    for r in range(h):
-        for c in range(w):
-            if not valid_mask[r, c]:
-                continue
-            r_min, r_max = max(0, r - 1), min(h, r + 2)
-            c_min, c_max = max(0, c - 1), min(w, c + 2)
-            nb_mask = valid_mask[r_min:r_max, c_min:c_max].copy()
-            nb_z = z[r_min:r_max, c_min:c_max].copy()
-            nb_mask[r - r_min, c - c_min] = False
-            nb_count = int(np.sum(nb_mask))
-            if nb_count > 0:
-                lag[r, c] = float(np.sum(nb_z[nb_mask])) / nb_count
+    # 1. 2D convolution for neighbor counts and inverse neighbor counts
+    nb_counts = ndimage.convolve(valid_mask.astype(float), QUEEN_KERNEL, mode="constant", cval=0.0)
+    inv_nb = np.where(valid_mask & (nb_counts > 0), 1.0 / nb_counts, 0.0)
 
+    # Row-standardized Queen contiguity (8-neighbor) spatial lag via 2D convolution
+    neighbor_z_sum = ndimage.convolve(z, QUEEN_KERNEL, mode="constant", cval=0.0)
+    lag = neighbor_z_sum * inv_nb
+
+    # 2. Exact asymmetric weight invariants (Cliff & Ord 1981)
+    # S0 = sum_i I(N_i > 0)
+    has_neighbors = valid_mask & (nb_counts > 0)
+    s0 = float(np.sum(has_neighbors))
+    if s0 <= 0:
+        return {
+            "moran_i": 0.0,
+            "expected_i": float(-1.0 / (n - 1)),
+            "z_score": 0.0,
+            "p_value": 1.0,
+            "interpretation": "Spatial distribution has no connected neighbors."
+        }
+
+    # S1 = 1/2 sum_i sum_{j in N(i)} (w_ij + w_ji)^2 = sum_{i: N_i > 0} 1/N_i + sum_{i: N_i > 0} 1/N_i (sum_{j in N(i)} 1/N_j)
+    # where sum_{j in N(i)} 1/N_j is computed in one C call via ndimage.convolve(inv_nb, QUEEN_KERNEL, mode="constant", cval=0.0)
+    conv_inv_nb = ndimage.convolve(inv_nb, QUEEN_KERNEL, mode="constant", cval=0.0)
+    s1 = float(np.sum(inv_nb[has_neighbors]) + np.sum(inv_nb[has_neighbors] * conv_inv_nb[has_neighbors]))
+
+    # S2 = sum_{i: valid} (I(N_i > 0) + sum_{j in N(i)} 1/N_j)^2
+    row_plus_col = np.where(valid_mask, has_neighbors.astype(float) + conv_inv_nb, 0.0)
+    s2_w = float(np.sum(row_plus_col ** 2))
+
+    # 3. Scale Moran's I properly by (n / S_0) * (sum z_i lag_i / sum z_i^2)
     numerator = float(np.sum(z[valid_mask] * lag[valid_mask]))
     denom = float(np.sum(z[valid_mask] ** 2))
-    moran_i = float(numerator / denom) if denom > 0 else 0.0
+    scale = float(n) / s0
+    moran_i = float(scale * (numerator / denom)) if denom > 0 else 0.0
     expected_i = float(-1.0 / (n - 1))
 
-    # Analytical variance under randomization assumption (Cliff & Ord 1981)
-    # Compute weight matrix statistics: S0, S1, S2
-    # Using row-standardized Queen weights
-    s0 = 0.0
-    s1 = 0.0
-    s2_w = 0.0
-    for r in range(h):
-        for c in range(w):
-            if not valid_mask[r, c]:
-                continue
-            r_min_n, r_max_n = max(0, r - 1), min(h, r + 2)
-            c_min_n, c_max_n = max(0, c - 1), min(w, c + 2)
-            nb_mask_n = valid_mask[r_min_n:r_max_n, c_min_n:c_max_n].copy()
-            nb_mask_n[r - r_min_n, c - c_min_n] = False
-            nb_count_n = int(np.sum(nb_mask_n))
-            if nb_count_n > 0:
-                w_ij = 1.0 / nb_count_n
-                row_sum = 0.0
-                for dr in range(nb_mask_n.shape[0]):
-                    for dc in range(nb_mask_n.shape[1]):
-                        if nb_mask_n[dr, dc]:
-                            s0 += w_ij
-                            s1 += 2.0 * w_ij * w_ij  # (w_ij + w_ji)^2 / 2 simplified
-                            row_sum += w_ij
-                s2_w += (2.0 * row_sum) ** 2  # (sum_j w_ij + sum_j w_ji)^2
-
-    s0 = max(s0, 1e-6)
     n_f = float(n)
     e_i = -1.0 / (n_f - 1.0)
 
@@ -141,7 +139,8 @@ def compute_lisa_clusters(
     alpha: float = 0.05
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Compute Anselin Local Indicators of Spatial Association (LISA).
+    Compute Anselin Local Indicators of Spatial Association (LISA)
+    using 2D convolutions across the spatial grid.
 
     Parameters:
         values_2d: 2D array of slopes or values.
@@ -168,45 +167,22 @@ def compute_lisa_clusters(
     if s2 <= 1e-12:
         return clusters, local_i
 
-    lag = np.zeros_like(values_2d, dtype=float)
-    for r in range(h):
-        for c in range(w):
-            if not valid_mask[r, c]:
-                continue
-            r_min, r_max = max(0, r - 1), min(h, r + 2)
-            c_min, c_max = max(0, c - 1), min(w, c + 2)
-            nb_mask = valid_mask[r_min:r_max, c_min:c_max].copy()
-            nb_z = z[r_min:r_max, c_min:c_max].copy()
-            nb_mask[r - r_min, c - c_min] = False
-            nb_count = int(np.sum(nb_mask))
-            if nb_count > 0:
-                lag[r, c] = float(np.sum(nb_z[nb_mask])) / nb_count
+    # 2D convolution for neighbor counts and inverse neighbor counts
+    nb_counts = ndimage.convolve(valid_mask.astype(float), QUEEN_KERNEL, mode="constant", cval=0.0)
+    inv_nb = np.where(valid_mask & (nb_counts > 0), 1.0 / nb_counts, 0.0)
+    neighbor_z_sum = ndimage.convolve(z, QUEEN_KERNEL, mode="constant", cval=0.0)
+    lag = neighbor_z_sum * inv_nb
 
-    for r in range(h):
-        for c in range(w):
-            if not valid_mask[r, c]:
-                continue
-            zi = z[r, c]
-            li = lag[r, c]
-            li_stat = (zi / s2) * li
-            local_i[r, c] = li_stat
+    local_i = np.where(valid_mask, (z / s2) * lag, 0.0)
 
-            # Only label as cluster if cell has non-trivial deviation
-            if abs(zi) > 1e-4 and abs(li) > 1e-4:
-                # If cell is statistically significant or has strong local association
-                cell_sig = (p_values_2d is None) or (p_values_2d[r, c] <= alpha)
-                if cell_sig:
-                    if zi > 0 and li > 0:
-                        clusters[r, c] = "HH"  # High-High Warming Hotspot
-                    elif zi < 0 and li < 0:
-                        clusters[r, c] = "LL"  # Low-Low Cooling / Stable Refugium
-                    elif zi > 0 and li < 0:
-                        clusters[r, c] = "HL"  # Isolated Warm Outlier
-                    elif zi < 0 and li > 0:
-                        clusters[r, c] = "LH"  # Isolated Cool Outlier
-                    else:
-                        clusters[r, c] = "NS"
-                else:
-                    clusters[r, c] = "NS"
+    # Classify clusters
+    is_eval = valid_mask & (np.abs(z) > 1e-4) & (np.abs(lag) > 1e-4)
+    if p_values_2d is not None:
+        is_eval = is_eval & (p_values_2d <= alpha)
+
+    clusters[is_eval & (z > 0) & (lag > 0)] = "HH"
+    clusters[is_eval & (z < 0) & (lag < 0)] = "LL"
+    clusters[is_eval & (z > 0) & (lag < 0)] = "HL"
+    clusters[is_eval & (z < 0) & (lag > 0)] = "LH"
 
     return clusters, local_i
