@@ -113,7 +113,7 @@ def test_netcdf_export_cleanup():
 
 
 def test_morans_i_analytical_variance():
-    """Verify Cliff & Ord (1981) analytical variance produces valid stats."""
+    """Verify Cliff & Ord (1981) analytical variance produces valid stats with exact asymmetric weights."""
     grid = np.array([
         [1.0, 1.2, 1.5],
         [1.1, 1.3, 1.6],
@@ -123,7 +123,26 @@ def test_morans_i_analytical_variance():
     assert "moran_i" in result
     assert "z_score" in result
     assert "p_value" in result
+    assert result["moran_i"] > 0.2
+    assert result["z_score"] > 2.0
+    assert result["is_clustered"] is True
+    assert 0.0 <= result["p_value"] <= 0.05
+
+
+def test_morans_i_asymmetric_weights_and_nan_handling():
+    """Verify Moran's I with coastal/NaN cells and asymmetric neighbor counts."""
+    grid = np.array([
+        [1.0, 1.2, 1.5, 2.0],
+        [1.1, np.nan, 1.6, 2.1],
+        [0.9, 1.4, 1.7, 2.2]
+    ])
+    result = compute_global_morans_i(grid)
+    assert "moran_i" in result
+    assert "z_score" in result
+    assert "p_value" in result
     assert 0.0 <= result["p_value"] <= 1.0
+    assert not np.isnan(result["z_score"])
+    assert not np.isnan(result["moran_i"])
 
 
 def test_nasa_power_clamping_provenance():
