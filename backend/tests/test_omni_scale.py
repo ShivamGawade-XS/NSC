@@ -62,6 +62,35 @@ def test_copula_bivariate_fitting_and_return_periods():
     assert "compound_extreme_cells" in ret_res
 
 
+def test_copula_negative_correlation_independence_bound():
+    """Verify that negatively correlated (x, y) yields theta == 1.0 and tail_dependence == 0.0."""
+    x = np.linspace(1.0, 10.0, 20)
+    y = -np.linspace(1.0, 10.0, 20)  # Perfectly negatively correlated: tau == -1.0
+
+    gumbel_res = fit_bivariate_copula(x, y, copula_type="gumbel")
+    assert gumbel_res["tau"] < 0.0
+    assert gumbel_res["theta"] == 1.0
+    assert gumbel_res["tail_dependence"] == 0.0
+
+    clayton_res = fit_bivariate_copula(x, y, copula_type="clayton")
+    assert clayton_res["tau"] < 0.0
+    assert clayton_res["theta"] == 0.0
+    assert clayton_res["tail_dependence"] == 0.0
+
+    # Also test evaluate_gumbel_cdf at independence bound (theta <= 1.0 + 1e-6)
+    from app.science.copula_hazard import evaluate_gumbel_cdf
+    u = np.array([0.2, 0.5, 0.8])
+    v = np.array([0.3, 0.6, 0.9])
+    cdf = evaluate_gumbel_cdf(u, v, theta=1.0)
+    np.testing.assert_allclose(cdf, u * v, atol=1e-5)
+
+    # Verify compound_extreme_cells excludes wetting or cooling cells
+    t_slopes = np.ones((5, 5)) * 0.5
+    p_slopes = np.ones((5, 5)) * 0.5  # wetting!
+    ret_res = compute_compound_copula_return_periods(t_slopes, p_slopes)
+    assert ret_res["compound_extreme_cells"] == 0
+
+
 def test_monte_carlo_ar1_significance_and_bootstrap():
     """Verify red-noise surrogate simulation and bootstrap confidence intervals."""
     # Strong upward trend with low noise
