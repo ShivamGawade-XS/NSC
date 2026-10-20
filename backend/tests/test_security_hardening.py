@@ -153,6 +153,64 @@ def test_custom_rate_limit_exceeded_handler_rfc_compliance():
     assert "Rate limit exceeded" in body["detail"]
 
 
+def test_limiter_proxy_aware_ip_resolution_and_spoofing_defense(monkeypatch):
+    """Verify get_client_ip extracts right-most untrusted IP only when arriving via TRUSTED_PROXY_IPS."""
+    from types import SimpleNamespace
+    from app.core.limiter import get_client_ip
+
+    monkeypatch.setenv("TRUSTED_PROXY_IPS", "10.0.0.1, 10.0.0.2")
+
+    def make_mock_req(host, xff=None):
+        req = SimpleNamespace()
+        req.client = SimpleNamespace(host=host) if host else None
+        req.headers = {"x-forwarded-for": xff} if xff else {}
+        return req
+
+    # 1. Direct connection from untrusted IP attempting XFF spoofing
+    req_spoof = make_mock_req(host="198.51.100.55", xff="1.1.1.1, 8.8.8.8")
+    assert get_client_ip(req_spoof) == "198.51.100.55"
+
+    # 2. Connection from trusted proxy with single client IP
+    req_proxy1 = make_mock_req(host="10.0.0.1", xff="203.0.113.195")
+    assert get_client_ip(req_proxy1) == "203.0.113.195"
+
+    # 3. Multi-proxy chain: client -> trusted proxy 1 (10.0.0.1) -> trusted proxy 2 (10.0.0.2)
+    req_chain = make_mock_req(host="10.0.0.2", xff="203.0.113.195, 10.0.0.1")
+    assert get_client_ip(req_chain) == "203.0.113.195"
+
+    # 4. Multi-proxy chain with spoofed intermediate IP
+    req_spoofed_chain = make_mock_req(host="10.0.0.2", xff="spoofed.client.ip, 198.51.100.77, 10.0.0.1")
+    assert get_client_ip(req_spoofed_chain) == "198.51.100.77"
+
+    # 5. Connection from trusted proxy without X-Forwarded-For header
+    req_no_xff = make_mock_req(host="10.0.0.1", xff=None)
+    assert get_client_ip(req_no_xff) == "10.0.0.1"
+
+
+def test_limiter_production_ignores_test_environment_flags(monkeypatch):
+    """Verify testing override flags are strictly ignored in production environment."""
+    from app.core.limiter import check_is_test_env
+
+    # Simulate production mode with flags set to bypass rate limiting
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.setenv("LOAD_TESTING", "true")
+    monkeypatch.setenv("DISABLE_RATE_LIMIT", "1")
+    monkeypatch.setenv("TESTING", "yes")
+
+    # In production, check_is_test_env must return False when not inside pytest runner
+    assert check_is_test_env(env="production", _is_pytest=False) is False
+
+    # In development mode, check_is_test_env respects LOAD_TESTING flag
+    monkeypatch.setenv("ENVIRONMENT", "development")
+    assert check_is_test_env(env="development", _is_pytest=False) is True
+
+
+def test_limiter_headers_enabled_setting():
+    """Verify Limiter has headers_enabled=True to return standard rate limit headers."""
+    from app.core.limiter import limiter
+    assert limiter._headers_enabled is True
+
+
 # --- Boundary Validation & Traversal Guards ---
 
 @pytest.mark.parametrize("invalid_bbox,reason", [
