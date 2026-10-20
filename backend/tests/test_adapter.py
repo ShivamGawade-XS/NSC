@@ -126,3 +126,31 @@ def test_nasa_power_adapter_live_metadata():
     assert len(catalog) > 0
     assert all("is_synthetic" in c for c in catalog)
     assert all(c["is_synthetic"] is False for c in catalog)
+
+
+def test_merra2_adapter_prefer_live_and_unit_conversions():
+    """Verify MERRA2Adapter respects prefer_live and prevents unit double-conversion."""
+    from app.adapters.merra2 import MERRA2Adapter
+    adapter = MERRA2Adapter()
+
+    # 1. prefer_live=False deterministically returns synthetic fixture
+    syn_res = adapter.fetch(variable="T2M", start_year=2000, end_year=2020, prefer_live=False)
+    assert syn_res["is_synthetic"] is True
+    assert syn_res["data_source_label"] == "Synthetic test data — not NASA observations."
+
+    # 2. prefer_live=True loads authentic NetCDF fixture without double conversion
+    real_res = adapter.fetch(variable="T2M", start_year=2000, end_year=2020,
+                             bbox=[-100.0, 30.0, -90.0, 40.0], prefer_live=True)
+    assert real_res["is_synthetic"] is False
+    assert "NASA GMAO MERRA-2" in real_res["data_source_label"]
+    # Check reasonable Celsius temperatures (~5 to 30 °C, not negative Kelvin offset)
+    mean_val = float(np.nanmean(real_res["data"]))
+    assert 5.0 < mean_val < 35.0
+
+    # 3. PRECTOT with prefer_live=True loads mm/day without double conversion (~0.5 to 10 mm/day)
+    precip_res = adapter.fetch(variable="PRECTOT", start_year=2000, end_year=2020,
+                               bbox=[-100.0, 30.0, -90.0, 40.0], prefer_live=True)
+    assert precip_res["is_synthetic"] is False
+    precip_mean = float(np.nanmean(precip_res["data"]))
+    assert 0.1 < precip_mean < 25.0
+
