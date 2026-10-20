@@ -196,6 +196,10 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse:
     lons = raw_slice["lon"]
     time_coords = (years - req.start_year) / 10.0  # Decades
 
+    # Long-term mean climatology from 3D observation cube
+    mean_climatology = np.nanmean(data_3d, axis=0)
+    raw_slice["mean_climatology"] = mean_climatology
+
     # Run vectorized scientific analysis
     trend_results = compute_spatial_trends(data_3d, time_coords=time_coords, alpha=req.alpha)
 
@@ -297,6 +301,7 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse:
     # Cache for interactive drilldown with thread-safe bounded LRU eviction
     set_cached_analysis(analysis_id, {
         "raw_slice": raw_slice,
+        "mean_climatology": mean_climatology,
         "trend_results": trend_results,
         "contrasts": contrasts,
         "signals": signals,
@@ -845,10 +850,18 @@ def get_climate_velocity(request: Request, analysis_id: str) -> ClimateVelocityR
     lats = raw["lat"]
     lons = raw["lon"]
 
+    # Compute mean climatology from 3D observation cube
+    mean_climatology = cached.get("mean_climatology")
+    if mean_climatology is None and "mean_climatology" in raw:
+        mean_climatology = raw["mean_climatology"]
+    elif mean_climatology is None and "data" in raw and raw["data"] is not None and getattr(raw["data"], "ndim", 0) == 3:
+        mean_climatology = np.nanmean(raw["data"], axis=0)
+
     vel_res = compute_climate_velocity(
         slopes=slopes,
         latitudes=lats,
-        longitudes=lons
+        longitudes=lons,
+        mean_climatology=mean_climatology
     )
 
     vector_objs = [VelocityVector(**v) for v in vel_res["vectors"]]

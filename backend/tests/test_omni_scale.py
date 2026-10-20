@@ -45,6 +45,31 @@ def test_climate_velocity_vector_field():
     assert res["summary"]["mean_velocity_km_decade"] > 0.0
 
 
+def test_climate_velocity_reconstructed_climatology_and_nan_filtering():
+    """Verify reconstructed meridional climatology and NaN cell filtering in vectors."""
+    lats = np.linspace(30.0, 40.0, 6)
+    lons = np.linspace(-100.0, -90.0, 6)
+    slopes = np.ones((6, 6)) * 0.4
+    # Inject NaN cell
+    slopes[0, 0] = np.nan
+
+    # Pass mean_climatology=None to exercise reconstructed meridional profile
+    res = compute_climate_velocity(slopes, lats, lons, mean_climatology=None)
+    assert "velocity_magnitude" in res
+    assert "vectors" in res
+
+    # Ensure no vector corresponds to the NaN cell at (lats[0], lons[0])
+    first_lat = round(float(lats[0]), 3)
+    first_lon = round(float(lons[0]), 3)
+    assert not any(v["lat"] == first_lat and v["lon"] == first_lon for v in res["vectors"])
+
+    # Ensure vectors migrate Northward under warming (~0° bearing)
+    for v in res["vectors"]:
+        assert not np.isnan(v["velocity_km_decade"])
+        assert not np.isnan(v["bearing_deg"])
+        assert v["cardinal"] in ["N", "NNW", "NNE"]
+
+
 def test_copula_bivariate_fitting_and_return_periods():
     """Verify Archimedean Gumbel copula estimation and joint return periods."""
     rng = np.random.default_rng(42)
