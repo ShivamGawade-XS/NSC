@@ -158,6 +158,8 @@ def test_full_analysis_workflow_and_sub_endpoints():
     top_sig = signals_data["signals"][0]
     assert "discovery_score" in top_sig
     assert "ranking_rationale" in top_sig
+    assert "tau" in top_sig
+    assert top_sig["tau"] is not None
     assert top_sig["discovery_score"] >= signals_data["signals"][-1]["discovery_score"]
 
     # 6. GET /analysis/{id}/contrasts (Contrast Engine)

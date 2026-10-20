@@ -229,3 +229,48 @@ def test_pettitt_changepoint_robust_types():
     assert res_str["significant"] is True
     assert isinstance(res_str["changepoint_time"], str)
 
+
+def test_spatial_coherence_and_discovery_signals():
+    """Verify compute_spatial_coherence 2D convolution and discover_candidate_signals top-N ranking with tau."""
+    from app.science.discovery import compute_spatial_coherence, discover_candidate_signals
+
+    # 1. Test compute_spatial_coherence
+    slopes = np.array([
+        [1.0, 1.0, -1.0],
+        [1.0, 1.0, -1.0],
+        [-1.0, -1.0, -1.0],
+    ])
+    sig = np.ones((3, 3), dtype=bool)
+    coh = compute_spatial_coherence(slopes, sig)
+    assert coh.shape == (3, 3)
+    # Center cell (1, 1) has slopes=1.0. Its 8 neighbors:
+    # 3 positive (0,0), (0,1), (1,0) and 5 negative (0,2), (1,2), (2,0), (2,1), (2,2)
+    # Since center cell has slopes > 0, matching count is 3, total valid neighbors is 8: coh = 3/8 = 0.375
+    assert np.isclose(coh[1, 1], 3.0 / 8.0)
+
+    # 2. Test discover_candidate_signals top-N extraction and Kendall's tau
+    p_vals = np.full((3, 3), 0.01)
+    q_vals = np.full((3, 3), 0.02)
+    lats = np.array([10.0, 20.0, 30.0])
+    lons = np.array([100.0, 110.0, 120.0])
+    data_3d = np.tile(np.arange(10, dtype=float)[:, None, None], (1, 3, 3))  # Perfectly increasing time series: tau=1.0
+
+    signals = discover_candidate_signals(
+        slopes=slopes,
+        p_values=p_vals,
+        q_values=q_vals,
+        is_significant_raw=sig,
+        is_significant_fdr=sig,
+        latitudes=lats,
+        longitudes=lons,
+        top_n=3,
+        data_3d=data_3d
+    )
+    assert len(signals) == 3
+    # Sorted descending by discovery_score
+    assert signals[0]["discovery_score"] >= signals[1]["discovery_score"] >= signals[2]["discovery_score"]
+    # Verify Kendall's tau is present and equals 1.0
+    for s in signals:
+        assert "tau" in s
+        assert s["tau"] == 1.0
+

@@ -133,6 +133,7 @@ class CandidateSignal(BaseModel):
     is_significant_raw: bool | None = None
     spatial_coherence: float | None = None
     completeness: float | None = None
+    tau: float | None = None
 
 
 class SignalsResponse(BaseModel):
