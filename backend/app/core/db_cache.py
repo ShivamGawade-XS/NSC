@@ -4,6 +4,7 @@ Provides L2 persistent caching, database indexing, and query optimization
 for computed NASA Earth-system trend analyses and coordinate time series.
 """
 
+import logging
 import os
 import pickle
 import sqlite3
@@ -12,6 +13,8 @@ import time
 import zlib
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger("earthsift.db_cache")
 
 # Database file location
 DEFAULT_DB_DIR = Path(__file__).resolve().parents[2] / "data"
@@ -165,24 +168,37 @@ def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
             return None
 
         data_bytes = row[0]
+        if len(data_bytes) <= 32:
+            logger.error("Security alert: cache payload too small (<=32 bytes) for analysis_id=%s", analysis_id)
+            return None
+
         from app.core.config import settings
         import hashlib
         import hmac
         hmac_key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
 
-        # Verify HMAC signature (32 bytes) if signed
-        if len(data_bytes) > 32:
-            sig = data_bytes[:32]
-            raw_payload = data_bytes[32:]
-            expected_sig = hmac.new(hmac_key, raw_payload, hashlib.sha256).digest()
-            if hmac.compare_digest(sig, expected_sig):
-                decompressed = zlib.decompress(raw_payload)
-                return pickle.loads(decompressed)  # nosec B301
+        sig = data_bytes[:32]
+        raw_payload = data_bytes[32:]
+        expected_sig = hmac.new(hmac_key, raw_payload, hashlib.sha256).digest()
 
-        # Fallback for legacy unsigned cached entries
-        decompressed = zlib.decompress(data_bytes)
-        return pickle.loads(decompressed)  # nosec B301
-    except Exception:
+        if not hmac.compare_digest(sig, expected_sig):
+            logger.error("HMAC-SHA256 verification failed for analysis_id=%s", analysis_id)
+            return None
+
+        if hmac.compare_digest(sig, expected_sig):
+            decompressed = zlib.decompress(raw_payload)
+            payload = pickle.loads(decompressed)  # nosec B301
+
+            with _DB_LOCK, conn:
+                conn.execute("""
+                    UPDATE analysis_metadata_index
+                    SET last_accessed = ?, access_count = access_count + 1
+                    WHERE analysis_id = ?;
+                """, (time.time(), analysis_id))
+
+            return payload
+    except Exception as exc:
+        logger.error("Error loading cache for analysis_id=%s: %s", analysis_id, exc)
         return None
 
 
