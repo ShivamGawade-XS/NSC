@@ -290,6 +290,86 @@ def test_sensitive_data_logging_scrubber():
     assert "[REDACTED]" in record.msg
 
 
+def test_sensitive_data_logging_scrubber_url_basic_auth():
+    """Verify URL basic auth credentials in log messages are redacted."""
+    scrubber = SensitiveDataScrubber()
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="test.py",
+        lineno=1,
+        msg="Connecting to https://nasa_user:super_secret_nasa_pass123@urs.earthdata.nasa.gov/archive/file.nc and http://admin:pass456@internal.service:8080/path",
+        args=(),
+        exc_info=None
+    )
+    scrubber.filter(record)
+    assert "super_secret_nasa_pass123" not in record.msg
+    assert "pass456" not in record.msg
+    assert "https://nasa_user:[REDACTED]@urs.earthdata.nasa.gov/archive/file.nc" in record.msg
+    assert "http://admin:[REDACTED]@internal.service:8080/path" in record.msg
+
+
+def test_sensitive_data_logging_scrubber_nested_dict_args():
+    """Verify nested dictionaries, lists, and tuples in record.args are recursively scrubbed."""
+    scrubber = SensitiveDataScrubber()
+    nested_args = {
+        "config": {
+            "env": {
+                "SECRET_KEY": "SECRET_KEY=production_secret_key_8888",
+                "EARTHDATA_TOKEN": "EARTHDATA_TOKEN=token_abc_12345",
+                "EARTHDATA_PASSWORD": "EARTHDATA_PASSWORD=super_secret_edl_pass",
+            },
+            "endpoints": [
+                "https://edl_user:edl_secret_pass@urs.earthdata.nasa.gov/stream",
+                {"api_key": "api_key=AIzaSyDxyz99999999"}
+            ]
+        }
+    }
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="test.py",
+        lineno=1,
+        msg="Processing config: %s",
+        args=(nested_args,),
+        exc_info=None
+    )
+    scrubber.filter(record)
+    # Check scrubbed args
+    cleaned = record.args if isinstance(record.args, dict) else record.args[0]
+    assert cleaned["config"]["env"]["SECRET_KEY"] == "SECRET_KEY=[REDACTED]"
+    assert cleaned["config"]["env"]["EARTHDATA_TOKEN"] == "EARTHDATA_TOKEN=[REDACTED]"
+    assert cleaned["config"]["env"]["EARTHDATA_PASSWORD"] == "EARTHDATA_PASSWORD=[REDACTED]"
+    assert cleaned["config"]["endpoints"][0] == "https://edl_user:[REDACTED]@urs.earthdata.nasa.gov/stream"
+    assert cleaned["config"]["endpoints"][1]["api_key"] == "api_key=[REDACTED]"
+    assert "production_secret_key_8888" not in str(record.args)
+    assert "edl_secret_pass" not in str(record.args)
+
+
+def test_sensitive_data_logging_scrubber_exc_text():
+    """Verify exception tracebacks in record.exc_text and record.exc_info are scrubbed."""
+    scrubber = SensitiveDataScrubber()
+    record = logging.LogRecord(
+        name="test",
+        level=logging.ERROR,
+        pathname="test.py",
+        lineno=1,
+        msg="Exception occurred",
+        args=(),
+        exc_info=None
+    )
+    record.exc_text = (
+        "Traceback (most recent call last):\n"
+        "  File 'fetch.py', line 12, in connect\n"
+        "ValueError: Failed URL https://edl_admin:secret_traceback_pwd@urs.earthdata.nasa.gov with SECRET_KEY=leaked_key_9999"
+    )
+    scrubber.filter(record)
+    assert "secret_traceback_pwd" not in record.exc_text
+    assert "leaked_key_9999" not in record.exc_text
+    assert "https://edl_admin:[REDACTED]@urs.earthdata.nasa.gov" in record.exc_text
+    assert "SECRET_KEY=[REDACTED]" in record.exc_text
+
+
 def test_netrc_file_permissions_isolation(tmp_path, monkeypatch):
     """Verify netrc setup writes credentials to the correct platform-specific netrc file."""
     import sys
