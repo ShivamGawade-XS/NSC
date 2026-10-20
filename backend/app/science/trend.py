@@ -273,76 +273,125 @@ def benjamini_hochberg_fdr(
 def compute_spatial_trends(
     data_3d: np.ndarray,
     time_coords: np.ndarray | None = None,
-    alpha: float = 0.05
+    alpha: float = 0.05,
+    decadal_scale: float = 1.0,
 ) -> dict[str, Any]:
     """
     Compute spatial trends across a 3D grid [time, lat, lon].
-    Utilizes multi-threaded parallel chunk execution across rows for high performance.
+    Utilizes vectorized upper-triangular broadcasting across the temporal axis
+    for high-performance calculation of Theil-Sen slope, Mann-Kendall S,
+    tie-adjusted base variance, and Gilbert (1987) 95% confidence intervals.
     
     Parameters:
         data_3d: 3D array of shape (T, H, W).
         time_coords: Optional 1D array of time steps of length T.
-        alpha: Significance threshold.
+        alpha: Significance threshold (default: 0.05).
+        decadal_scale: Optional scaling factor for slope rate (default: 1.0).
         
     Returns:
         Dict with 2D spatial maps:
-          'slopes', 'intercepts', 'p_values', 'q_values',
-          'is_significant_raw', 'is_significant_fdr', 'n_samples'
+          'slopes', 'intercepts', 'ci_lower', 'ci_upper', 'p_values', 'q_values',
+          'is_significant_raw', 'is_significant_fdr', 'n_samples', 'moran_stats', 'lisa_clusters'
     """
-    import os
-    from concurrent.futures import ThreadPoolExecutor
+    t_len, h_len, w_len = data_3d.shape
 
-    _t_len, h_len, w_len = data_3d.shape
-    
-    slopes = np.zeros((h_len, w_len), dtype=float)
-    intercepts = np.zeros((h_len, w_len), dtype=float)
-    ci_lower = np.zeros((h_len, w_len), dtype=float)
-    ci_upper = np.zeros((h_len, w_len), dtype=float)
-    p_values = np.ones((h_len, w_len), dtype=float)
-    n_samples = np.zeros((h_len, w_len), dtype=int)
-    
-    def process_row(i: int):
-        row_slopes = np.zeros(w_len, dtype=float)
-        row_intercepts = np.zeros(w_len, dtype=float)
-        row_ci_l = np.zeros(w_len, dtype=float)
-        row_ci_u = np.zeros(w_len, dtype=float)
-        row_p_vals = np.ones(w_len, dtype=float)
-        row_samples = np.zeros(w_len, dtype=int)
+    if t_len < 2:
+        empty_zeros = np.zeros((h_len, w_len), dtype=float)
+        n_samples = np.sum(~np.isnan(data_3d), axis=0)
+        return {
+            "slopes": empty_zeros.copy(),
+            "intercepts": empty_zeros.copy(),
+            "ci_lower": empty_zeros.copy(),
+            "ci_upper": empty_zeros.copy(),
+            "p_values": np.ones((h_len, w_len), dtype=float),
+            "q_values": np.ones((h_len, w_len), dtype=float),
+            "is_significant_raw": np.zeros((h_len, w_len), dtype=bool),
+            "is_significant_fdr": np.zeros((h_len, w_len), dtype=bool),
+            "n_samples": n_samples,
+            "moran_stats": {"moran_i": 0.0, "p_value": 1.0, "is_clustered": False},
+            "lisa_clusters": np.full((h_len, w_len), "NS", dtype=object),
+        }
 
-        for j in range(w_len):
-            ts = data_3d[:, i, j]
-            mk_res = mann_kendall_test(ts, alpha=alpha, correct_autocorrelation=True)
-            row_p_vals[j] = mk_res["p_value"]
-            row_samples[j] = mk_res["n_samples"]
-
-            sen_res = sens_slope(ts, time_steps=time_coords, alpha=alpha, var_s=mk_res["var_s"])
-            row_slopes[j] = sen_res["slope"]
-            row_intercepts[j] = sen_res["intercept"]
-            row_ci_l[j] = sen_res["ci_lower"]
-            row_ci_u[j] = sen_res["ci_upper"]
-
-        return i, row_slopes, row_intercepts, row_ci_l, row_ci_u, row_p_vals, row_samples
-
-    total_cells = h_len * w_len
-    if total_cells >= 30:
-        max_workers = min(8, max(2, os.cpu_count() or 4))
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            for i, r_slopes, r_intercepts, r_ci_l, r_ci_u, r_p, r_samples in executor.map(process_row, range(h_len)):
-                slopes[i, :] = r_slopes
-                intercepts[i, :] = r_intercepts
-                ci_lower[i, :] = r_ci_l
-                ci_upper[i, :] = r_ci_u
-                p_values[i, :] = r_p
-                n_samples[i, :] = r_samples
+    if time_coords is None:
+        t_coords = np.arange(t_len, dtype=float)
     else:
-        for i in range(h_len):
-            _, r_slopes, r_intercepts, r_ci_l, r_ci_u, r_p, r_samples = process_row(i)
-            slopes[i, :] = r_slopes
-            intercepts[i, :] = r_intercepts
-            ci_lower[i, :] = r_ci_l
-            ci_upper[i, :] = r_ci_u
-            p_values[i, :] = r_p
-            n_samples[i, :] = r_samples
+        t_coords = np.asarray(time_coords, dtype=float)
+
+    # 1. Vectorized upper-triangular pairwise broadcasting across the time axis T
+    idx_i, idx_j = np.triu_indices(t_len, k=1)
+    dy = data_3d[idx_j] - data_3d[idx_i]  # shape: (P, H, W) where P = T * (T - 1) // 2
+    dt = (t_coords[idx_j] - t_coords[idx_i])[:, None, None]
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        pairwise_slopes = (dy / dt) * decadal_scale
+        slopes = np.nanmedian(pairwise_slopes, axis=0)
+
+    # Count valid temporal observations per cell
+    n_samples = np.sum(~np.isnan(data_3d), axis=0)
+    slopes[n_samples < 2] = 0.0
+
+    # 2. Mann-Kendall S statistic across valid non-NaN pairs
+    s_2d = np.nansum(np.sign(dy), axis=0)
+
+    # 3. Tie-adjusted base variance Var(S) per cell
+    sorted_d = np.sort(data_3d, axis=0)
+    equal = (sorted_d[1:] == sorted_d[:-1]) & ~np.isnan(sorted_d[1:])
+
+    if np.any(equal):
+        run_len = np.ones((t_len, h_len, w_len), dtype=int)
+        for t in range(t_len - 1):
+            run_len[t + 1] = np.where(equal[t], run_len[t] + 1, 1)
+        is_end = np.zeros((t_len, h_len, w_len), dtype=bool)
+        is_end[:-1] = ~equal
+        is_end[-1] = True
+        valid_grp = (run_len > 1) & is_end
+        tg = np.where(valid_grp, run_len, 0)
+        tie_term_2d = np.sum(tg * (tg - 1) * (2 * tg + 5), axis=0)
+    else:
+        tie_term_2d = np.zeros((h_len, w_len), dtype=float)
+
+    var_s_2d = (n_samples * (n_samples - 1) * (2 * n_samples + 5) - tie_term_2d) / 18.0
+    var_s_2d = np.maximum(var_s_2d, 0.0)
+
+    # Compute standardized test statistic Z and two-tailed p-values
+    z_2d = np.zeros((h_len, w_len), dtype=float)
+    pos = (s_2d > 0) & (var_s_2d > 0)
+    neg = (s_2d < 0) & (var_s_2d > 0)
+    std_s = np.sqrt(np.where(var_s_2d > 0, var_s_2d, 1.0))
+    z_2d[pos] = (s_2d[pos] - 1.0) / std_s[pos]
+    z_2d[neg] = (s_2d[neg] + 1.0) / std_s[neg]
+
+    p_values = 2.0 * stats.norm.sf(np.abs(z_2d))
+    p_values[n_samples < 5] = 1.0
+    p_values[var_s_2d <= 0] = 1.0
+    p_values = np.clip(p_values, 0.0, 1.0)
+
+    # 4. Vectorize Gilbert (1987) 95% confidence intervals
+    valid_pairs = ~np.isnan(pairwise_slopes)
+    N_pairs = np.sum(valid_pairs, axis=0)
+    z_crit = float(stats.norm.ppf(1.0 - alpha / 2.0))
+    c_alpha = z_crit * np.sqrt(var_s_2d)
+
+    rank_lower = np.clip(np.floor((N_pairs - c_alpha) / 2.0).astype(int), 0, np.maximum(N_pairs - 1, 0))
+    rank_upper = np.clip(np.ceil((N_pairs + c_alpha) / 2.0).astype(int), 0, np.maximum(N_pairs - 1, 0))
+
+    sorted_slopes = np.sort(pairwise_slopes, axis=0)
+    ci_lower = np.take_along_axis(sorted_slopes, rank_lower[None, :, :], axis=0)[0]
+    ci_upper = np.take_along_axis(sorted_slopes, rank_upper[None, :, :], axis=0)[0]
+
+    ci_lower[N_pairs <= 2] = slopes[N_pairs <= 2]
+    ci_upper[N_pairs <= 2] = slopes[N_pairs <= 2]
+    ci_lower[n_samples < 2] = 0.0
+    ci_upper[n_samples < 2] = 0.0
+    ci_lower[var_s_2d <= 0] = slopes[var_s_2d <= 0]
+    ci_upper[var_s_2d <= 0] = slopes[var_s_2d <= 0]
+
+    # Compute robust Theil-Sen intercept per cell
+    time_3d = t_coords[:, None, None]
+    residuals = data_3d - slopes[None, :, :] * time_3d
+    with np.errstate(all="ignore"):
+        intercepts = np.nanmedian(residuals, axis=0)
+    intercepts[n_samples < 2] = 0.0
 
     # Benjamini-Hochberg adjustment across the entire 2D spatial field
     q_values, is_sig_fdr = benjamini_hochberg_fdr(p_values, alpha=alpha)
