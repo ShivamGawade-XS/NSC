@@ -154,3 +154,36 @@ def test_merra2_adapter_prefer_live_and_unit_conversions():
     precip_mean = float(np.nanmean(precip_res["data"]))
     assert 0.1 < precip_mean < 25.0
 
+
+def test_nasa_power_live_retry_and_timeout():
+    """Verify live HTTP calls retry on 429/503 with exponential backoff and timeout=12.0."""
+    import urllib.error
+    from unittest.mock import MagicMock, patch
+    from app.adapters.nasa_power import NASAPowerAdapter
+
+    adapter = NASAPowerAdapter()
+    attempts = 0
+
+    def mock_urlopen(req, timeout):
+        nonlocal attempts
+        attempts += 1
+        assert timeout == 12.0
+        if attempts == 1:
+            raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", {}, None)
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.read.return_value = b"authentic_nasa_netcdf_data" * 100
+        mock_resp.__enter__.return_value = mock_resp
+        mock_resp.__exit__.return_value = None
+        return mock_resp
+
+    with patch("urllib.request.urlopen", side_effect=mock_urlopen):
+        with patch("time.sleep", return_value=None) as mock_sleep:
+            with patch("builtins.open", MagicMock()):
+                with patch("pathlib.Path.exists", return_value=False):
+                    res = adapter.fetch_live_granule("T2M", 2000, 2020, [-100.0, 30.0, -95.0, 35.0])
+                    assert res is not None
+                    assert attempts == 2
+                    mock_sleep.assert_called_once_with(1.0)
+
+
