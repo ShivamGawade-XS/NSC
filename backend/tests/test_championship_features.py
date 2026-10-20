@@ -9,7 +9,7 @@ Tests for Championship Production Features:
 import numpy as np
 from app.main import app
 from app.science.export import generate_jupyter_notebook
-from app.science.trend import pettitt_changepoint_test
+from app.science.trend import compute_spatial_pettitt, pettitt_changepoint_test
 from fastapi.testclient import TestClient
 
 client = TestClient(app)
@@ -41,6 +41,65 @@ def test_pettitt_changepoint_constant_or_small():
     flat = np.full(20, 15.0)
     res_flat = pettitt_changepoint_test(flat)
     assert res_flat["significant"] is False
+
+
+def test_compute_spatial_pettitt_vectorized():
+    """Verify 3D grid vectorized Pettitt test computes changepoint year and p-value correctly."""
+    years = np.arange(2000, 2024)
+    t_len = len(years)
+    # Shape: (24, 2, 2)
+    data = np.zeros((t_len, 2, 2))
+    # Cell (0, 0): regime shift at index 10 (2010)
+    data[:, 0, 0] = np.concatenate([np.full(10, 5.0), np.full(14, 20.0)])
+    # Cell (0, 1): regime shift at index 16 (2016)
+    data[:, 0, 1] = np.concatenate([np.full(16, 5.0), np.full(8, 20.0)])
+    # Cell (1, 0): flat constant line (ptp < 1e-12)
+    data[:, 1, 0] = np.full(t_len, 7.0)
+    # Cell (1, 1): all-NaN mask
+    data[:, 1, 1] = np.nan
+
+    res = compute_spatial_pettitt(data, time_coords=years)
+
+    # Dictionary access
+    cp_year = res["changepoint_year"]
+    cp_pval = res["changepoint_p_value"]
+    sig = res["significant"]
+
+    assert cp_year.shape == (2, 2)
+    assert cp_pval.shape == (2, 2)
+
+    # Valid changepoints
+    assert cp_year[0, 0] in (2009, 2010)
+    assert cp_pval[0, 0] < 0.01
+    assert bool(sig[0, 0]) is True
+
+    assert cp_year[0, 1] in (2015, 2016)
+    assert cp_pval[0, 1] < 0.01
+    assert bool(sig[0, 1]) is True
+
+    # Flat and NaN cells
+    assert np.isnan(cp_year[1, 0])
+    assert cp_pval[1, 0] == 1.0
+    assert bool(sig[1, 0]) is False
+
+    assert np.isnan(cp_year[1, 1])
+    assert cp_pval[1, 1] == 1.0
+    assert bool(sig[1, 1]) is False
+
+    # 2-tuple unpacking
+    unpacked_year, unpacked_pval = compute_spatial_pettitt(data, time_coords=years)
+    np.testing.assert_array_equal(unpacked_year, cp_year)
+    np.testing.assert_array_equal(unpacked_pval, cp_pval)
+
+
+def test_compute_spatial_pettitt_insufficient_samples():
+    """Verify compute_spatial_pettitt returns safe defaults when T < 6."""
+    small_data = np.random.randn(4, 3, 3)
+    res = compute_spatial_pettitt(small_data)
+    assert res["changepoint_p_value"].shape == (3, 3)
+    assert np.all(res["changepoint_p_value"] == 1.0)
+    assert np.all(np.isnan(res["changepoint_year"]))
+    assert np.all(res["significant"] == False)
 
 
 def test_jupyter_notebook_generation():
