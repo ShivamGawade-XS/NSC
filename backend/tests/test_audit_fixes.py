@@ -274,3 +274,33 @@ def test_spatial_coherence_and_discovery_signals():
         assert "tau" in s
         assert s["tau"] == 1.0
 
+
+def test_contrast_cluster_area_weighting():
+    """Verify _build_cluster_dict applies cos(lat) area weights to regional mean slope and centroid."""
+    from app.science.contrasts import _build_cluster_dict
+
+    # Cell 0 at lat 0.0 (weight cos(0) = 1.0, slope = 2.0, lon = 10.0)
+    # Cell 1 at lat 60.0 (weight cos(60 deg) = 0.5, slope = 4.0, lon = 10.0)
+    lats = np.array([0.0, 60.0])
+    lons = np.array([10.0, 10.0])
+    slopes = np.array([[2.0, 2.0], [4.0, 4.0]])
+    indices = np.array([[0, 0], [1, 0]])
+
+    cluster = _build_cluster_dict(
+        indices=indices,
+        slopes=slopes,
+        latitudes=lats,
+        longitudes=lons,
+        cluster_id="test_cluster",
+        label_type="increasing"
+    )
+
+    # Weighted mean slope: (2.0 * 1.0 + 4.0 * 0.5) / (1.0 + 0.5) = 4.0 / 1.5 = 2.6667
+    assert cluster["mean_slope"] == 2.6667
+    assert cluster["max_slope"] == 4.0
+    assert cluster["min_slope"] == 2.0
+    # Weighted center lat: (0.0 * 1.0 + 60.0 * 0.5) / 1.5 = 30.0 / 1.5 = 20.0
+    assert cluster["center"] == [10.0, 20.0]
+    assert cluster["bbox"] == [10.0, 0.0, 10.0, 60.0]
+    assert cluster["cell_count"] == 2
+

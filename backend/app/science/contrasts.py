@@ -12,6 +12,46 @@ import numpy as np
 from scipy import ndimage
 
 
+def _build_cluster_dict(
+    indices: np.ndarray,
+    slopes: np.ndarray,
+    latitudes: np.ndarray,
+    longitudes: np.ndarray,
+    cluster_id: str,
+    label_type: str
+) -> dict[str, Any]:
+    """
+    Construct a cluster dictionary with area-weighted regional statistics.
+    Grid cell area scales with cos(lat) on regular lat-lon grids.
+    """
+    lats = latitudes[indices[:, 0]]
+    lons = longitudes[indices[:, 1]]
+    region_slopes = slopes[indices[:, 0], indices[:, 1]]
+
+    weights = np.maximum(0.01, np.cos(np.deg2rad(lats)))
+    mean_slope = float(np.average(region_slopes, weights=weights))
+    center = [
+        round(float(np.average(lons, weights=weights)), 2),
+        round(float(np.average(lats, weights=weights)), 2)
+    ]
+
+    return {
+        "cluster_id": cluster_id,
+        "type": label_type,
+        "cell_count": len(indices),
+        "mean_slope": round(mean_slope, 4),
+        "max_slope": round(float(np.max(region_slopes)), 4),
+        "min_slope": round(float(np.min(region_slopes)), 4),
+        "bbox": [
+            round(float(np.min(lons)), 2),
+            round(float(np.min(lats)), 2),
+            round(float(np.max(lons)), 2),
+            round(float(np.max(lats)), 2)
+        ],
+        "center": center
+    }
+
+
 def find_contrasting_regions(
     slopes: np.ndarray,
     is_significant: np.ndarray,
@@ -54,28 +94,16 @@ def find_contrasting_regions(
             if len(indices) < min_cluster_size:
                 continue
             
-            lats = latitudes[indices[:, 0]]
-            lons = longitudes[indices[:, 1]]
-            region_slopes = slopes[indices[:, 0], indices[:, 1]]
-            
-            clusters.append({
-                "cluster_id": f"{label_type}_{feat_id}",
-                "type": label_type,
-                "cell_count": len(indices),
-                "mean_slope": round(float(np.mean(region_slopes)), 4),
-                "max_slope": round(float(np.max(region_slopes)), 4),
-                "min_slope": round(float(np.min(region_slopes)), 4),
-                "bbox": [
-                    round(float(np.min(lons)), 2),
-                    round(float(np.min(lats)), 2),
-                    round(float(np.max(lons)), 2),
-                    round(float(np.max(lats)), 2)
-                ],
-                "center": [
-                    round(float(np.mean(lons)), 2),
-                    round(float(np.mean(lats)), 2)
-                ]
-            })
+            clusters.append(
+                _build_cluster_dict(
+                    indices=indices,
+                    slopes=slopes,
+                    latitudes=latitudes,
+                    longitudes=longitudes,
+                    cluster_id=f"{label_type}_{feat_id}",
+                    label_type=label_type
+                )
+            )
         # Sort clusters by absolute mean slope descending
         clusters.sort(key=lambda c: abs(c["mean_slope"]), reverse=True)
         return clusters
@@ -86,31 +114,11 @@ def find_contrasting_regions(
     # Fallback to entire masks if clusters were fragmented below min_cluster_size
     if not pos_clusters and np.sum(pos_mask) >= min_cluster_size:
         indices = np.argwhere(pos_mask)
-        pos_clusters = [{
-            "cluster_id": "increasing_all",
-            "type": "increasing",
-            "cell_count": len(indices),
-            "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
-            "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
-            "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
-            "bbox": [round(float(np.min(longitudes[indices[:, 1]])), 2), round(float(np.min(latitudes[indices[:, 0]])), 2),
-                     round(float(np.max(longitudes[indices[:, 1]])), 2), round(float(np.max(latitudes[indices[:, 0]])), 2)],
-            "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
-        }]
+        pos_clusters = [_build_cluster_dict(indices, slopes, latitudes, longitudes, "increasing_all", "increasing")]
         
     if not neg_clusters and np.sum(neg_mask) >= min_cluster_size:
         indices = np.argwhere(neg_mask)
-        neg_clusters = [{
-            "cluster_id": "decreasing_all",
-            "type": "decreasing",
-            "cell_count": len(indices),
-            "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
-            "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
-            "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
-            "bbox": [round(float(np.min(longitudes[indices[:, 1]])), 2), round(float(np.min(latitudes[indices[:, 0]])), 2),
-                     round(float(np.max(longitudes[indices[:, 1]])), 2), round(float(np.max(latitudes[indices[:, 0]])), 2)],
-            "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
-        }]
+        neg_clusters = [_build_cluster_dict(indices, slopes, latitudes, longitudes, "decreasing_all", "decreasing")]
 
     # Fallback to thermal/hydrological refugia if domain is uniformly one-directional
     if not neg_clusters and len(pos_clusters) > 0:
@@ -123,17 +131,7 @@ def find_contrasting_regions(
                 ref_clusters = extract_clusters(ref_labeled, num_ref, "refugium")
                 if not ref_clusters and int(np.sum(refugium_mask)) >= min_cluster_size:
                     indices = np.argwhere(refugium_mask)
-                    ref_clusters = [{
-                        "cluster_id": "refugium_all",
-                        "type": "refugium",
-                        "cell_count": len(indices),
-                        "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
-                        "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
-                        "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
-                        "bbox": [round(float(np.min(longitudes[indices[:, 1]])), 2), round(float(np.min(latitudes[indices[:, 0]])), 2),
-                                 round(float(np.max(longitudes[indices[:, 1]])), 2), round(float(np.max(latitudes[indices[:, 0]])), 2)],
-                        "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
-                    }]
+                    ref_clusters = [_build_cluster_dict(indices, slopes, latitudes, longitudes, "refugium_all", "refugium")]
                 if ref_clusters:
                     neg_clusters = ref_clusters
 
@@ -147,17 +145,7 @@ def find_contrasting_regions(
                 buf_clusters = extract_clusters(buf_labeled, num_buf, "buffered")
                 if not buf_clusters and int(np.sum(buffer_mask)) >= min_cluster_size:
                     indices = np.argwhere(buffer_mask)
-                    buf_clusters = [{
-                        "cluster_id": "buffered_all",
-                        "type": "buffered",
-                        "cell_count": len(indices),
-                        "mean_slope": round(float(np.mean(slopes[indices[:, 0], indices[:, 1]])), 4),
-                        "max_slope": round(float(np.max(slopes[indices[:, 0], indices[:, 1]])), 4),
-                        "min_slope": round(float(np.min(slopes[indices[:, 0], indices[:, 1]])), 4),
-                        "bbox": [round(float(np.min(longitudes[indices[:, 1]])), 2), round(float(np.min(latitudes[indices[:, 0]])), 2),
-                                 round(float(np.max(longitudes[indices[:, 1]])), 2), round(float(np.max(latitudes[indices[:, 0]])), 2)],
-                        "center": [round(float(np.mean(longitudes[indices[:, 1]])), 2), round(float(np.mean(latitudes[indices[:, 0]])), 2)]
-                    }]
+                    buf_clusters = [_build_cluster_dict(indices, slopes, latitudes, longitudes, "buffered_all", "buffered")]
                 if buf_clusters:
                     pos_clusters = buf_clusters
 
