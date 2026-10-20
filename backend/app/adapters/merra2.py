@@ -197,7 +197,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
         )
 
         # Check for local real NetCDF observations if preferred and available
-        if prefer_live or os.environ.get("PREFER_LIVE_DATA") == "1":
+        if prefer_live:
             data_dir = Path(os.environ.get("MERRA2_DATA_DIR", Path(__file__).resolve().parent.parent.parent / "data"))
             candidate_paths = [
                 data_dir / "fixtures" / "merra2_reanalysis.nc",
@@ -245,6 +245,8 @@ class MERRA2Adapter(BaseDatasetAdapter):
                         sub_da = sub_da.sel({lat_coord: lat_slice, lon_coord: lon_slice})
 
                         if sub_da.sizes[time_coord] >= 5 and sub_da.sizes[lat_coord] > 0 and sub_da.sizes[lon_coord] > 0:
+                            # In-memory load to ensure file descriptor is released on context exit
+                            sub_da = sub_da.load()
                             var_info = self.VARIABLES[variable]
                             raw_vals = np.asarray(sub_da.values, dtype=float)
                             lats_out = np.asarray(sub_da[lat_coord].values, dtype=float)
@@ -254,7 +256,17 @@ class MERRA2Adapter(BaseDatasetAdapter):
                                 lats_out = lats_out[::-1]
                                 raw_vals = raw_vals[:, ::-1, :]
 
-                            is_fixture = "reanalysis" in nc_file.name or "fixture" in str(nc_file)
+                            # Unit conversions inspecting NetCDF variable units attribute
+                            units_attr = str(sub_da.attrs.get("units", "") or da.attrs.get("units", "")).strip().lower()
+                            if variable == "T2M":
+                                # Kelvin -> °C via -273.15 when source units are "K" or values > 150
+                                if units_attr in ("k", "kelvin") or (units_attr == "" and np.nanmean(raw_vals) > 150.0):
+                                    raw_vals = raw_vals - 273.15
+                            elif variable == "PRECTOT":
+                                # kg m-2 s-1 -> mm/day via * 86400.0 when source units are flux rates
+                                if any(u in units_attr for u in ("kg m-2 s-1", "kg m^-2 s^-1", "kg/m2/s", "kg/m^2/s")) or (units_attr == "" and np.nanmean(raw_vals) < 0.01):
+                                    raw_vals = raw_vals * 86400.0
+
                             source_label = "NASA GMAO MERRA-2 Atmospheric Reanalysis (Gridded NetCDF Ingestion)"
 
                             return {
