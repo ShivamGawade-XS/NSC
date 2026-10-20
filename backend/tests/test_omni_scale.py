@@ -143,6 +143,25 @@ def test_nlq_query_parser():
     assert res.analysis_request.bbox is not None
     assert "North America" in res.matched_regions
 
+    # Verify 'wind' resolves to 'WS10M' and 'Texas' resolves to Texas bounding box
+    wind_texas_query = "Assess wind trends in Texas over the past 15 years"
+    res_wind = parse_natural_language_query(wind_texas_query)
+    assert res_wind.analysis_request.variable_id == "WS10M"
+    assert res_wind.analysis_request.dataset_id == "nasa_power"
+    assert res_wind.analysis_request.bbox == [-106.6, 25.8, -93.5, 36.5]
+    assert "Texas" in res_wind.matched_regions
+    assert res_wind.analysis_request.end_year == 2023
+    assert res_wind.analysis_request.start_year == 2008  # 2023 - 15
+
+    # Relative temporal window with 'last 20 years' and humidity/moisture -> RH2M
+    humidity_query = "Analyze humidity in southern plains for the last 20 years"
+    res_humidity = parse_natural_language_query(humidity_query)
+    assert res_humidity.analysis_request.variable_id == "RH2M"
+    assert res_humidity.analysis_request.dataset_id == "nasa_power"
+    assert res_humidity.analysis_request.bbox == [-102.0, 30.0, -94.0, 38.0]
+    assert res_humidity.analysis_request.end_year == 2023
+    assert res_humidity.analysis_request.start_year == 2003  # 2023 - 20
+
 
 def test_nlq_endpoint():
     """Verify /copilot/parse-query endpoint returns valid Pydantic schema."""
