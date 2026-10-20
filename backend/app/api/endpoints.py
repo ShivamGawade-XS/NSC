@@ -819,6 +819,7 @@ def run_compound_hazard_analysis(request: Request, req: CompoundHazardRequest) -
         time_span=f"{req.start_year} - {req.end_year}",
         aridification_fraction=compound_res["aridification_fraction"],
         intensification_fraction=compound_res["intensification_fraction"],
+        significant_compound_fraction=compound_res.get("significant_compound_fraction"),
         summary=compound_res["summary"],
         hazard_distribution=dist,
         cells=cells,

@@ -39,13 +39,16 @@ def compute_compound_hazard(
     hazard_map = np.full(shape, "neutral_baseline", dtype=object)
 
     if n_valid < 4:
-        return {
+        res = {
             "cai_map": cai_map,
             "hazard_classification": hazard_map,
             "aridification_fraction": 0.0,
             "intensification_fraction": 0.0,
             "summary": "Insufficient joint spatial points for compound hazard analysis."
         }
+        if temp_sig is not None or precip_sig is not None:
+            res["significant_compound_fraction"] = 0.0
+        return res
 
     # Standardize slopes across valid cells
     t_vals = temp_slopes[valid_mask]
@@ -61,35 +64,23 @@ def compute_compound_hazard(
     cai = z_t - z_p
     cai_map[valid_mask] = np.round(cai[valid_mask], 3)
 
-    # Classification
-    arid_count = 0
-    intens_count = 0
-    buffer_count = 0
+    # Vectorized classification using np.select
+    cond_severe_arid = valid_mask & (temp_slopes > 0) & (precip_slopes < 0) & (cai > 0.5)
+    cond_mod_drying = valid_mask & (temp_slopes > 0) & (precip_slopes < 0) & (cai <= 0.5)
+    cond_intens = valid_mask & (temp_slopes > 0) & (precip_slopes > 0)
+    cond_buffer = valid_mask & (temp_slopes <= 0) & (precip_slopes >= 0)
 
-    for r in range(shape[0]):
-        for c in range(shape[1]):
-            if not valid_mask[r, c]:
-                continue
-            t_s = temp_slopes[r, c]
-            p_s = precip_slopes[r, c]
+    condlist = [cond_severe_arid, cond_mod_drying, cond_intens, cond_buffer]
+    choicelist = [
+        "severe_aridification",
+        "moderate_drying",
+        "hydrologic_intensification",
+        "thermal_buffering",
+    ]
+    hazard_map = np.select(condlist, choicelist, default="neutral_baseline")
 
-            # Compound Aridification: warming and drying
-            if t_s > 0 and p_s < 0:
-                if cai[r, c] > 0.5:
-                    hazard_map[r, c] = "severe_aridification"
-                    arid_count += 1
-                else:
-                    hazard_map[r, c] = "moderate_drying"
-            # Hydrological Intensification: warming and wetting
-            elif t_s > 0 and p_s > 0:
-                hazard_map[r, c] = "hydrologic_intensification"
-                intens_count += 1
-            # Thermal Buffering: cooling/stable with wetting
-            elif t_s <= 0 and p_s >= 0:
-                hazard_map[r, c] = "thermal_buffering"
-                buffer_count += 1
-            else:
-                hazard_map[r, c] = "neutral_baseline"
+    arid_count = int(np.sum(cond_severe_arid))
+    intens_count = int(np.sum(cond_intens))
 
     arid_frac = round(arid_count / max(1, n_valid), 3)
     intens_frac = round(intens_count / max(1, n_valid), 3)
@@ -102,7 +93,7 @@ def compute_compound_hazard(
         base_timestep_years=10.0
     )
 
-    return {
+    res_dict = {
         "cai_map": cai_map,
         "hazard_classification": hazard_map,
         "aridification_fraction": arid_frac,
@@ -119,4 +110,12 @@ def compute_compound_hazard(
             f"hotspots with joint compound return period > 50 years."
         )
     }
+
+    if temp_sig is not None or precip_sig is not None:
+        t_sig_arr = np.asarray(temp_sig, dtype=bool) if temp_sig is not None else np.zeros(shape, dtype=bool)
+        p_sig_arr = np.asarray(precip_sig, dtype=bool) if precip_sig is not None else np.zeros(shape, dtype=bool)
+        joint_sig_mask = valid_mask & (t_sig_arr | p_sig_arr)
+        res_dict["significant_compound_fraction"] = round(float(np.sum(joint_sig_mask)) / max(1, n_valid), 3)
+
+    return res_dict
 
