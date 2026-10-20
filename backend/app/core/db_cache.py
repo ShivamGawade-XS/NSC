@@ -78,8 +78,8 @@ def init_db() -> None:
         # B-Tree Indexes for rapid multi-dimensional filtering
         conn.execute("CREATE INDEX IF NOT EXISTS idx_ami_dataset_var ON analysis_metadata_index(dataset_id, variable_id);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_ami_temporal ON analysis_metadata_index(start_year, end_year);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_ami_bbox ON analysis_metadata_index(bbox_min_lat, bbox_max_lat, bbox_min_lon, bbox_max_lon);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_ami_lookup ON analysis_metadata_index(dataset_id, variable_id, start_year, end_year, bbox_min_lat, bbox_max_lat, bbox_min_lon, bbox_max_lon, alpha);")
+        conn.execute("DROP INDEX IF EXISTS idx_ami_lookup;")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_ami_lookup ON analysis_metadata_index(dataset_id, variable_id, start_year, end_year, bbox_min_lat, bbox_max_lat, bbox_min_lon, bbox_max_lon, alpha, fdr_controlled);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_ami_accessed ON analysis_metadata_index(last_accessed);")
 
         # Table 2: Coordinate Cell Drilldown Cache Index
@@ -182,7 +182,8 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
         end_year = int(getattr(req, "end_year", 2023))
         bbox = getattr(req, "bbox", None) or [-90.0, -180.0, 90.0, 180.0]
         alpha = float(getattr(req, "alpha", 0.05))
-        fdr_controlled = 1 if getattr(req, "apply_fdr", True) else 0
+        use_fdr = getattr(req, "use_fdr", getattr(req, "apply_fdr", True))
+        fdr_controlled = 1 if use_fdr else 0
 
         # Compress payload using zlib for minimal disk footprint and cryptographically sign
         json_bytes = _serialize_cache_payload(payload)
@@ -267,7 +268,8 @@ def find_cached_analysis_id(
     start_year: int,
     end_year: int,
     bbox: list[float],
-    alpha: float
+    alpha: float,
+    use_fdr: bool = True
 ) -> str | None:
     """
     Leverages composite B-Tree index to discover if an equivalent analysis
@@ -287,16 +289,102 @@ def find_cached_analysis_id(
               AND bbox_min_lon = ?
               AND bbox_max_lon = ?
               AND alpha = ?
+              AND fdr_controlled = ?
             ORDER BY created_at DESC
             LIMIT 1;
         """, (
             dataset_id, variable_id, start_year, end_year,
             float(bbox[1]), float(bbox[3]), float(bbox[0]), float(bbox[2]),
-            float(alpha)
+            float(alpha), 1 if use_fdr else 0
         ))
         row = cur.fetchone()
         return row[0] if row else None
     except Exception:
+        return None
+
+
+def save_cell_to_db_cache(
+    analysis_id: str,
+    lat: float,
+    lon: float,
+    cell_payload: dict[str, Any]
+) -> None:
+    """
+    Save coordinate drilldown cell to persistent spatial_cell_cache table
+    with HMAC-SHA256 signed and compressed JSON payload.
+    """
+    try:
+        cell_key = f"{analysis_id}:{lat:.4f}:{lon:.4f}"
+        slope = cell_payload.get("slope")
+        p_val = cell_payload.get("p_value")
+        q_val = cell_payload.get("q_value")
+        sig_raw = cell_payload.get("significant", cell_payload.get("is_significant_fdr"))
+        significant = (1 if sig_raw else 0) if sig_raw is not None else None
+        cp_year = cell_payload.get("changepoint_year")
+
+        json_bytes = _serialize_cache_payload(cell_payload)
+        raw_compressed = zlib.compress(json_bytes, level=6)
+        hmac_key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+        sig = hmac.new(hmac_key, raw_compressed, hashlib.sha256).digest()
+        signed_bytes = sig + raw_compressed
+        now = time.time()
+
+        conn = get_db_connection()
+        with _DB_LOCK:
+            conn.execute("""
+                INSERT OR REPLACE INTO spatial_cell_cache (
+                    cell_key, analysis_id, lat, lon,
+                    slope, p_value, q_value, significant, changepoint_year,
+                    data_compressed, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """, (
+                cell_key, analysis_id, float(lat), float(lon),
+                float(slope) if slope is not None else None,
+                float(p_val) if p_val is not None else None,
+                float(q_val) if q_val is not None else None,
+                significant,
+                int(cp_year) if cp_year is not None else None,
+                signed_bytes,
+                now
+            ))
+            conn.commit()
+    except Exception as exc:
+        logger.error("Error saving cell cache for key=%s: %s", f"{analysis_id}:{lat:.4f}:{lon:.4f}", exc)
+
+
+def load_cell_from_db_cache(analysis_id: str, lat: float, lon: float) -> dict[str, Any] | None:
+    """
+    Retrieve coordinate drilldown cell from persistent spatial_cell_cache table.
+    Cryptographically verifies HMAC signature before deserialization.
+    """
+    cell_key = f"{analysis_id}:{lat:.4f}:{lon:.4f}"
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT data_compressed FROM spatial_cell_cache WHERE cell_key = ?;", (cell_key,))
+        row = cur.fetchone()
+        if not row or not row[0]:
+            return None
+
+        data_bytes = row[0]
+        if len(data_bytes) <= 32:
+            logger.error("Security alert: cell cache payload too small (<=32 bytes) for key=%s", cell_key)
+            return None
+
+        hmac_key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+        sig = data_bytes[:32]
+        raw_payload = data_bytes[32:]
+        expected_sig = hmac.new(hmac_key, raw_payload, hashlib.sha256).digest()
+
+        if not hmac.compare_digest(sig, expected_sig):
+            logger.error("HMAC-SHA256 verification failed for cell_key=%s", cell_key)
+            return None
+
+        if hmac.compare_digest(sig, expected_sig):
+            decompressed = zlib.decompress(raw_payload)
+            return _deserialize_cache_payload(decompressed)
+    except Exception as exc:
+        logger.error("Error loading cell cache for key=%s: %s", cell_key, exc)
         return None
 
 
@@ -307,11 +395,15 @@ def get_cache_db_stats() -> dict[str, Any]:
         cur = conn.cursor()
         cur.execute("SELECT COUNT(*), COALESCE(SUM(LENGTH(payload_compressed)), 0) FROM analysis_metadata_index;")
         count, total_bytes = cur.fetchone()
-        
+
+        cur.execute("SELECT COUNT(*) FROM spatial_cell_cache;")
+        cell_count = cur.fetchone()[0]
+
         file_size = DB_PATH.stat().st_size if DB_PATH.exists() else 0
         return {
             "db_path": str(DB_PATH),
             "indexed_records": count,
+            "indexed_cells": cell_count,
             "compressed_payload_bytes": total_bytes,
             "database_file_size_bytes": file_size,
             "wal_mode_active": True

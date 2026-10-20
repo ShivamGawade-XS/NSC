@@ -7,7 +7,9 @@ import time
 from app.core.db_cache import (
     find_cached_analysis_id,
     get_cache_db_stats,
+    load_cell_from_db_cache,
     load_from_db_cache,
+    save_cell_to_db_cache,
     save_to_db_cache,
 )
 from app.schemas.analysis import AnalysisRequest
@@ -127,3 +129,94 @@ def test_json_encoder_ndarray_pydantic_fidelity():
     assert loaded["scalar_f64"] == 3.14159
     assert loaded["scalar_i64"] == 42
     assert loaded["scalar_bool"] is True
+
+
+def test_fdr_controlled_distinction_no_collision():
+    """Verify that use_fdr=True and use_fdr=False do not collide in find_cached_analysis_id."""
+    unique_ts = int(time.time() * 1000)
+    var_name = f"FDR_TEST_{unique_ts}"
+    bbox = [-105.0, 32.0, -98.0, 38.0]
+
+    # Save analysis with use_fdr=True
+    req_fdr_true = AnalysisRequest(
+        dataset_id="merra2_reanalysis",
+        variable_id=var_name,
+        start_year=2000,
+        end_year=2020,
+        bbox=bbox,
+        alpha=0.05,
+        use_fdr=True
+    )
+    id_true = f"ana_{var_name}_fdr_true"
+    save_to_db_cache(id_true, {"req": req_fdr_true, "data": "with_fdr"})
+
+    # Save analysis with use_fdr=False
+    req_fdr_false = AnalysisRequest(
+        dataset_id="merra2_reanalysis",
+        variable_id=var_name,
+        start_year=2000,
+        end_year=2020,
+        bbox=bbox,
+        alpha=0.05,
+        use_fdr=False
+    )
+    id_false = f"ana_{var_name}_fdr_false"
+    save_to_db_cache(id_false, {"req": req_fdr_false, "data": "without_fdr"})
+
+    # Query with use_fdr=True
+    found_true = find_cached_analysis_id(
+        dataset_id="merra2_reanalysis",
+        variable_id=var_name,
+        start_year=2000,
+        end_year=2020,
+        bbox=bbox,
+        alpha=0.05,
+        use_fdr=True
+    )
+    assert found_true == id_true
+
+    # Query with use_fdr=False
+    found_false = find_cached_analysis_id(
+        dataset_id="merra2_reanalysis",
+        variable_id=var_name,
+        start_year=2000,
+        end_year=2020,
+        bbox=bbox,
+        alpha=0.05,
+        use_fdr=False
+    )
+    assert found_false == id_false
+    assert found_true != found_false
+
+
+def test_spatial_cell_cache_read_write_lifecycle():
+    """Verify save_cell_to_db_cache and load_cell_from_db_cache round-trip with HMAC signing."""
+    analysis_id = f"ana_cell_test_{int(time.time() * 1000)}"
+    lat = 34.0522
+    lon = -118.2437
+
+    cell_payload = {
+        "lat": lat,
+        "lon": lon,
+        "slope": 0.0314,
+        "p_value": 0.002,
+        "q_value": 0.008,
+        "significant": True,
+        "changepoint_year": 2012,
+        "observations": [14.2, 14.8, 15.1, 15.5],
+        "years": [2010, 2011, 2012, 2013]
+    }
+
+    save_cell_to_db_cache(analysis_id, lat, lon, cell_payload)
+
+    loaded = load_cell_from_db_cache(analysis_id, lat, lon)
+    assert loaded is not None
+    assert loaded["lat"] == lat
+    assert loaded["lon"] == lon
+    assert loaded["slope"] == 0.0314
+    assert loaded["significant"] is True
+    assert loaded["changepoint_year"] == 2012
+    assert loaded["years"] == [2010, 2011, 2012, 2013]
+
+    # Test missing cell returns None
+    assert load_cell_from_db_cache(analysis_id, 0.0, 0.0) is None
