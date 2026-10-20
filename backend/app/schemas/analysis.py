@@ -3,8 +3,40 @@ EarthSift — Analysis Request & Response Schemas
 Typed Pydantic schemas enforcing strict API contracts and evidence integrity.
 """
 
+import math
 from typing import Any
 from pydantic import BaseModel, Field, model_validator
+
+
+def _sanitize_float(v: Any, default: float) -> Any:
+    """Replace non-finite floats (NaN, +Inf, -Inf) with a safe default."""
+    if v is None or isinstance(v, bool):
+        return v
+    try:
+        if isinstance(v, (int, float)) or hasattr(v, "__float__"):
+            if not isinstance(v, (str, bytes)):
+                val = float(v)
+                if not math.isfinite(val):
+                    return default
+    except (TypeError, ValueError):
+        pass
+    return v
+
+
+def _sanitize_model_dict(data: Any) -> Any:
+    """Recursively sanitize dictionary float fields converting NaNs/Infs to safe defaults."""
+    if isinstance(data, dict):
+        data = dict(data)
+        for k, v in data.items():
+            if "p_value" in k or "q_value" in k:
+                data[k] = _sanitize_float(v, 1.0)
+            elif isinstance(v, list):
+                data[k] = [_sanitize_float(item, 0.0) for item in v]
+            elif isinstance(v, dict):
+                data[k] = _sanitize_model_dict(v)
+            else:
+                data[k] = _sanitize_float(v, 0.0)
+    return data
 
 
 class AnalysisRequest(BaseModel):
@@ -23,11 +55,21 @@ class AnalysisRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_temporal_and_spatial_bounds(self) -> "AnalysisRequest":
+        if not math.isfinite(self.alpha):
+            raise ValueError("alpha must be a finite floating-point value.")
         if self.start_year > self.end_year:
             raise ValueError(f"start_year ({self.start_year}) cannot be greater than end_year ({self.end_year}).")
+        if self.end_year - self.start_year < 2:
+            raise ValueError(
+                f"end_year ({self.end_year}) - start_year ({self.start_year}) must be at least 2 "
+                f"to provide a minimum of 3 annual observation points."
+            )
         if self.bbox is not None:
             if len(self.bbox) != 4:
                 raise ValueError("bbox must contain exactly 4 coordinates: [min_lon, min_lat, max_lon, max_lat].")
+            for c in self.bbox:
+                if not math.isfinite(c):
+                    raise ValueError(f"All bbox coordinates must be finite floating-point values, got {c}.")
             min_lon, min_lat, max_lon, max_lat = self.bbox
             if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0):
                 raise ValueError("Longitude must be within the range [-180.0, 180.0].")
@@ -55,6 +97,11 @@ class SpatialGridPoint(BaseModel):
     lisa_cluster: str | None = "NS"
     n_samples: int
 
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_nan_inf(cls, data: Any) -> Any:
+        return _sanitize_model_dict(data)
+
 
 class AnalysisSummary(BaseModel):
     """Aggregate statistics across the analyzed spatial region."""
@@ -65,6 +112,11 @@ class AnalysisSummary(BaseModel):
     max_slope: float
     min_slope: float
     spatial_autocorrelation: dict[str, Any] | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_nan_inf(cls, data: Any) -> Any:
+        return _sanitize_model_dict(data)
 
 
 class AnalysisResponse(BaseModel):
@@ -106,6 +158,11 @@ class CellDetailResponse(BaseModel):
     changepoint_year: int | None = None
     changepoint_p_value: float | None = None
     evidence_record: dict[str, Any]
+
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_nan_inf(cls, data: Any) -> Any:
+        return _sanitize_model_dict(data)
 
 
 class MapLayerResponse(BaseModel):
@@ -239,11 +296,21 @@ class CompoundHazardRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_compound_bounds(self) -> "CompoundHazardRequest":
+        if not math.isfinite(self.alpha):
+            raise ValueError("alpha must be a finite floating-point value.")
         if self.start_year > self.end_year:
             raise ValueError(f"start_year ({self.start_year}) cannot be greater than end_year ({self.end_year}).")
+        if self.end_year - self.start_year < 2:
+            raise ValueError(
+                f"end_year ({self.end_year}) - start_year ({self.start_year}) must be at least 2 "
+                f"to provide a minimum of 3 annual observation points."
+            )
         if self.bbox is not None:
             if len(self.bbox) != 4:
                 raise ValueError("bbox must contain exactly 4 coordinates: [min_lon, min_lat, max_lon, max_lat].")
+            for c in self.bbox:
+                if not math.isfinite(c):
+                    raise ValueError(f"All bbox coordinates must be finite floating-point values, got {c}.")
             min_lon, min_lat, max_lon, max_lat = self.bbox
             if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0):
                 raise ValueError("Longitude must be within the range [-180.0, 180.0].")

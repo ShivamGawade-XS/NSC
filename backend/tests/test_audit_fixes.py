@@ -11,6 +11,7 @@ Validates:
 """
 
 import threading
+import pytest
 
 import numpy as np
 from app.adapters.merra2 import MERRA2Adapter
@@ -382,4 +383,117 @@ def test_ground_evidence_guardrails_and_citations():
     assert "statistical significance level" in res.summary
     assert "statistical significance level" in res.statistical_assessment
     assert "statistical significance level" in res.limitations
+
+
+def test_analysis_request_finite_and_temporal_window_validation():
+    """Verify AnalysisRequest and CompoundHazardRequest reject NaN/Inf bbox/alpha and <2-year spans."""
+    from pydantic import ValidationError
+    from app.schemas.analysis import AnalysisRequest, CompoundHazardRequest
+
+    # 1. Reject NaN in bbox
+    with pytest.raises(ValidationError):
+        AnalysisRequest(bbox=[float("nan"), 30.0, -90.0, 40.0])
+
+    with pytest.raises(ValidationError):
+        CompoundHazardRequest(bbox=[-100.0, float("inf"), -90.0, 40.0])
+
+    # 2. Reject NaN/Inf in alpha
+    with pytest.raises(ValidationError):
+        AnalysisRequest(alpha=float("nan"))
+
+    with pytest.raises(ValidationError):
+        CompoundHazardRequest(alpha=float("inf"))
+
+    # 3. Reject end_year - start_year < 2 (minimum 3 annual points required)
+    with pytest.raises(ValidationError):
+        AnalysisRequest(start_year=2020, end_year=2021)
+
+    with pytest.raises(ValidationError):
+        AnalysisRequest(start_year=2020, end_year=2020)
+
+    with pytest.raises(ValidationError):
+        CompoundHazardRequest(start_year=2020, end_year=2021)
+
+    # Valid span (>= 2) succeeds
+    valid_req = AnalysisRequest(start_year=2020, end_year=2022)
+    assert valid_req.end_year - valid_req.start_year == 2
+
+    valid_comp = CompoundHazardRequest(start_year=2020, end_year=2022)
+    assert valid_comp.end_year - valid_comp.start_year == 2
+
+
+def test_response_models_nan_inf_sanitization():
+    """Verify SpatialGridPoint and AnalysisSummary sanitize np.nan / np.inf to 0.0 or 1.0."""
+    import json
+    from app.schemas.analysis import SpatialGridPoint, AnalysisSummary, CellDetailResponse
+
+    # 1. SpatialGridPoint sanitization
+    pt = SpatialGridPoint(
+        lat=35.0,
+        lon=-100.0,
+        slope=float("nan"),
+        ci_lower=float("-inf"),
+        ci_upper=float("inf"),
+        p_value=float("nan"),
+        q_value=float("inf"),
+        is_significant_raw=False,
+        is_significant_fdr=False,
+        direction="neutral",
+        n_samples=20
+    )
+    assert pt.slope == 0.0
+    assert pt.ci_lower == 0.0
+    assert pt.ci_upper == 0.0
+    assert pt.p_value == 1.0
+    assert pt.q_value == 1.0
+
+    # Ensure json.dumps passes without strict JSON out-of-range float errors
+    json_str = json.dumps(pt.model_dump())
+    assert "NaN" not in json_str
+    assert "Infinity" not in json_str
+
+    # 2. AnalysisSummary sanitization
+    summary = AnalysisSummary(
+        total_cells=50,
+        significant_cells_raw=0,
+        significant_cells_fdr=0,
+        mean_slope=float("nan"),
+        max_slope=float("inf"),
+        min_slope=float("-inf"),
+        spatial_autocorrelation={"morans_i": float("nan"), "p_value": float("nan")}
+    )
+    assert summary.mean_slope == 0.0
+    assert summary.max_slope == 0.0
+    assert summary.min_slope == 0.0
+    assert summary.spatial_autocorrelation["morans_i"] == 0.0
+    assert summary.spatial_autocorrelation["p_value"] == 1.0
+
+    # 3. CellDetailResponse sanitization
+    cell = CellDetailResponse(
+        lat=35.0,
+        lon=-100.0,
+        variable_name="T2M",
+        display_units="deg C",
+        slope_units="deg C / decade",
+        years=[2020, 2021, 2022],
+        observations=[15.0, float("nan"), 17.0],
+        fitted_values=[15.1, 16.0, float("inf")],
+        slope=float("nan"),
+        intercept=float("-inf"),
+        p_value=float("nan"),
+        q_value=float("inf"),
+        tau=float("nan"),
+        significant=False,
+        direction="neutral",
+        changepoint_p_value=float("nan"),
+        evidence_record={}
+    )
+    assert cell.slope == 0.0
+    assert cell.intercept == 0.0
+    assert cell.p_value == 1.0
+    assert cell.q_value == 1.0
+    assert cell.changepoint_p_value == 1.0
+    assert cell.observations[1] == 0.0
+    assert cell.fitted_values[2] == 0.0
+
 
