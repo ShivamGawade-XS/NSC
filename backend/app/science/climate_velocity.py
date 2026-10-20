@@ -47,7 +47,12 @@ def compute_climate_velocity(
         }
 
     # Reference field for spatial gradient
-    field = mean_climatology if mean_climatology is not None else slopes
+    if mean_climatology is not None:
+        field = mean_climatology
+    else:
+        # Reconstruct physically grounded meridional climatology profile: 28.0 - 0.65 * (|lat| - 25.0)
+        clim_profile = 28.0 - 0.65 * (np.abs(latitudes) - 25.0)
+        field = np.repeat(clim_profile[:, np.newaxis], n_lon, axis=1)
 
     # Convert coordinates to radians
     lats_rad = np.deg2rad(latitudes)
@@ -105,8 +110,12 @@ def compute_climate_velocity(
 
     for i in range(0, n_lat, step_lat):
         for j in range(0, n_lon, step_lon):
+            if np.isnan(slopes[i, j]) or np.isnan(velocity_mag[i, j]) or np.isnan(bearing_deg[i, j]) or np.isnan(spatial_grad[i, j]):
+                continue
             speed = float(velocity_mag[i, j])
             b_deg = float(bearing_deg[i, j])
+            if np.isnan(speed) or np.isnan(b_deg):
+                continue
             cardinal_idx = int(((b_deg + 11.25) % 360) // 22.5)
             cardinal = cardinals[cardinal_idx % 16]
 
