@@ -14,7 +14,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.core.config import settings
+from app.core.config import Settings, settings
 from app.core.db_cache import load_from_db_cache, save_to_db_cache
 from app.core.logging_security import SensitiveDataScrubber
 from app.main import app, custom_rate_limit_exceeded_handler
@@ -264,6 +264,30 @@ def test_netrc_file_permissions_isolation(tmp_path, monkeypatch):
         import stat
         mode = stat.S_IMODE(test_netrc.stat().st_mode)
         assert mode == 0o600
+
+
+def test_netrc_injection_rejection(tmp_path, monkeypatch):
+    """Verify netrc setup rejects usernames and passwords containing newlines or whitespace."""
+    from pathlib import Path
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    # Test newline injection
+    monkeypatch.setattr(settings, "EARTHDATA_USERNAME", "attacker\ndefault login evil password hack")
+    monkeypatch.setattr(settings, "EARTHDATA_PASSWORD", "legit_pass")
+    assert settings.setup_netrc() is False
+
+    # Test space injection in password
+    monkeypatch.setattr(settings, "EARTHDATA_USERNAME", "clean_user")
+    monkeypatch.setattr(settings, "EARTHDATA_PASSWORD", "pass with spaces")
+    assert settings.setup_netrc() is False
+
+
+def test_secret_key_ephemeral_generation_in_production(monkeypatch):
+    """Verify Settings._init_secret_key generates a secure random 32-byte hex key in production without SECRET_KEY."""
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    prod_key = Settings._init_secret_key("production", _is_pytest=False)
+    assert len(prod_key) == 64  # 32 bytes hex = 64 hex chars
+    assert prod_key != "earthsift-scientific-hmac-sha256-production-token-2026"
 
 
 # --- Error Serialization & Traceback Suppression ---
