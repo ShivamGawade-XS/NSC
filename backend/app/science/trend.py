@@ -10,44 +10,113 @@ import numpy as np
 from scipy import stats
 
 
-def hamed_rao_variance_correction(data: np.ndarray, var_s: float) -> float:
+def hamed_rao_variance_correction(
+    data: np.ndarray,
+    var_s: float | np.ndarray,
+    slope: float | np.ndarray | None = None
+) -> float | np.ndarray:
     """
     Hamed & Rao (1998) variance correction for serial autocorrelation in Mann-Kendall test.
-    Detrends the series using Sen's slope, then calculates autocorrelation on the residuals.
-    This prevents a real monotonic trend from being mistakenly penalized as serial persistence.
+    Detrends the series using Theil-Sen slope, converts residuals to ranks,
+    and calculates normalized rank autocorrelation across significant lags.
+    Clamps the correction factor floor to max(1.0, correction_factor) so negative
+    oscillations never artificially shrink Var(S) below the i.i.d. baseline.
+    
+    Parameters:
+        data: 1D array of temporal observations, or 3D array of shape (T, H, W).
+        var_s: Uncorrected base variance of S (float or 2D array).
+        slope: Optional precomputed Theil-Sen slope (float or 2D array).
+        
+    Returns:
+        Autocorrelation-corrected variance Var*(S), clamped to >= var_s.
     """
-    n = len(data)
-    if n < 8:
-        return var_s
+    data = np.asarray(data, dtype=float)
+    if data.ndim == 1:
+        valid_mask = ~np.isnan(data)
+        valid_data = data[valid_mask]
+        n = len(valid_data)
+        if n < 8:
+            return var_s
 
-    # 1. Detrend series using robust Sen's slope
-    sen = sens_slope(data)
-    t = np.arange(n, dtype=float)
-    residuals = data - sen["slope"] * t
+        # 1. Detrend series using Theil-Sen slope: e_t = y_t - beta * t
+        if slope is None:
+            sen = sens_slope(valid_data)
+            beta = float(sen["slope"])
+        else:
+            beta = float(slope)
 
-    # 2. Compute ranks of the detrended residuals
-    ranks = stats.rankdata(residuals)
-    ranks_centered = ranks - np.mean(ranks)
-    denom = np.sum(ranks_centered ** 2)
-    if denom <= 0:
-        return var_s
+        t = np.arange(n, dtype=float)
+        residuals = valid_data - beta * t
 
-    # Significant threshold at 95% confidence interval
-    sig_limit = 1.96 / np.sqrt(n)
-    sum_terms = 0.0
+        # 2. Convert valid residuals to ranks via rankdata (average ranks for ties)
+        ranks = stats.rankdata(residuals, method="average")
+        ranks_centered = ranks - np.mean(ranks)
+        denom = float(np.sum(ranks_centered ** 2))
+        if denom <= 0:
+            return var_s
 
-    max_lag = min(n - 1, 10)
-    for k in range(1, max_lag + 1):
-        rho_k = float(np.sum(ranks_centered[:-k] * ranks_centered[k:]) / denom)
-        if abs(rho_k) > sig_limit:
-            weight = (n - k) * (n - k - 1) * (n - k - 2)
-            sum_terms += weight * rho_k
+        # 3. Two-tailed 95% significance threshold: |rho(k)| > 1.96 / sqrt(n)
+        sig_limit = 1.96 / np.sqrt(n)
+        sum_terms = 0.0
 
-    if sum_terms > 0:
+        # Lags k = 1 .. min(n - 3, 10)
+        max_lag = min(n - 3, 10)
+        for k in range(1, max_lag + 1):
+            rho_k = float(np.sum(ranks_centered[:-k] * ranks_centered[k:]) / denom)
+            # 4. Filter lags where |rho(k)| > 1.96 / sqrt(n)
+            if abs(rho_k) > sig_limit:
+                weight = (n - k) * (n - k - 1) * (n - k - 2)
+                sum_terms += weight * rho_k
+
+        # 5. Compute correction factor: n / n_s* = 1 + [2 / (n * (n-1) * (n-2))] * sum(...)
         n_denom = n * (n - 1) * (n - 2)
         if n_denom > 0:
             correction_factor = 1.0 + (2.0 / n_denom) * sum_terms
-            return float(var_s * max(1.0, correction_factor))
+            # 6. Clamp correction factor floor to max(1.0, correction_factor)
+            correction_factor = max(1.0, float(correction_factor))
+            return float(var_s * correction_factor)
+        return var_s
+
+    elif data.ndim == 3:
+        # Vectorized across 3D grid (T, H, W) without Python loops across cells
+        t_len, h_len, w_len = data.shape
+        n_samples = np.sum(~np.isnan(data), axis=0)
+
+        if slope is None:
+            idx_i, idx_j = np.triu_indices(t_len, k=1)
+            dy = data[idx_j] - data[idx_i]
+            dt = (idx_j - idx_i)[:, None, None]
+            with np.errstate(all="ignore"):
+                beta = np.nanmedian(dy / dt, axis=0)
+        else:
+            beta = np.asarray(slope, dtype=float)
+
+        t_3d = np.arange(t_len, dtype=float)[:, None, None]
+        residuals = data - beta[None, :, :] * t_3d
+
+        # Rankdata along time axis (axis=0)
+        ranks = stats.rankdata(residuals, axis=0, method="average")
+        ranks_centered = ranks - np.mean(ranks, axis=0, keepdims=True)
+        denom = np.sum(ranks_centered ** 2, axis=0, keepdims=True)
+
+        max_lag = min(t_len - 3, 10)
+        sum_terms = np.zeros((h_len, w_len), dtype=float)
+        sig_limit = 1.96 / np.sqrt(np.maximum(n_samples, 1))
+
+        for k in range(1, max_lag + 1):
+            with np.errstate(all="ignore"):
+                rho_k = np.sum(ranks_centered[:-k] * ranks_centered[k:], axis=0) / np.maximum(denom[0], 1e-12)
+            sig_mask = (np.abs(rho_k) > sig_limit) & (k <= (n_samples - 3))
+            weight = (n_samples - k) * (n_samples - k - 1) * (n_samples - k - 2)
+            sum_terms += np.where(sig_mask, weight * rho_k, 0.0)
+
+        n_denom = n_samples * (n_samples - 1) * (n_samples - 2)
+        with np.errstate(all="ignore"):
+            correction_factor = 1.0 + (2.0 / np.maximum(n_denom, 1)) * sum_terms
+        correction_factor = np.maximum(1.0, correction_factor)
+        correction_factor[n_samples < 8] = 1.0
+        return var_s * correction_factor
+
     return var_s
 
 
@@ -352,6 +421,9 @@ def compute_spatial_trends(
 
     var_s_2d = (n_samples * (n_samples - 1) * (2 * n_samples + 5) - tie_term_2d) / 18.0
     var_s_2d = np.maximum(var_s_2d, 0.0)
+
+    # Apply vectorized Hamed & Rao (1998) serial autocorrelation correction
+    var_s_2d = hamed_rao_variance_correction(data_3d, var_s_2d, slope=slopes)
 
     # Compute standardized test statistic Z and two-tailed p-values
     z_2d = np.zeros((h_len, w_len), dtype=float)
