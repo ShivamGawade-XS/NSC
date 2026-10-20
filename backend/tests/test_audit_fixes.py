@@ -64,6 +64,40 @@ def test_compound_hazard_endpoint_accuracy():
     assert "cai" in first_cell
 
 
+def test_compute_compound_hazard_vectorized_and_significance():
+    """Verify compute_compound_hazard np.select classification and significant_compound_fraction."""
+    from app.science.compound import compute_compound_hazard
+
+    t_slopes = np.array([
+        [1.0, 1.0, 1.0],
+        [-0.5, 0.0, 1.5]
+    ])
+    p_slopes = np.array([
+        [-1.0, 1.0, -0.05],
+        [1.0, 0.0, -2.0]
+    ])
+    t_sig = np.array([
+        [True, False, False],
+        [False, False, True]
+    ])
+    p_sig = np.array([
+        [False, True, False],
+        [False, False, False]
+    ])
+
+    res = compute_compound_hazard(t_slopes, p_slopes, temp_sig=t_sig, precip_sig=p_sig)
+    assert "hazard_classification" in res
+    assert "cai_map" in res
+    assert "significant_compound_fraction" in res
+    # 3 out of 6 cells are significant in t_sig | p_sig: (0,0), (0,1), (1,2)
+    assert res["significant_compound_fraction"] == round(3.0 / 6.0, 3)
+
+    hazard_map = res["hazard_classification"]
+    assert "hydrologic_intensification" in hazard_map
+    assert "thermal_buffering" in hazard_map
+    assert any(h in ["severe_aridification", "moderate_drying"] for h in hazard_map.flatten())
+
+
 def test_concurrent_cache_access():
     """Verify thread-safe LRU cache handles concurrent analysis requests without race conditions."""
     errors = []

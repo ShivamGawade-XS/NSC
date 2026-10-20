@@ -262,6 +262,7 @@ class CompoundHazardResponse(BaseModel):
     time_span: str
     aridification_fraction: float
     intensification_fraction: float
+    significant_compound_fraction: float | None = None
     summary: str
     hazard_distribution: dict[str, int]
     cells: list[dict[str, Any]]
