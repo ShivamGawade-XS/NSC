@@ -61,10 +61,34 @@ def test_owasp_security_headers_injected_on_all_responses():
     assert "camera=()" in res.headers.get("permissions-policy", "")
     # 6. Modern XSS standard
     assert res.headers.get("x-xss-protection") == "0"
-    # 7. Content Security Policy
+    # 7. Cross-Origin Policies (COOP & CORP)
+    assert res.headers.get("cross-origin-opener-policy") == "same-origin"
+    assert res.headers.get("cross-origin-resource-policy") == "same-origin"
+    # 8. Content Security Policy
     csp = res.headers.get("content-security-policy", "")
     assert "default-src 'self'" in csp
     assert "frame-ancestors 'none'" in csp
+    assert "script-src 'self';" in csp
+    assert "https://cdn.jsdelivr.net" not in csp
+    assert "https://*.basemaps.cartocdn.com" in csp
+
+
+def test_csp_dev_docs_vs_api_routes(monkeypatch):
+    """Verify CSP script-src disables unsafe-inline/CDNs on API routes while allowing dev docs."""
+    # API route in default/production mode
+    res_api = client.get("/health")
+    csp_api = res_api.headers.get("content-security-policy", "")
+    assert "script-src 'self';" in csp_api
+    assert "https://cdn.jsdelivr.net" not in csp_api
+    assert "https://*.basemaps.cartocdn.com" in csp_api
+
+    # Docs route in development mode
+    monkeypatch.setenv("ENVIRONMENT", "development")
+    res_docs = client.get("/docs")
+    if res_docs.status_code == 200:
+        csp_docs = res_docs.headers.get("content-security-policy", "")
+        assert "https://cdn.jsdelivr.net" in csp_docs
+        assert "'unsafe-inline'" in csp_docs
 
 
 # --- Rate Limiting & DoS Mitigation ---

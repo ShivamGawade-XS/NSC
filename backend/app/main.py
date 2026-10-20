@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import psutil
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -104,20 +104,67 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 # Security headers and request size limiter
 class SecurityHardeningMiddleware(BaseHTTPMiddleware):
+    def _apply_security_headers(self, response: Response, request: Request) -> Response:
+        # Baseline security headers
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-XSS-Protection"] = "0"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        response.headers["Permissions-Policy"] = (
+            "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
+        )
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+
+        # Content Security Policy:
+        # In development mode, allow Swagger/ReDoc CDN assets for interactive documentation.
+        # For all production routes, enforce strict script-src 'self' with no unsafe-inline or CDN scripts.
+        is_dev_docs = (
+            request.url.path in ("/docs", "/redoc", "/openapi.json")
+            and os.getenv("ENVIRONMENT") != "production"
+        )
+        if is_dev_docs:
+            script_src = "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
+        else:
+            script_src = "script-src 'self';"
+
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            f"{script_src} "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com data:; "
+            "img-src 'self' data: blob: https://*.arcgisonline.com https://server.arcgisonline.com "
+            "https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
+            "connect-src 'self' http://localhost:8000 http://localhost:3000 "
+            "http://127.0.0.1:8000 http://127.0.0.1:3000 "
+            "https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self';"
+        )
+        return response
+
     async def dispatch(self, request: Request, call_next):
         # Bound request payload size to prevent memory exhaustion
         content_length = request.headers.get("content-length")
         if content_length is not None:
             try:
                 if int(content_length) > MAX_CONTENT_LENGTH:
-                    return JSONResponse(
-                        status_code=413,
-                        content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
+                    return self._apply_security_headers(
+                        JSONResponse(
+                            status_code=413,
+                            content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
+                        ),
+                        request
                     )
             except ValueError:
-                return JSONResponse(
-                    status_code=400,
-                    content={"detail": "Invalid Content-Length header: must be a valid integer."}
+                return self._apply_security_headers(
+                    JSONResponse(
+                        status_code=400,
+                        content={"detail": "Invalid Content-Length header: must be a valid integer."}
+                    ),
+                    request
                 )
 
         # Guard against chunked transfer encoding (missing Content-Length) streaming oversized bodies
@@ -127,42 +174,18 @@ class SecurityHardeningMiddleware(BaseHTTPMiddleware):
             async for chunk in request.stream():
                 total_bytes += len(chunk)
                 if total_bytes > MAX_CONTENT_LENGTH:
-                    return JSONResponse(
-                        status_code=413,
-                        content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
+                    return self._apply_security_headers(
+                        JSONResponse(
+                            status_code=413,
+                            content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
+                        ),
+                        request
                     )
                 chunks.append(chunk)
             request._body = b"".join(chunks)
 
         response = await call_next(request)
-
-        # Baseline security headers
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["X-XSS-Protection"] = "0"
-        response.headers["Permissions-Policy"] = (
-            "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
-        )
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
-
-        # Content Security Policy for API docs and tile endpoints
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com data:; "
-            "img-src 'self' data: blob: https://*.arcgisonline.com https://server.arcgisonline.com "
-            "https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov; "
-            "connect-src 'self' http://localhost:8000 http://localhost:3000 "
-            "http://127.0.0.1:8000 http://127.0.0.1:3000 "
-            "https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov; "
-            "frame-ancestors 'none'; "
-            "base-uri 'self'; "
-            "form-action 'self';"
-        )
-
-        return response
+        return self._apply_security_headers(response, request)
 
 
 app.add_middleware(SecurityHardeningMiddleware)
