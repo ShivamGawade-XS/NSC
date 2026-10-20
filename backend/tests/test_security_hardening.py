@@ -81,6 +81,31 @@ def test_payload_size_limit_guard_blocks_dos():
     assert "Payload Too Large" in data["detail"]
 
 
+def test_chunked_streaming_payload_exceeding_limit_returns_413():
+    """Verify chunked streaming requests exceeding 2MB without Content-Length are blocked with HTTP 413."""
+    def chunk_generator():
+        chunk = b"X" * (64 * 1024)
+        for _ in range(35):  # 35 * 64KB = 2.29MB (> 2MB limit)
+            yield chunk
+
+    res = client.post("/analysis", content=chunk_generator(), headers={"Content-Type": "application/json"})
+    assert res.status_code == 413
+    data = res.json()
+    assert "Payload Too Large" in data["detail"]
+
+
+def test_invalid_content_length_header_returns_400():
+    """Verify non-integer Content-Length headers return HTTP 400."""
+    res = client.post(
+        "/analysis",
+        content=b"{}",
+        headers={"Content-Length": "invalid-int", "Content-Type": "application/json"}
+    )
+    assert res.status_code == 400
+    data = res.json()
+    assert "Invalid Content-Length" in data["detail"]
+
+
 def test_custom_rate_limit_exceeded_handler_rfc_compliance():
     """Verify 429 handler returns human-readable JSON payload and Retry-After header."""
     mock_request = MagicMock()

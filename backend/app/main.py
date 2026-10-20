@@ -107,11 +107,32 @@ class SecurityHardeningMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Bound request payload size to prevent memory exhaustion
         content_length = request.headers.get("content-length")
-        if content_length and int(content_length) > MAX_CONTENT_LENGTH:
-            return JSONResponse(
-                status_code=413,
-                content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
-            )
+        if content_length is not None:
+            try:
+                if int(content_length) > MAX_CONTENT_LENGTH:
+                    return JSONResponse(
+                        status_code=413,
+                        content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
+                    )
+            except ValueError:
+                return JSONResponse(
+                    status_code=400,
+                    content={"detail": "Invalid Content-Length header: must be a valid integer."}
+                )
+
+        # Guard against chunked transfer encoding (missing Content-Length) streaming oversized bodies
+        if request.method in ("POST", "PUT", "PATCH"):
+            chunks: list[bytes] = []
+            total_bytes = 0
+            async for chunk in request.stream():
+                total_bytes += len(chunk)
+                if total_bytes > MAX_CONTENT_LENGTH:
+                    return JSONResponse(
+                        status_code=413,
+                        content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
+                    )
+                chunks.append(chunk)
+            request._body = b"".join(chunks)
 
         response = await call_next(request)
 
