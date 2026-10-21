@@ -14,7 +14,7 @@ from typing import Any
 from pathlib import Path
 
 import numpy as np
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from starlette.background import BackgroundTask
 
@@ -589,26 +589,19 @@ def export_analysis_netcdf(request: Request, analysis_id: str):
         }
     }
 
-    out_dir = Path(tempfile.mkdtemp(prefix="earthsift_")).resolve()
-    safe_id = "".join(c for c in analysis_id if c.isalnum() or c in ("-", "_")) or "export"
-    nc_path = (out_dir / f"earthsift_{safe_id}.nc").resolve()
-    if not str(nc_path).startswith(str(out_dir)):
-        raise HTTPException(status_code=400, detail="Path traversal security violation.")
     filename = f"earthsift_{req.variable_id}_{req.start_year}_{req.end_year}.nc"
     try:
-        export_to_netcdf(analysis_record, str(nc_path))
-        return FileResponse(
-            str(nc_path),
+        nc_payload = export_to_netcdf(analysis_record)
+        nc_bytes = nc_payload if isinstance(nc_payload, bytes) else Path(nc_payload).read_bytes()
+        return Response(
+            content=nc_bytes,
             media_type="application/x-netcdf",
-            filename=filename,
             headers={
                 "Content-Disposition": f'attachment; filename="{filename}"',
                 "Access-Control-Expose-Headers": "Content-Disposition"
-            },
-            background=BackgroundTask(shutil.rmtree, out_dir, ignore_errors=True)
+            }
         )
     except Exception as e:
-        shutil.rmtree(out_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=f"NetCDF export failed: {e!s}")
 
 

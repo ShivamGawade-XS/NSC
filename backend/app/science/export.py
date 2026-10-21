@@ -7,7 +7,9 @@ Exports analysis artifacts to:
 """
 
 import json
+import tempfile
 import time
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -21,10 +23,13 @@ except ImportError:
 
 def export_to_netcdf(
     analysis_record: dict[str, Any],
-    out_file_path: str
-) -> str:
+    out_file_path: str | None = None
+) -> bytes | str:
     """
-    Export full spatial analysis fields to a CF-1.8 compliant NetCDF-4 file.
+    Export full spatial analysis fields to a CF-1.8 compliant NetCDF-4 binary format.
+    Generates bytes in memory using tempfile.TemporaryDirectory() auto-cleanup or scipy in-memory engine.
+    If out_file_path is provided, writes to disk and returns the string path.
+    Otherwise, returns the raw NetCDF bytes.
     """
     if not HAS_XARRAY:
         raise RuntimeError("xarray is required for NetCDF-4 export.")
@@ -45,6 +50,9 @@ def export_to_netcdf(
     ci_lower = np.full((h_len, w_len), np.nan, dtype=float)
     ci_upper = np.full((h_len, w_len), np.nan, dtype=float)
     is_sig = np.zeros((h_len, w_len), dtype=np.int32)
+    lisa_arr = np.zeros((h_len, w_len), dtype=np.int32)
+
+    lisa_cluster_map = {"NS": 0, "HH": 1, "LL": 2, "HL": 3, "LH": 4}
 
     units = analysis_record.get("units", "units")
     slope_units = f"{units} / decade"
@@ -59,45 +67,93 @@ def export_to_netcdf(
         ci_upper[i, j] = c.get("ci_upper", c["slope"])
         is_sig[i, j] = 1 if c.get("significant", False) else 0
 
+        cluster_val = c.get("lisa_cluster", "NS")
+        if isinstance(cluster_val, (int, np.integer)):
+            lisa_arr[i, j] = int(cluster_val)
+        else:
+            lisa_arr[i, j] = lisa_cluster_map.get(str(cluster_val).upper(), 0)
+
     provenance = analysis_record.get("provenance", {})
     source_name = provenance.get("source", "NASA Earth Science Observations")
 
     ds = xr.Dataset(
         data_vars={
+            "slopes": (["lat", "lon"], slopes, {
+                "units": slope_units,
+                "long_name": "Decadal Theil-Sen Robust Trend Slope",
+                "standard_name": "trend_slope",
+                "grid_mapping": "crs"
+            }),
             "trend_slope": (["lat", "lon"], slopes, {
                 "units": slope_units,
                 "long_name": "Decadal Theil-Sen Robust Trend Slope",
-                "standard_name": "trend_slope"
+                "standard_name": "trend_slope",
+                "grid_mapping": "crs"
+            }),
+            "p_values": (["lat", "lon"], p_values, {
+                "units": "1",
+                "long_name": "Mann-Kendall Autocorrelation-Corrected p-value",
+                "grid_mapping": "crs"
             }),
             "p_value": (["lat", "lon"], p_values, {
                 "units": "1",
-                "long_name": "Mann-Kendall Autocorrelation-Corrected p-value"
+                "long_name": "Mann-Kendall Autocorrelation-Corrected p-value",
+                "grid_mapping": "crs"
+            }),
+            "q_values": (["lat", "lon"], q_values, {
+                "units": "1",
+                "long_name": "Benjamini-Hochberg Multiplicity Corrected q-value",
+                "grid_mapping": "crs"
             }),
             "q_value": (["lat", "lon"], q_values, {
                 "units": "1",
-                "long_name": "Benjamini-Hochberg Multiplicity Corrected q-value"
+                "long_name": "Benjamini-Hochberg Multiplicity Corrected q-value",
+                "grid_mapping": "crs"
             }),
             "ci_lower": (["lat", "lon"], ci_lower, {
                 "units": slope_units,
-                "long_name": "Gilbert (1987) 95% Confidence Interval Lower Bound"
+                "long_name": "Gilbert (1987) 95% Confidence Interval Lower Bound",
+                "grid_mapping": "crs"
             }),
             "ci_upper": (["lat", "lon"], ci_upper, {
                 "units": slope_units,
-                "long_name": "Gilbert (1987) 95% Confidence Interval Upper Bound"
+                "long_name": "Gilbert (1987) 95% Confidence Interval Upper Bound",
+                "grid_mapping": "crs"
+            }),
+            "lisa_cluster": (["lat", "lon"], lisa_arr, {
+                "units": "1",
+                "long_name": "Anselin Local Indicators of Spatial Association (LISA) Cluster",
+                "standard_name": "lisa_cluster",
+                "grid_mapping": "crs",
+                "flag_values": np.array([0, 1, 2, 3, 4], dtype=np.int32),
+                "flag_meanings": "not_significant high_high low_low high_low low_high"
             }),
             "is_significant_fdr": (["lat", "lon"], is_sig, {
                 "units": "1",
-                "long_name": "FDR Significance Mask (1=True, 0=False)"
+                "long_name": "FDR Significance Mask (1=True, 0=False)",
+                "grid_mapping": "crs"
+            }),
+            "crs": ([], np.int32(0), {
+                "grid_mapping_name": "latitude_longitude",
+                "epsg_code": "EPSG:4326",
+                "semi_major_axis": 6378137.0,
+                "inverse_flattening": 298.257223563,
+                "longitude_of_prime_meridian": 0.0,
+                "spatial_ref": 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]]'
             })
         },
         coords={
             "lat": (["lat"], np.array(lats, dtype=float), {
                 "units": "degrees_north",
-                "standard_name": "latitude"
+                "standard_name": "latitude",
+                "long_name": "Latitude",
+                "axis": "Y"
             }),
             "lon": (["lon"], np.array(lons, dtype=float), {
                 "units": "degrees_east",
-                "standard_name": "longitude"
+                "standard_name": "longitude",
+                "long_name": "Longitude",
+                "axis": "X"
             })
         },
         attrs={
@@ -112,12 +168,46 @@ def export_to_netcdf(
         }
     )
 
+    nc_bytes: bytes | None = None
     try:
-        ds.to_netcdf(out_file_path, engine="h5netcdf")
-    except Exception:
-        ds.to_netcdf(out_file_path)
+        # 1. Attempt in-memory NetCDF-4 generation via TemporaryDirectory (auto-deleted upon exit)
+        with tempfile.TemporaryDirectory(prefix="earthsift_nc_") as tmp_dir:
+            tmp_path = Path(tmp_dir) / "export.nc"
+            try:
+                ds.to_netcdf(str(tmp_path), engine="h5netcdf")
+                nc_bytes = tmp_path.read_bytes()
+            except Exception:
+                pass
 
-    return out_file_path
+        # 2. In-memory scipy engine fallback (pure memory buffer)
+        if nc_bytes is None:
+            try:
+                nc_bytes = ds.to_netcdf(engine="scipy")
+            except Exception:
+                pass
+
+        # 3. Fallback to default engine inside TemporaryDirectory
+        if nc_bytes is None:
+            with tempfile.TemporaryDirectory(prefix="earthsift_nc_") as tmp_dir:
+                tmp_path = Path(tmp_dir) / "export.nc"
+                ds.to_netcdf(str(tmp_path))
+                nc_bytes = tmp_path.read_bytes()
+    finally:
+        ds.close()
+
+    if out_file_path is not None:
+        Path(out_file_path).write_bytes(nc_bytes)
+        return str(out_file_path)
+
+    return nc_bytes
+
+
+def export_to_netcdf_bytes(analysis_record: dict[str, Any]) -> bytes:
+    """Generate CF-1.8 NetCDF bytes in memory for safe zero-disk-leak responses."""
+    res = export_to_netcdf(analysis_record, out_file_path=None)
+    if isinstance(res, bytes):
+        return res
+    return Path(res).read_bytes()
 
 
 def export_to_geojson(analysis_record: dict[str, Any]) -> dict[str, Any]:
