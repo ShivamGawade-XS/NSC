@@ -146,6 +146,26 @@ def test_netcdf_export_cleanup():
     assert export_res.headers["content-type"] == "application/x-netcdf"
     assert len(export_res.content) > 500
 
+    # Verify CF-1.8 compliance on returned binary payload
+    import tempfile
+    from pathlib import Path
+    import xarray as xr
+
+    with tempfile.NamedTemporaryFile(suffix=".nc", delete=False) as f:
+        f.write(export_res.content)
+        f.flush()
+        tmp_nc = f.name
+    try:
+        with xr.open_dataset(tmp_nc) as ds:
+            for v in ["slopes", "p_values", "q_values", "ci_lower", "ci_upper", "lisa_cluster"]:
+                assert v in ds.data_vars, f"Expected variable '{v}' in NetCDF export"
+                assert ds[v].attrs.get("grid_mapping") == "crs", f"Variable '{v}' missing grid_mapping='crs'"
+            assert "crs" in ds.data_vars, "Expected 'crs' variable in NetCDF export"
+            assert ds["crs"].attrs.get("epsg_code") == "EPSG:4326"
+    finally:
+        Path(tmp_nc).unlink(missing_ok=True)
+
+
 
 def test_morans_i_analytical_variance():
     """Verify Cliff & Ord (1981) analytical variance produces valid stats with exact asymmetric weights."""
