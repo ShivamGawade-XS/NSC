@@ -187,3 +187,115 @@ def test_nasa_power_live_retry_and_timeout():
                     mock_sleep.assert_called_once_with(1.0)
 
 
+def test_verify_cf_contract_valid_pipeline():
+    """Verify that fetch_subset executes verify_cf_contract and preserves all invariants."""
+    adapter = MERRA2Adapter()
+    norm = adapter.fetch_subset(
+        variable="T2M",
+        start_year=2000,
+        end_year=2010,
+        bbox=[-100.0, 30.0, -90.0, 40.0],
+        prefer_live=False,
+    )
+    # verify_cf_contract invariants
+    assert norm["data"].ndim == 3
+    assert norm["data"].shape == (len(norm["years"]), len(norm["lat"]), len(norm["lon"]))
+    assert np.all(np.diff(norm["lat"]) > 0)
+    assert np.all(np.diff(norm["lon"]) > 0)
+    assert isinstance(norm["is_synthetic"], bool)
+    assert isinstance(norm["data_source_label"], str)
+    assert isinstance(norm["provenance"]["is_synthetic"], bool)
+    assert isinstance(norm["provenance"]["data_source_label"], str)
+
+
+def test_verify_cf_contract_shape_and_ndim_invariants():
+    """Verify that verify_cf_contract catches dimension and shape mismatches."""
+    adapter = MERRA2Adapter()
+    base_dict = {
+        "data": np.zeros((5, 3, 4)),
+        "years": np.arange(2000, 2005),
+        "lat": np.array([30.0, 32.0, 34.0]),
+        "lon": np.array([-100.0, -98.0, -96.0, -94.0]),
+        "is_synthetic": True,
+        "data_source_label": "Synthetic test data",
+        "provenance": {
+            "is_synthetic": True,
+            "data_source_label": "Synthetic test data",
+        },
+    }
+
+    # Valid contract should pass
+    verified = adapter.verify_cf_contract(dict(base_dict))
+    assert verified["data"].shape == (5, 3, 4)
+
+    # 1. 2D array instead of 3D
+    bad_ndim = dict(base_dict, data=np.zeros((5, 12)))
+    with pytest.raises(AssertionError, match="ndim == 3"):
+        adapter.verify_cf_contract(bad_ndim)
+
+    # 2. Shape mismatch with (len(years), len(lat), len(lon))
+    bad_shape = dict(base_dict, data=np.zeros((6, 3, 4)))
+    with pytest.raises(AssertionError, match="does not match"):
+        adapter.verify_cf_contract(bad_shape)
+
+
+def test_verify_cf_contract_ascending_coordinates_invariant():
+    """Verify that verify_cf_contract catches non-ascending spatial coordinates."""
+    adapter = MERRA2Adapter()
+    base_dict = {
+        "data": np.zeros((3, 3, 3)),
+        "years": np.arange(2000, 2003),
+        "lat": np.array([30.0, 32.0, 34.0]),
+        "lon": np.array([-100.0, -98.0, -96.0]),
+        "is_synthetic": True,
+        "data_source_label": "Synthetic test data",
+        "provenance": {
+            "is_synthetic": True,
+            "data_source_label": "Synthetic test data",
+        },
+    }
+
+    # 1. Descending latitudes
+    descending_lat = dict(base_dict, lat=np.array([34.0, 32.0, 30.0]))
+    with pytest.raises(AssertionError, match="lat coordinates must be strictly ascending"):
+        adapter.verify_cf_contract(descending_lat)
+
+    # 2. Descending longitudes
+    descending_lon = dict(base_dict, lon=np.array([-96.0, -98.0, -100.0]))
+    with pytest.raises(AssertionError, match="lon coordinates must be strictly ascending"):
+        adapter.verify_cf_contract(descending_lon)
+
+
+def test_verify_cf_contract_provenance_invariants():
+    """Verify that verify_cf_contract asserts presence and types of synthetic provenance flags."""
+    adapter = MERRA2Adapter()
+    base_dict = {
+        "data": np.zeros((3, 2, 2)),
+        "years": np.arange(2000, 2003),
+        "lat": np.array([30.0, 32.0]),
+        "lon": np.array([-100.0, -98.0]),
+        "is_synthetic": True,
+        "data_source_label": "Synthetic test data",
+        "provenance": {
+            "is_synthetic": True,
+            "data_source_label": "Synthetic test data",
+        },
+    }
+
+    # 1. Missing top-level is_synthetic
+    no_synth = {k: v for k, v in base_dict.items() if k != "is_synthetic"}
+    with pytest.raises(AssertionError, match="is_synthetic must exist at top-level"):
+        adapter.verify_cf_contract(no_synth)
+
+    # 2. Non-boolean is_synthetic in provenance
+    bad_prov_synth = dict(base_dict, provenance={"is_synthetic": "yes", "data_source_label": "test"})
+    with pytest.raises(AssertionError, match="must exist in norm_data\\['provenance'\\] and be a boolean"):
+        adapter.verify_cf_contract(bad_prov_synth)
+
+    # 3. Missing data_source_label in provenance
+    no_prov_label = dict(base_dict, provenance={"is_synthetic": False})
+    with pytest.raises(AssertionError, match="must exist in norm_data\\['provenance'\\] and be a string"):
+        adapter.verify_cf_contract(no_prov_label)
+
+
+
