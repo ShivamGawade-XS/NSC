@@ -19,6 +19,7 @@ Mathematically verifies:
 
 import numpy as np
 import pytest
+
 from app.science.trend import (
     benjamini_hochberg_fdr,
     compute_spatial_trends,
@@ -176,7 +177,7 @@ def test_benjamini_hochberg_fdr():
     assert bool(sig_flags[1]) is True
     assert bool(sig_flags[2]) is True
     # Insignificant tests should remain False
-    assert np.all(sig_flags[3:] == False)
+    assert np.all(~sig_flags[3:])
     # Adjusted q-values must be non-decreasing
     assert np.all(np.diff(q_vals) >= 0)
 

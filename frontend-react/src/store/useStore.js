@@ -59,24 +59,57 @@ const useStore = create((set, get) => ({
   preprintModalOpen: false,
 
   // Actions
-  setFormField: (field, value) => set({ [field]: value }),
+  setFormField: (field, value) => {
+    const updates = { [field]: value };
+    if (['dataset', 'variable', 'startYear', 'endYear'].includes(field)) {
+      updates.comparePinA = null;
+      updates.comparePinB = null;
+      updates.comparisonResult = null;
+    }
+    set(updates);
+  },
   setBbox: (bbox) => set({ bbox }),
   setCurtainSplit: (val) => set({ curtainSplit: val }),
   toggleCurtainMode: () => set((s) => ({ showCurtainMode: !s.showCurtainMode })),
-  setNlqModalOpen: (open) => set({ nlqModalOpen: open }),
-  setLatexModalOpen: (open) => set({ latexModalOpen: open }),
-  setCustomDataModalOpen: (open) => set({ customDataModalOpen: open }),
-  setPreprintModalOpen: (open) => set({ preprintModalOpen: open }),
+
+  closeAllModals: () => set({
+    nlqModalOpen: false,
+    latexModalOpen: false,
+    customDataModalOpen: false,
+    preprintModalOpen: false,
+    isCaseStudyTourOpen: false,
+    isJudgeTourActive: false,
+  }),
+  setNlqModalOpen: (open) => set({
+    nlqModalOpen: open,
+    ...(open ? { latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setLatexModalOpen: (open) => set({
+    latexModalOpen: open,
+    ...(open ? { nlqModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setCustomDataModalOpen: (open) => set({
+    customDataModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, preprintModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setPreprintModalOpen: (open) => set({
+    preprintModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
   loadCustomGridData: (customData) => set({
     analysisData: customData,
+    analysisId: customData.analysis_id,
     selectedCell: customData.grid?.[0] || null,
     timeScrubberYear: customData.summary?.start_year || 2000,
     startYear: customData.summary?.start_year || 2000,
     endYear: customData.summary?.end_year || 2023,
-    customDataModalOpen: false
+    customDataModalOpen: false,
+    comparePinA: null,
+    comparePinB: null,
+    comparisonResult: null,
   }),
 
-  loadPreset: (presetKey) => {
+  loadPreset: (presetKey, options = {}) => {
     const preset = DETECTIVE_PRESETS[presetKey];
     if (!preset) return;
 
@@ -85,6 +118,9 @@ const useStore = create((set, get) => ({
       variable: preset.variable,
       startYear: preset.startYear,
       endYear: preset.endYear,
+      comparePinA: null,
+      comparePinB: null,
+      comparisonResult: null,
       bbox: {
         minLon: preset.bbox[0],
         minLat: preset.bbox[1],
@@ -94,13 +130,65 @@ const useStore = create((set, get) => ({
     });
 
     if (preset.isCompound) {
-      get().executeCompoundAnalysis();
+      get().executeCompoundAnalysis(options);
     } else {
-      get().executeAnalysis();
+      get().executeAnalysis(options);
     }
   },
 
-  executeAnalysis: async () => {
+  getShareableUrl: () => {
+    const { dataset, variable, startYear, endYear, useFdr, bbox, analysisData, selectedCell } = get();
+    const isCompound = Boolean(analysisData?.isCompound);
+    const params = new URLSearchParams();
+
+    if (dataset) params.set('dataset', dataset);
+    if (variable) params.set('var', variable);
+    if (startYear) params.set('start', String(startYear));
+    if (endYear) params.set('end', String(endYear));
+    if (useFdr !== undefined) params.set('fdr', String(Boolean(useFdr)));
+    if (isCompound) params.set('compound', 'true');
+
+    if (
+      bbox &&
+      bbox.minLon !== '' &&
+      bbox.minLat !== '' &&
+      bbox.maxLon !== '' &&
+      bbox.maxLat !== '' &&
+      bbox.minLon !== undefined &&
+      bbox.minLat !== undefined &&
+      bbox.maxLon !== undefined &&
+      bbox.maxLat !== undefined
+    ) {
+      params.set('bbox', `${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`);
+    }
+
+    if (selectedCell && selectedCell.lat !== undefined && selectedCell.lon !== undefined) {
+      const latVal = Number(selectedCell.lat).toFixed(4).replace(/\.?0+$/, '');
+      const lonVal = Number(selectedCell.lon).toFixed(4).replace(/\.?0+$/, '');
+      params.set('lat', latVal);
+      params.set('lon', lonVal);
+    }
+
+    const base = typeof window !== 'undefined'
+      ? `${window.location.origin}${window.location.pathname}`
+      : '/dashboard';
+
+    return `${base}?${params.toString()}`;
+  },
+
+  syncUrl: () => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (window.location.pathname.includes('/dashboard') || window.location.pathname === '/') {
+        const shareUrl = get().getShareableUrl();
+        window.history.replaceState(null, '', shareUrl);
+      }
+    } catch (err) {
+      console.warn('Failed to update window.history:', err);
+    }
+  },
+
+  executeAnalysis: async (options = {}) => {
     const { dataset, variable, startYear, endYear, bbox, useFdr } = get();
     set({ isLoading: true, error: null, timeScrubberYear: startYear });
 
@@ -142,19 +230,37 @@ const useStore = create((set, get) => ({
         isLoading: false,
       });
 
-      // Auto-select best cell
-      if (signals.length > 0) {
-        get().selectCell(signals[0].lat, signals[0].lon);
-      } else {
-        const target = data.grid?.find(c => c.is_significant_fdr) || data.grid?.[0];
-        if (target) get().selectCell(target.lat, target.lon);
+      // Target selection: prefer caller-specified target, otherwise auto-select best cell
+      let targetLat = options?.targetLat;
+      let targetLon = options?.targetLon;
+
+      if (targetLat !== undefined && targetLon !== undefined && data.grid?.length > 0) {
+        let closest = data.grid[0];
+        let minDist = Infinity;
+        for (const c of data.grid) {
+          const dist = (c.lat - targetLat) ** 2 + (c.lon - targetLon) ** 2;
+          if (dist < minDist) {
+            minDist = dist;
+            closest = c;
+          }
+        }
+        targetLat = closest.lat;
+        targetLon = closest.lon;
+      } else if (targetLat === undefined || targetLon === undefined) {
+        targetLat = signals[0]?.lat ?? data.grid?.find(c => c.is_significant_fdr)?.lat ?? data.grid?.[0]?.lat;
+        targetLon = signals[0]?.lon ?? data.grid?.find(c => c.is_significant_fdr)?.lon ?? data.grid?.[0]?.lon;
       }
+
+      if (targetLat !== undefined && targetLon !== undefined) {
+        await get().selectCell(targetLat, targetLon);
+      }
+      get().syncUrl();
     } catch (err) {
       set({ isLoading: false, error: err.message });
     }
   },
 
-  executeCompoundAnalysis: async () => {
+  executeCompoundAnalysis: async (options = {}) => {
     const { dataset, startYear, endYear, bbox } = get();
     set({ isLoading: true, error: null });
 
@@ -184,33 +290,28 @@ const useStore = create((set, get) => ({
       });
 
       if (data.cells && data.cells.length > 0) {
-        get().selectCompoundCell(data.cells[0]);
+        let targetCell = data.cells[0];
+        if (options?.targetLat !== undefined && options?.targetLon !== undefined) {
+          let closest = data.cells[0];
+          let minDist = Infinity;
+          for (const c of data.cells) {
+            const dist = (c.lat - options.targetLat) ** 2 + (c.lon - options.targetLon) ** 2;
+            if (dist < minDist) {
+              minDist = dist;
+              closest = c;
+            }
+          }
+          targetCell = closest;
+        }
+        get().selectCompoundCell(targetCell);
       }
+      get().syncUrl();
     } catch (err) {
       set({ isLoading: false, error: err.message });
     }
   },
 
   selectCompoundCell: (cell) => {
-    const { startYear, endYear } = get();
-    const sYear = startYear || 2000;
-    const eYear = endYear || 2023;
-    const numYears = Math.max(1, eYear - sYear + 1);
-    const years = Array.from({ length: numYears }, (_, i) => sYear + i);
-
-    // Baseline climate values
-    const baseTemp = 18.5;
-    const basePrecip = 2.4;
-    const tempSlopePerYear = (cell.temp_slope || 0) / 10.0;
-    const precipSlopePerYear = (cell.precip_slope || 0) / 10.0;
-
-    // Construct annual series with small deterministic interannual oscillations
-    const tempObs = years.map((y, i) => +(baseTemp + tempSlopePerYear * (y - sYear) + Math.sin(i * 1.35) * 0.22).toFixed(3));
-    const tempFitted = years.map((y) => +(baseTemp + tempSlopePerYear * (y - sYear)).toFixed(3));
-
-    const precipObs = years.map((y, i) => +Math.max(0.1, basePrecip + precipSlopePerYear * (y - sYear) + Math.cos(i * 1.15) * 0.18).toFixed(3));
-    const precipFitted = years.map((y) => +Math.max(0.1, basePrecip + precipSlopePerYear * (y - sYear)).toFixed(3));
-
     set({
       selectedCell: {
         lat: cell.lat,
@@ -222,21 +323,23 @@ const useStore = create((set, get) => ({
         slope: cell.temp_slope,
         temp_slope: cell.temp_slope,
         precip_slope: cell.precip_slope,
-        p_value: cell.temp_significant ? 0.01 : 0.2,
-        q_value: cell.temp_significant ? 0.01 : 0.2,
+        p_value: cell.temp_p_value,
+        q_value: cell.temp_q_value,
+        precip_p_value: cell.precip_p_value,
+        precip_q_value: cell.precip_q_value,
         tau: cell.cai,
         significant: cell.temp_significant || cell.precip_significant,
         direction: cell.hazard_type,
-        years,
-        observations: tempObs,
-        fitted_values: tempFitted,
-        precip_observations: precipObs,
-        precip_fitted_values: precipFitted,
+        years: cell.years || [],
+        observations: cell.temp_observations || [],
+        fitted_values: cell.temp_fitted_values || [],
+        precip_observations: cell.precip_observations || [],
+        precip_fitted_values: cell.precip_fitted_values || [],
         lisa_cluster: cell.hazard_class,
         evidence_record: {
-          observation: `Compound Hazard Classification: ${cell.hazard_type.replace(/_/g, ' ').toUpperCase()}`,
+          observation: `Compound Hazard Classification: ${(cell.hazard_type || '').replace(/_/g, ' ').toUpperCase()}`,
           magnitude: `Temp Trend: ${cell.temp_slope > 0 ? '+' : ''}${cell.temp_slope} °C/dec | Precip: ${cell.precip_slope > 0 ? '+' : ''}${cell.precip_slope} mm/day/dec`,
-          significance: `Climate Aridification Index (CAI): ${cell.cai}`,
+          significance: `Climate Aridification Index (CAI): ${cell.cai} | Temp p: ${cell.temp_p_value}, Precip p: ${cell.precip_p_value}`,
           coverage: 'Joint Bivariate Spatiotemporal Grid',
           method: 'Compound Hazard Classification & Aridification Index',
           source: 'NASA Ingestion',
@@ -244,6 +347,7 @@ const useStore = create((set, get) => ({
         }
       }
     });
+    get().syncUrl();
   },
 
   selectCell: async (lat, lon) => {
@@ -268,6 +372,7 @@ const useStore = create((set, get) => ({
     try {
       const cell = await api.getCellTimeseries(analysisId, lat, lon);
       set({ selectedCell: cell });
+      get().syncUrl();
     } catch (err) {
       console.error('Failed to load cell:', err);
     }
@@ -318,11 +423,29 @@ const useStore = create((set, get) => ({
   toggleTimelinePlay: () => set((s) => ({ isTimelinePlaying: !s.isTimelinePlaying })),
 
   // Curated Regional Case Studies Tour
-  openCaseStudyTour: () => set({ isCaseStudyTourOpen: true, isJudgeTourActive: true, tourStepIndex: 0, judgeTourStep: 0 }),
+  openCaseStudyTour: () => set({
+    isCaseStudyTourOpen: true,
+    isJudgeTourActive: true,
+    tourStepIndex: 0,
+    judgeTourStep: 0,
+    nlqModalOpen: false,
+    latexModalOpen: false,
+    customDataModalOpen: false,
+    preprintModalOpen: false,
+  }),
   closeCaseStudyTour: () => set({ isCaseStudyTourOpen: false, isJudgeTourActive: false, tourStepIndex: 0, judgeTourStep: 0 }),
   nextCaseStudyStep: () => set((s) => ({ tourStepIndex: s.tourStepIndex + 1, judgeTourStep: s.judgeTourStep + 1 })),
   // Aliases
-  startJudgeTour: () => set({ isCaseStudyTourOpen: true, isJudgeTourActive: true, tourStepIndex: 0, judgeTourStep: 0 }),
+  startJudgeTour: () => set({
+    isCaseStudyTourOpen: true,
+    isJudgeTourActive: true,
+    tourStepIndex: 0,
+    judgeTourStep: 0,
+    nlqModalOpen: false,
+    latexModalOpen: false,
+    customDataModalOpen: false,
+    preprintModalOpen: false,
+  }),
   stopJudgeTour: () => set({ isCaseStudyTourOpen: false, isJudgeTourActive: false, tourStepIndex: 0, judgeTourStep: 0 }),
   nextJudgeTourStep: () => set((s) => ({ tourStepIndex: s.tourStepIndex + 1, judgeTourStep: s.judgeTourStep + 1 })),
 
@@ -338,5 +461,9 @@ const useStore = create((set, get) => ({
     bbox: { minLon: '', minLat: '', maxLon: '', maxLat: '' },
   }),
 }));
+
+if (typeof window !== 'undefined') {
+  window.__earthsift_store__ = useStore;
+}
 
 export default useStore;

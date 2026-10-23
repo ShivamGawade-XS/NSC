@@ -11,14 +11,15 @@ Validates:
 """
 
 import threading
-import pytest
 
 import numpy as np
+import pytest
+from fastapi.testclient import TestClient
+
 from app.adapters.merra2 import MERRA2Adapter
 from app.adapters.nasa_power import NASAPowerAdapter
 from app.main import app
 from app.science.spatial import compute_global_morans_i
-from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -63,6 +64,24 @@ def test_compound_hazard_endpoint_accuracy():
     assert "lon" in first_cell
     assert "hazard_type" in first_cell
     assert "cai" in first_cell
+    assert "years" in first_cell
+    assert len(first_cell["years"]) == 21
+    assert "temp_observations" in first_cell
+    assert len(first_cell["temp_observations"]) == len(first_cell["years"])
+    assert "temp_fitted_values" in first_cell
+    assert len(first_cell["temp_fitted_values"]) == len(first_cell["years"])
+    assert "precip_observations" in first_cell
+    assert len(first_cell["precip_observations"]) == len(first_cell["years"])
+    assert "precip_fitted_values" in first_cell
+    assert len(first_cell["precip_fitted_values"]) == len(first_cell["years"])
+    assert "temp_p_value" in first_cell
+    assert "temp_q_value" in first_cell
+    assert "precip_p_value" in first_cell
+    assert "precip_q_value" in first_cell
+    assert 0.0 <= first_cell["temp_p_value"] <= 1.0
+    assert 0.0 <= first_cell["temp_q_value"] <= 1.0
+    assert 0.0 <= first_cell["precip_p_value"] <= 1.0
+    assert 0.0 <= first_cell["precip_q_value"] <= 1.0
 
 
 def test_compute_compound_hazard_vectorized_and_significance():
@@ -141,14 +160,22 @@ def test_netcdf_export_cleanup():
     assert res.status_code == 200
     analysis_id = res.json()["analysis_id"]
 
+    import glob
+    import os
+    import tempfile
+
+    nc_leftovers_before = glob.glob(os.path.join(tempfile.gettempdir(), "earthsift_nc_*"))
     export_res = client.get(f"/analysis/{analysis_id}/export/netcdf")
     assert export_res.status_code == 200
     assert export_res.headers["content-type"] == "application/x-netcdf"
     assert len(export_res.content) > 500
+    nc_leftovers_after = glob.glob(os.path.join(tempfile.gettempdir(), "earthsift_nc_*"))
+    assert len(nc_leftovers_after) <= len(nc_leftovers_before), "Zero leftover .nc temp directories/files in temp directory after export"
 
     # Verify CF-1.8 compliance on returned binary payload
     import tempfile
     from pathlib import Path
+
     import xarray as xr
 
     with tempfile.NamedTemporaryFile(suffix=".nc", delete=False) as f:
@@ -329,6 +356,7 @@ def test_contrast_cluster_area_weighting():
 def test_explain_evidence_async_and_sync():
     """Verify explain_evidence_with_ai_async and sync explain_evidence_with_ai."""
     import asyncio
+
     from app.schemas.analysis import ExplainRequest
     from app.science.explainer import explain_evidence_with_ai, explain_evidence_with_ai_async
 
@@ -350,6 +378,7 @@ def test_explain_evidence_async_and_sync():
     res_async = asyncio.run(explain_evidence_with_ai_async(req))
     assert "0.45" in res_async.summary
     assert res_async.statistical_assessment is not None
+    assert res_async.physical_hypotheses is not None
     assert len(res_async.physical_hypotheses) > 0
 
     # Test sync wrapper
@@ -408,6 +437,7 @@ def test_ground_evidence_guardrails_and_citations():
 def test_analysis_request_finite_and_temporal_window_validation():
     """Verify AnalysisRequest and CompoundHazardRequest reject NaN/Inf bbox/alpha and <2-year spans."""
     from pydantic import ValidationError
+
     from app.schemas.analysis import AnalysisRequest, CompoundHazardRequest
 
     # 1. Reject NaN in bbox
@@ -445,7 +475,8 @@ def test_analysis_request_finite_and_temporal_window_validation():
 def test_response_models_nan_inf_sanitization():
     """Verify SpatialGridPoint and AnalysisSummary sanitize np.nan / np.inf to 0.0 or 1.0."""
     import json
-    from app.schemas.analysis import SpatialGridPoint, AnalysisSummary, CellDetailResponse
+
+    from app.schemas.analysis import AnalysisSummary, CellDetailResponse, SpatialGridPoint
 
     # 1. SpatialGridPoint sanitization
     pt = SpatialGridPoint(
@@ -485,6 +516,7 @@ def test_response_models_nan_inf_sanitization():
     assert summary.mean_slope == 0.0
     assert summary.max_slope == 0.0
     assert summary.min_slope == 0.0
+    assert summary.spatial_autocorrelation is not None
     assert summary.spatial_autocorrelation["morans_i"] == 0.0
     assert summary.spatial_autocorrelation["p_value"] == 1.0
 

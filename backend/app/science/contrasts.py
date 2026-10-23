@@ -6,7 +6,7 @@ during the exact same temporal period.
 Uses connected component spatial clustering (8-connectivity) to isolate true regional clusters.
 """
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from scipy import ndimage
@@ -75,6 +75,8 @@ def find_contrasting_regions(
     Returns:
         List of contrast records pairing an increasing region with a decreasing region.
     """
+    latitudes = np.asarray(latitudes)
+    longitudes = np.asarray(longitudes)
     _h, _w = slopes.shape
     
     pos_mask = (slopes > 0) & is_significant
@@ -84,8 +86,10 @@ def find_contrasting_regions(
     struct_8 = np.ones((3, 3), dtype=int)
     
     # Label connected spatial clusters
-    pos_labeled, num_pos = ndimage.label(pos_mask, structure=struct_8)
-    neg_labeled, num_neg = ndimage.label(neg_mask, structure=struct_8)
+    pos_res = cast(Any, ndimage.label(pos_mask, structure=struct_8))
+    pos_labeled, num_pos = pos_res[0], int(pos_res[1])
+    neg_res = cast(Any, ndimage.label(neg_mask, structure=struct_8))
+    neg_labeled, num_neg = neg_res[0], int(neg_res[1])
     
     def extract_clusters(labeled_grid: np.ndarray, num_features: int, label_type: str) -> list[dict[str, Any]]:
         clusters = []
@@ -127,7 +131,8 @@ def find_contrasting_regions(
             q25 = float(np.percentile(valid_slopes, 25))
             refugium_mask = (slopes <= q25) & (~np.isnan(slopes))
             if int(np.sum(refugium_mask)) >= min_cluster_size:
-                ref_labeled, num_ref = ndimage.label(refugium_mask, structure=struct_8)
+                ref_res = cast(Any, ndimage.label(refugium_mask, structure=struct_8))
+                ref_labeled, num_ref = ref_res[0], int(ref_res[1])
                 ref_clusters = extract_clusters(ref_labeled, num_ref, "refugium")
                 if not ref_clusters and int(np.sum(refugium_mask)) >= min_cluster_size:
                     indices = np.argwhere(refugium_mask)
@@ -141,7 +146,8 @@ def find_contrasting_regions(
             q75 = float(np.percentile(valid_slopes, 75))
             buffer_mask = (slopes >= q75) & (~np.isnan(slopes))
             if int(np.sum(buffer_mask)) >= min_cluster_size:
-                buf_labeled, num_buf = ndimage.label(buffer_mask, structure=struct_8)
+                buf_res = cast(Any, ndimage.label(buffer_mask, structure=struct_8))
+                buf_labeled, num_buf = buf_res[0], int(buf_res[1])
                 buf_clusters = extract_clusters(buf_labeled, num_buf, "buffered")
                 if not buf_clusters and int(np.sum(buffer_mask)) >= min_cluster_size:
                     indices = np.argwhere(buffer_mask)

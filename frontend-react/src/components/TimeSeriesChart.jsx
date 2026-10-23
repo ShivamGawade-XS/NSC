@@ -19,7 +19,14 @@ const changepointPlugin = {
     if (!chartArea || !scales?.x) return;
 
     // Chart.js category scale lookup
-    const xPos = scales.x.getPixelForValue(cpYear);
+    let xPos = NaN;
+    const labels = chart.data.labels || [];
+    const idx = labels.findIndex((l) => Number(l) === Number(cpYear));
+    if (idx !== -1) {
+      xPos = scales.x.getPixelForValue(idx);
+    } else {
+      xPos = scales.x.getPixelForValue(String(cpYear));
+    }
     if (xPos === undefined || isNaN(xPos) || xPos < chartArea.left || xPos > chartArea.right) return;
 
     ctx.save();
@@ -35,8 +42,8 @@ const changepointPlugin = {
     // 2. Regime Shift Marker Badge
     ctx.setLineDash([]);
     const pStr = cpPVal !== undefined && cpPVal !== null
-      ? (cpPVal < 0.001 ? '<0.001' : Number(cpPVal).toFixed(3))
-      : '0.0X';
+      ? (typeof cpPVal === 'number' ? Number(cpPVal.toFixed(4)) : cpPVal)
+      : '';
     const labelText = `Regime Shift: ${cpYear} (p=${pStr})`;
     ctx.font = 'bold 9px "JetBrains Mono", monospace';
     const textWidth = ctx.measureText(labelText).width;
@@ -72,14 +79,19 @@ export default function TimeSeriesChart() {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
   const selectedCell = useStore((s) => s.selectedCell);
+  const analysisId = useStore((s) => s.analysisId);
   const isAnomalyMode = useStore((s) => s.isAnomalyMode);
 
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioTelemetry, setAudioTelemetry] = useState(null);
 
   useEffect(() => {
-    return () => stopSonification();
-  }, []);
+    return () => {
+      stopSonification();
+      setIsPlayingAudio(false);
+      setAudioTelemetry(null);
+    };
+  }, [selectedCell?.lat, selectedCell?.lon, analysisId]);
 
   const toggleSonification = () => {
     if (isPlayingAudio) {
@@ -177,27 +189,30 @@ export default function TimeSeriesChart() {
             order: 5,
           },
           {
-            label: 'ci_lower_hidden',
-            data: [],
-            yAxisID: 'y',
-            borderColor: 'transparent',
-            backgroundColor: 'transparent',
-            pointRadius: 0,
-            fill: false,
-            order: 4,
-          },
-          {
             label: '95% CI (Gilbert 1987)',
             data: [],
             yAxisID: 'y',
             borderColor: 'rgba(245, 158, 11, 0.3)',
             borderWidth: 1,
             borderDash: [3, 3],
-            backgroundColor: 'rgba(245, 158, 11, 0.08)',
+            backgroundColor: 'rgba(245, 158, 11, 0.12)',
             pointRadius: 0,
-            fill: '-1',
+            fill: '+1',
             tension: 0,
             order: 3,
+          },
+          {
+            label: 'ci_lower_hidden',
+            data: [],
+            yAxisID: 'y',
+            borderColor: 'rgba(245, 158, 11, 0.3)',
+            borderWidth: 1,
+            borderDash: [3, 3],
+            backgroundColor: 'transparent',
+            pointRadius: 0,
+            fill: false,
+            tension: 0,
+            order: 4,
           },
         ],
       },
@@ -231,6 +246,7 @@ export default function TimeSeriesChart() {
             cornerRadius: 4,
             titleFont: { family: 'Space Grotesk', size: 11, weight: 'bold' },
             bodyFont: { family: 'JetBrains Mono', size: 10 },
+            filter: (item) => item.dataset.label !== 'ci_lower_hidden',
           },
         },
         scales: {
@@ -364,7 +380,11 @@ export default function TimeSeriesChart() {
     chart.options.scales.y1.display = false;
 
     // Check Pettitt changepoint
-    const hasChangepoint = cell.changepoint_year && cell.changepoint_p_value !== undefined && cell.changepoint_p_value < 0.05;
+    const hasChangepoint =
+      cell.changepoint_year &&
+      cell.changepoint_p_value !== undefined &&
+      cell.changepoint_p_value !== null &&
+      Number(cell.changepoint_p_value) <= 0.05;
     chart.options.plugins.changepoint = {
       year: hasChangepoint ? cell.changepoint_year : null,
       pVal: hasChangepoint ? cell.changepoint_p_value : null,
@@ -373,15 +393,36 @@ export default function TimeSeriesChart() {
     const obs = cell.observations || [];
     const meanObs = obs.length > 0 ? obs.reduce((s, v) => s + v, 0) / obs.length : 0;
 
-    // Compute Gilbert CI envelope
+    // Compute Gilbert CI envelope anchored at median time step (t - t_mid)
     let ciLower = [];
     let ciUpper = [];
-    if (cell.ci_lower !== undefined && cell.ci_upper !== undefined && cell.fitted_values?.length > 0) {
-      const startY = cell.years[0];
-      const slopeDeltaL = (cell.ci_lower - cell.slope) / 10.0;
-      const slopeDeltaU = (cell.ci_upper - cell.slope) / 10.0;
-      ciLower = cell.fitted_values.map((fv, i) => +(fv + slopeDeltaL * (cell.years[i] - startY)).toFixed(3));
-      ciUpper = cell.fitted_values.map((fv, i) => +(fv + slopeDeltaU * (cell.years[i] - startY)).toFixed(3));
+    const hasCI =
+      cell.ci_lower !== undefined &&
+      cell.ci_lower !== null &&
+      cell.ci_upper !== undefined &&
+      cell.ci_upper !== null &&
+      cell.fitted_values?.length > 0 &&
+      cell.years?.length > 0;
+
+    if (hasCI) {
+      const n = cell.years.length;
+      const tMid = cell.years[0] + (cell.years[n - 1] - cell.years[0]) / 2.0;
+      const slopeDeltaU = (cell.ci_upper - (cell.slope || 0)) / 10.0;
+      const slopeDeltaL = (cell.ci_lower - (cell.slope || 0)) / 10.0;
+
+      ciUpper = cell.fitted_values.map((fv, i) => {
+        const dt = cell.years[i] - tMid;
+        const b1 = fv + slopeDeltaU * dt;
+        const b2 = fv + slopeDeltaL * dt;
+        return +Math.max(b1, b2).toFixed(3);
+      });
+
+      ciLower = cell.fitted_values.map((fv, i) => {
+        const dt = cell.years[i] - tMid;
+        const b1 = fv + slopeDeltaU * dt;
+        const b2 = fv + slopeDeltaL * dt;
+        return +Math.min(b1, b2).toFixed(3);
+      });
     } else {
       ciLower = cell.fitted_values || [];
       ciUpper = cell.fitted_values || [];
@@ -425,27 +466,30 @@ export default function TimeSeriesChart() {
         order: 5,
       };
       chart.data.datasets[3] = {
-        label: 'ci_lower_hidden',
-        data: ciLower.map((v) => +(v - meanObs).toFixed(3)),
-        yAxisID: 'y',
-        borderColor: 'transparent',
-        backgroundColor: 'transparent',
-        pointRadius: 0,
-        fill: false,
-        order: 4,
-      };
-      chart.data.datasets[4] = {
         label: '95% CI (Gilbert 1987)',
         data: ciUpper.map((v) => +(v - meanObs).toFixed(3)),
         yAxisID: 'y',
         borderColor: 'rgba(245, 158, 11, 0.3)',
         borderWidth: 1,
         borderDash: [3, 3],
-        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+        backgroundColor: 'rgba(245, 158, 11, 0.12)',
         pointRadius: 0,
-        fill: '-1',
+        fill: '+1',
         tension: 0,
         order: 3,
+      };
+      chart.data.datasets[4] = {
+        label: 'ci_lower_hidden',
+        data: ciLower.map((v) => +(v - meanObs).toFixed(3)),
+        yAxisID: 'y',
+        borderColor: 'rgba(245, 158, 11, 0.3)',
+        borderWidth: 1,
+        borderDash: [3, 3],
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        fill: false,
+        tension: 0,
+        order: 4,
       };
       if (chart.options.scales.y) {
         chart.options.scales.y.title = {
@@ -491,27 +535,30 @@ export default function TimeSeriesChart() {
         order: 5,
       };
       chart.data.datasets[3] = {
-        label: 'ci_lower_hidden',
-        data: ciLower,
-        yAxisID: 'y',
-        borderColor: 'transparent',
-        backgroundColor: 'transparent',
-        pointRadius: 0,
-        fill: false,
-        order: 4,
-      };
-      chart.data.datasets[4] = {
         label: '95% CI (Gilbert 1987)',
         data: ciUpper,
         yAxisID: 'y',
         borderColor: 'rgba(245, 158, 11, 0.3)',
         borderWidth: 1,
         borderDash: [3, 3],
-        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+        backgroundColor: 'rgba(245, 158, 11, 0.12)',
         pointRadius: 0,
-        fill: '-1',
+        fill: '+1',
         tension: 0,
         order: 3,
+      };
+      chart.data.datasets[4] = {
+        label: 'ci_lower_hidden',
+        data: ciLower,
+        yAxisID: 'y',
+        borderColor: 'rgba(245, 158, 11, 0.3)',
+        borderWidth: 1,
+        borderDash: [3, 3],
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        fill: false,
+        tension: 0,
+        order: 4,
       };
       if (chart.options.scales.y) {
         chart.options.scales.y.title = {
@@ -536,11 +583,11 @@ export default function TimeSeriesChart() {
           </span>
           <span className="text-[9px] text-[var(--color-text-secondary)]">CAI Aridification Index</span>
         </div>
-      ) : selectedCell?.changepoint_year && selectedCell?.changepoint_p_value < 0.05 ? (
+      ) : selectedCell?.changepoint_year && selectedCell?.changepoint_p_value !== undefined && selectedCell?.changepoint_p_value !== null && Number(selectedCell?.changepoint_p_value) <= 0.05 ? (
         <div className="flex items-center justify-between px-2 py-1 mb-1 bg-red-950/20 border border-red-500/30 rounded text-[10px] font-mono text-red-400">
           <span className="flex items-center gap-1.5 font-semibold">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-            Pettitt (1979) Regime Shift: Year {selectedCell.changepoint_year} (p = {selectedCell.changepoint_p_value < 0.001 ? '<0.001' : selectedCell.changepoint_p_value.toFixed(4)})
+            Pettitt (1979) Regime Shift: Year {selectedCell.changepoint_year} (p = {Number(selectedCell.changepoint_p_value) < 0.001 ? '<0.001' : Number(selectedCell.changepoint_p_value).toFixed(4)})
           </span>
           <span className="text-[9px] text-[var(--color-text-secondary)]">Abrupt Changepoint</span>
         </div>

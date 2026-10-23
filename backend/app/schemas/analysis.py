@@ -5,6 +5,7 @@ Typed Pydantic schemas enforcing strict API contracts and evidence integrity.
 
 import math
 from typing import Any
+
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -80,6 +81,26 @@ class AnalysisRequest(BaseModel):
             if min_lat >= max_lat:
                 raise ValueError(f"min_lat ({min_lat}) must be strictly less than max_lat ({max_lat}).")
         return self
+
+
+class CustomCellInput(BaseModel):
+    """Single cell input for user-uploaded custom datasets."""
+    lat: float
+    lon: float
+    years: list[int] | None = None
+    values: list[float] | None = None
+    slope: float | None = None
+    p_value: float | None = None
+
+
+class CustomAnalysisRequest(BaseModel):
+    """Request payload to analyze user-uploaded custom coordinate records."""
+    dataset_name: str
+    variable_name: str = "Custom Variable"
+    units: str = "units"
+    alpha: float = 0.05
+    use_fdr: bool = True
+    cells: list[CustomCellInput] = Field(..., max_length=5000, description="List of coordinate records (max 5000)")
 
 
 class SpatialGridPoint(BaseModel):

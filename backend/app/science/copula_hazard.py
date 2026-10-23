@@ -5,6 +5,7 @@ using Gumbel and Clayton Copulas to estimate joint empirical return periods and 
 """
 
 from typing import Any
+
 import numpy as np
 from scipy import stats
 
@@ -41,7 +42,8 @@ def fit_bivariate_copula(
 
     # Kendall's tau correlation
     tau_res = stats.kendalltau(xv, yv)
-    tau = float(tau_res.statistic) if not np.isnan(tau_res.statistic) else 0.0
+    tau_val = float(getattr(tau_res, "statistic", 0.0))
+    tau = tau_val if not np.isnan(tau_val) else 0.0
 
     # Invert Kendall's tau to find copula parameter theta
     if tau <= 0.0:

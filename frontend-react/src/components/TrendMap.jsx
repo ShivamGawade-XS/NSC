@@ -68,7 +68,49 @@ export default function TrendMap() {
   const startYear = useStore((s) => s.startYear);
   const endYear = useStore((s) => s.endYear);
   const selectCell = useStore((s) => s.selectCell);
+  const toggleCompareMode = useStore((s) => s.toggleCompareMode);
   const [showGlobe3D, setShowGlobe3D] = useState(false);
+
+function inferGridStep(grid) {
+  if (!grid || grid.length < 2) return { dLat: 0.5, dLon: 0.5 };
+
+  const lats = Array.from(new Set(grid.map((c) => c.lat))).sort((a, b) => a - b);
+  const lons = Array.from(new Set(grid.map((c) => c.lon))).sort((a, b) => a - b);
+
+  let dLat = 0.5;
+  let dLon = 0.5;
+
+  if (lats.length >= 2) {
+    let minDiffLat = Infinity;
+    for (let i = 1; i < lats.length; i++) {
+      const diff = Math.abs(lats[i] - lats[i - 1]);
+      if (diff > 0.05 && diff < minDiffLat) minDiffLat = diff;
+    }
+    if (minDiffLat !== Infinity) {
+      dLat = minDiffLat;
+    }
+  }
+
+  if (lons.length >= 2) {
+    let minDiffLon = Infinity;
+    for (let i = 1; i < lons.length; i++) {
+      const diff = Math.abs(lons[i] - lons[i - 1]);
+      if (diff > 0.05 && diff < minDiffLon) minDiffLon = diff;
+    }
+    if (minDiffLon !== Infinity) {
+      dLon = minDiffLon;
+    }
+  }
+
+  // Snap to standard climate grid steps (0.5° or 1.0°) if close
+  if (Math.abs(dLat - 0.5) < 0.15) dLat = 0.5;
+  else if (Math.abs(dLat - 1.0) < 0.15) dLat = 1.0;
+
+  if (Math.abs(dLon - 0.5) < 0.15) dLon = 0.5;
+  else if (Math.abs(dLon - 1.0) < 0.15) dLon = 1.0;
+
+  return { dLat, dLon };
+}
 
   // 1. Render Spatial Trend Grid (Continuous Raster Cells or Point Matrix)
   const renderSpatialGrid = useCallback((grid) => {
@@ -77,8 +119,7 @@ export default function TrendMap() {
     const useFdr = useStore.getState().useFdr;
     const { min_slope: minSlope, max_slope: maxSlope } = analysisData.summary;
 
-    const dLat = 0.5;
-    const dLon = 0.5;
+    const { dLat, dLon } = inferGridStep(grid);
 
     const activeYear = timeScrubberYear || endYear || 2023;
     const progress = (endYear && startYear && endYear > startYear)
@@ -95,7 +136,10 @@ export default function TrendMap() {
 
       const marker = isRasterMode
         ? L.rectangle(
-            [[cell.lat - dLat * 0.46, cell.lon - dLon * 0.46], [cell.lat + dLat * 0.46, cell.lon + dLon * 0.46]],
+            [
+              [cell.lat - dLat / 2, cell.lon - dLon / 2],
+              [cell.lat + dLat / 2, cell.lon + dLon / 2],
+            ],
             {
               renderer: canvasRenderer,
               fillColor: color,
@@ -110,7 +154,7 @@ export default function TrendMap() {
             fillColor: color,
             fillOpacity: dynamicFillOpacity,
             color: isSig ? (showLisa ? '#ffffff' : '#38bdf8') : '#334155',
-            weight: isSig ? 1.5 : 0.8,
+            weight: isSig ? 2 : 0.8,
           });
 
       const accumulatedShift = cell.slope !== undefined && startYear
@@ -124,12 +168,12 @@ export default function TrendMap() {
       marker.bindTooltip(`
         <div style="font-family: Inter, sans-serif; font-size: 11px;">
           <strong>Coords:</strong> ${escapeHtml(formatCoords(cell.lat, cell.lon))}<br/>
-          <strong>Slope:</strong> ${cell.slope > 0 ? '+' : ''}${cell.slope.toFixed(4)}<br/>
+          <strong>Slope:</strong> ${escapeHtml((cell.slope > 0 ? '+' : '') + cell.slope.toFixed(4))}<br/>
           <strong>95% CI:</strong> ${escapeHtml(ciText)}<br/>
           <strong>LISA:</strong> ${escapeHtml(cell.lisa_cluster || 'NS')}<br/>
-          <strong>p-val:</strong> ${cell.p_value.toFixed(4)} | <strong>FDR q:</strong> ${cell.q_value !== undefined ? cell.q_value.toFixed(4) : 'N/A'}<br/>
+          <strong>p-val:</strong> ${escapeHtml(cell.p_value !== undefined ? cell.p_value.toFixed(4) : 'N/A')} | <strong>FDR q:</strong> ${escapeHtml(cell.q_value !== undefined ? cell.q_value.toFixed(4) : 'N/A')}<br/>
           <span style="color: #38bdf8; display: inline-block; margin-top: 3px; padding-top: 3px; border-top: 1px solid rgba(255,255,255,0.15);">
-            <strong>4D Epoch (${activeYear}):</strong> Net Shift: ${accumulatedShift > 0 ? '+' : ''}${accumulatedShift} ${cell.slope_units || ''}
+            <strong>4D Epoch (${escapeHtml(activeYear)}):</strong> Net Shift: ${escapeHtml((accumulatedShift > 0 ? '+' : '') + accumulatedShift)} ${escapeHtml(cell.slope_units || '')}
           </span>
         </div>
       `);
@@ -145,8 +189,7 @@ export default function TrendMap() {
   // 2. Render Compound Grid
   const renderCompoundGrid = useCallback((cells) => {
     const canvasRenderer = L.canvas({ padding: 0.5 });
-    const dLat = 0.5;
-    const dLon = 0.5;
+    const { dLat, dLon } = inferGridStep(cells);
 
     cells.forEach((cell) => {
       const color = getHazardColor(cell.hazard_type);
@@ -154,7 +197,10 @@ export default function TrendMap() {
 
       const marker = isRasterMode
         ? L.rectangle(
-            [[cell.lat - dLat * 0.46, cell.lon - dLon * 0.46], [cell.lat + dLat * 0.46, cell.lon + dLon * 0.46]],
+            [
+              [cell.lat - dLat / 2, cell.lon - dLon / 2],
+              [cell.lat + dLat / 2, cell.lon + dLon / 2],
+            ],
             {
               renderer: canvasRenderer,
               fillColor: color,
@@ -176,8 +222,8 @@ export default function TrendMap() {
         <div style="font-family: Inter, sans-serif; font-size: 11px;">
           <strong>Coords:</strong> ${escapeHtml(formatCoords(cell.lat, cell.lon))}<br/>
           <strong>Hazard:</strong> <span style="color:${color};font-weight:700;">${escapeHtml(String(cell.hazard_type || '').replace(/_/g, ' ').toUpperCase())}</span><br/>
-          <strong>CAI:</strong> ${cell.cai !== undefined ? cell.cai.toFixed(3) : 'N/A'}<br/>
-          <strong>Temp Slope:</strong> ${cell.temp_slope !== undefined ? (cell.temp_slope > 0 ? '+' : '') + cell.temp_slope.toFixed(3) + ' °C/dec' : 'N/A'}
+          <strong>CAI:</strong> ${escapeHtml(cell.cai !== undefined ? cell.cai.toFixed(3) : 'N/A')}<br/>
+          <strong>Temp Slope:</strong> ${escapeHtml(cell.temp_slope !== undefined ? (cell.temp_slope > 0 ? '+' : '') + cell.temp_slope.toFixed(3) + ' °C/dec' : 'N/A')}
         </div>
       `);
       marker.on('click', () => {
@@ -221,9 +267,9 @@ export default function TrendMap() {
 
       const tooltipContent = `
         <div style="font-family: monospace; font-size: 11px;">
-          <strong>Velocity:</strong> ${vec.velocity_km_decade} km/decade<br/>
-          <strong>Bearing:</strong> ${vec.bearing_deg}° (${vec.cardinal})<br/>
-          <strong>Gradient:</strong> ${vec.spatial_gradient} / km
+          <strong>Velocity:</strong> ${escapeHtml(vec.velocity_km_decade)} km/decade<br/>
+          <strong>Bearing:</strong> ${escapeHtml(vec.bearing_deg)}° (${escapeHtml(vec.cardinal)})<br/>
+          <strong>Gradient:</strong> ${escapeHtml(vec.spatial_gradient)} / km
         </div>
       `;
       line.bindTooltip(tooltipContent);
@@ -247,7 +293,7 @@ export default function TrendMap() {
         fillOpacity: 0.85,
         color: '#ffffff',
         weight: 2.5,
-      }).bindTooltip(`<strong>Location A:</strong> ${formatCoords(comparePinA.lat, comparePinA.lon)}`);
+      }).bindTooltip(`<strong>Location A:</strong> ${escapeHtml(formatCoords(comparePinA.lat, comparePinA.lon))}`);
       compareLayerRef.current.addLayer(pinA);
     }
 
@@ -258,7 +304,7 @@ export default function TrendMap() {
         fillOpacity: 0.85,
         color: '#ffffff',
         weight: 2.5,
-      }).bindTooltip(`<strong>Location B:</strong> ${formatCoords(comparePinB.lat, comparePinB.lon)}`);
+      }).bindTooltip(`<strong>Location B:</strong> ${escapeHtml(formatCoords(comparePinB.lat, comparePinB.lon))}`);
       compareLayerRef.current.addLayer(pinB);
     }
   }, [compareMode, comparePinA, comparePinB]);
@@ -274,6 +320,7 @@ export default function TrendMap() {
       minZoom: 2,
       maxZoom: 12,
       zoomControl: true,
+      preferCanvas: true,
     });
 
     const isDark = document.documentElement.classList.contains('dark');
@@ -300,9 +347,17 @@ export default function TrendMap() {
     selectionLayerRef.current = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
     setMapInstance(map);
-    setMapReady(true);
+    // Attach ResizeObserver to auto-invalidate map dimensions on container resize / devtools open
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && container) {
+      resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize({ animate: false });
+      });
+      resizeObserver.observe(container);
+    }
 
     return () => {
+      if (resizeObserver) resizeObserver.disconnect();
       observer.disconnect();
       map.remove();
       mapInstanceRef.current = null;
@@ -311,6 +366,16 @@ export default function TrendMap() {
       if (container) delete container._leaflet_id;
     };
   }, []);
+
+  // When switching back from 3D Globe to 2D Leaflet map, invalidate container dimensions
+  useEffect(() => {
+    if (!showGlobe3D && mapInstanceRef.current) {
+      const timer = setTimeout(() => {
+        mapInstanceRef.current?.invalidateSize({ animate: false });
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [showGlobe3D]);
 
   // Update Grid
   useEffect(() => {
@@ -395,8 +460,9 @@ export default function TrendMap() {
     }
 
     if (showGibs || showCurtainMode) {
-      const year = timeScrubberYear || endYear || 2023;
-      const gibsDate = `${year}-07-15`;
+      const rawYear = timeScrubberYear || endYear || 2023;
+      const effectiveYear = rawYear < 2000 ? 2000 : rawYear;
+      const gibsDate = `${effectiveYear}-07-15`;
       const currentLayerId = gibsLayerId || 'MODIS_Terra_CorrectedReflectance_TrueColor';
       const currentOpacity = showCurtainMode ? 0.95 : (gibsOpacity ?? 0.70);
 
@@ -416,6 +482,27 @@ export default function TrendMap() {
       selectionLayerRef.current?.bringToFront?.();
     }
   }, [showGibs, showCurtainMode, gibsLayerId, gibsOpacity, timeScrubberYear, endYear]);
+
+  // Curtain Split Pane Clipping
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const overlayPane = map.getPane('overlayPane');
+    if (!overlayPane) return;
+
+    if (showCurtainMode) {
+      overlayPane.style.clipPath = `polygon(${curtainSplit}% 0, 100% 0, 100% 100%, ${curtainSplit}% 100%)`;
+      overlayPane.style.webkitClipPath = `polygon(${curtainSplit}% 0, 100% 0, 100% 100%, ${curtainSplit}% 100%)`;
+    } else {
+      overlayPane.style.clipPath = '';
+      overlayPane.style.webkitClipPath = '';
+    }
+
+    return () => {
+      overlayPane.style.clipPath = '';
+      overlayPane.style.webkitClipPath = '';
+    };
+  }, [showCurtainMode, curtainSplit]);
 
   // 4D Timeline playback timer
   useEffect(() => {
@@ -681,9 +768,9 @@ export default function TrendMap() {
               ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
               : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
           }`}
-          title="Toggle between contiguous raster grid and point scatter view"
+          title="Toggle between Continuous Raster Grid and Point/Stipple view"
         >
-          {isRasterMode ? 'Raster Grid' : 'Point Grid'}
+          {isRasterMode ? 'Continuous Raster' : 'Point / Stipple'}
         </button>
 
         <button
@@ -716,18 +803,33 @@ export default function TrendMap() {
         </button>
       </div>
 
-      {/* Compare Mode Prompt Banner */}
+      {/* Prominent Compare Mode HUD Banner */}
       {compareMode && (
-        <div className="absolute top-3 left-14 z-[1000] bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 text-[var(--color-text-main)] text-xs px-3.5 py-1.5 rounded backdrop-blur-md font-mono flex items-center gap-2 shadow-lg">
-          <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-          </svg>
-          {!comparePinA
-            ? 'Click anywhere on map to drop Pin A'
-            : !comparePinB
-            ? 'Click second location to drop Pin B and inspect divergence'
-            : 'Both locations active. View differential analysis in side panel.'}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] bg-[var(--color-bg-surface)]/95 border-2 border-amber-400 text-[var(--color-text-main)] text-xs px-4 py-2 rounded-lg backdrop-blur-md font-mono flex items-center gap-3 shadow-2xl animate-in fade-in slide-in-from-top duration-200">
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+          <div className="font-semibold tracking-wide">
+            {!comparePinA ? (
+              <span>COMPARISON MODE ACTIVE: Click Pin A on map</span>
+            ) : !comparePinB ? (
+              <span>Now click Pin B to compare regimes</span>
+            ) : (
+              <span>Comparing Pin A vs Pin B. Click any cell to reset Pin A</span>
+            )}
+          </div>
+          <button
+            onClick={() => toggleCompareMode()}
+            className="ml-2 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded border border-amber-500/50 transition-colors shrink-0 cursor-pointer text-[11px]"
+          >
+            Exit Compare Mode
+          </button>
+        </div>
+      )}
+
+      {/* GIBS Satellite Clamping Warning Badge */}
+      {(showGibs || showCurtainMode) && (timeScrubberYear || endYear) < 2000 && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] bg-cyan-950/90 border border-cyan-500/50 text-cyan-200 px-3 py-1.5 rounded shadow-lg backdrop-blur-md text-[11px] font-mono flex items-center gap-2">
+          <span>🛰️</span>
+          <span>MODIS Terra imagery available 2000–Present; clamping satellite overlay to 2000</span>
         </div>
       )}
 

@@ -6,8 +6,8 @@ Along with migration trajectory bearing [degrees from North].
 """
 
 from typing import Any
-import numpy as np
 
+import numpy as np
 
 EARTH_RADIUS_KM = 6371.0
 

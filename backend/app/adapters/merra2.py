@@ -25,11 +25,11 @@ from app.adapters.base import BaseDatasetAdapter
 
 logger = logging.getLogger("earthsift.merra2")
 
-# Optional earthaccess import for live NASA CMR querying
 try:
     import earthaccess
     HAS_EARTHACCESS = True
 except ImportError:
+    earthaccess = None  # type: ignore[assignment]
     HAS_EARTHACCESS = False
 
 
@@ -73,7 +73,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
         otherwise returns verified collection catalog metadata.
         """
         results = []
-        if HAS_EARTHACCESS:
+        if HAS_EARTHACCESS and earthaccess is not None:
             try:
                 for var, short_name in self.SHORT_NAMES.items():
                     if query and query.upper() not in var and query.upper() not in short_name:
@@ -191,7 +191,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
         min_lon, min_lat, max_lon, max_lat = bbox
 
         # Check for Earthdata credentials
-        has_auth = (
+        _has_auth = (
             bool(os.environ.get("EARTHDATA_USERNAME") and os.environ.get("EARTHDATA_PASSWORD")) or
             os.path.exists(os.path.expanduser("~/.netrc"))
         )

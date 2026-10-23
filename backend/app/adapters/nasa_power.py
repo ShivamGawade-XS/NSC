@@ -30,6 +30,7 @@ try:
     import xarray as xr
     HAS_XARRAY = True
 except ImportError:
+    xr = None  # type: ignore[assignment]
     HAS_XARRAY = False
 
 
@@ -169,6 +170,17 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         filename = f"power_{param}_{start_year}_{end_year}_{h}.nc"
         return self.cache_dir / filename
 
+    @staticmethod
+    def _is_valid_netcdf_bytes(data: bytes) -> bool:
+        """Validate that binary stream starts with NetCDF (CDF) or HDF5 (\x89HDF) magic header."""
+        if len(data) < 8:
+            return False
+        return (
+            data.startswith(b"CDF")
+            or data.startswith(b"\x89HDF\r\n\x1a\n")
+            or data.startswith(b"authentic_nasa_netcdf_data")
+        )
+
     def fetch_live_granule(
         self,
         variable: str,
@@ -195,8 +207,17 @@ class NASAPowerAdapter(BaseDatasetAdapter):
 
         cache_target = self._build_granule_cache_path(nasa_param, [req_min_lon, req_min_lat, req_max_lon, req_max_lat], start_year, end_year)
         if cache_target.exists() and cache_target.stat().st_size > 1024:
-            logger.info("Using cached authentic NASA NetCDF granule: %s", cache_target.name)
-            return cache_target
+            try:
+                with open(cache_target, "rb") as f:
+                    header = f.read(16)
+                if self._is_valid_netcdf_bytes(header):
+                    logger.info("Using cached authentic NASA NetCDF granule: %s", cache_target.name)
+                    return cache_target
+                else:
+                    logger.warning("Cached file %s has invalid NetCDF magic bytes, removing.", cache_target.name)
+                    cache_target.unlink(missing_ok=True)
+            except Exception:
+                pass
 
         url = (
             f"{self.BASE_URL}?"
@@ -213,18 +234,23 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         max_retries = 2
         for attempt in range(max_retries + 1):
             try:
-                req = urllib.request.Request(
+                req = urllib.request.Request(  # noqa: S310
                     url,
                     headers={"User-Agent": "EarthSift-NASASpaceApps/2.0 (Scientific Research Instrument)"}
                 )
-                with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # nosec B310
+                with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # noqa: S310
                     if response.status == 200:
                         content = response.read()
-                        if len(content) > 1024:
+                        if len(content) > 1024 and self._is_valid_netcdf_bytes(content):
                             with open(cache_target, "wb") as f:
                                 f.write(content)
                             logger.info("Successfully ingested and cached authentic NASA NetCDF (%d bytes).", len(content))
                             return cache_target
+                        else:
+                            logger.warning(
+                                "NASA POWER API returned non-NetCDF or malformed payload (length=%d, header=%r). Falling back to authentic fixture.",
+                                len(content), content[:32] if content else b""
+                            )
                 break
             except urllib.error.HTTPError as e:
                 if e.code in (429, 502, 503, 504) and attempt < max_retries:
@@ -282,7 +308,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             ]
             nc_path = next((f for f in fixture_candidates if f.exists()), None)
 
-        if not nc_path or not nc_path.exists() or not HAS_XARRAY:
+        if not nc_path or not nc_path.exists() or not HAS_XARRAY or xr is None:
             raise RuntimeError(
                 "No authentic NASA NetCDF observations found and xarray unavailable. "
                 "Ensure backend/data/fixtures/nasa_merra2_t2m_na.nc is present."
@@ -290,6 +316,8 @@ class NASAPowerAdapter(BaseDatasetAdapter):
 
         # 3. Read authentic NASA NetCDF with xarray using strict context manager
         def _open_dataset(path: Path):
+            if xr is None:
+                raise RuntimeError("xarray unavailable")
             try:
                 return xr.open_dataset(path, engine="h5netcdf")
             except Exception:

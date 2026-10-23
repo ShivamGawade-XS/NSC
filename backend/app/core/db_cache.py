@@ -21,7 +21,7 @@ import numpy as np
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.schemas.analysis import AnalysisRequest, AnalysisSummary
+from app.schemas.analysis import AnalysisRequest, AnalysisSummary, CustomAnalysisRequest
 
 logger = logging.getLogger("earthsift.db_cache")
 
@@ -43,6 +43,7 @@ def get_db_connection() -> sqlite3.Connection:
         # Enable Write-Ahead Logging for high-concurrency read performance
         conn.execute("PRAGMA journal_mode=WAL;")
         conn.execute("PRAGMA synchronous=NORMAL;")
+        conn.execute("PRAGMA busy_timeout=30000;")
         conn.execute("PRAGMA cache_size=-16000;")  # 16MB in-memory SQLite page cache
         conn.execute("PRAGMA temp_store=MEMORY;")
         conn.execute("PRAGMA mmap_size=67108864;")  # 64MB memory-mapped I/O
@@ -148,6 +149,8 @@ def _deserialize_cache_payload(raw_bytes: bytes) -> dict[str, Any]:
     def _object_hook(d: dict[str, Any]) -> Any:
         if "__pydantic_AnalysisRequest__" in d:
             return AnalysisRequest(**d["__pydantic_AnalysisRequest__"])
+        if "__pydantic_CustomAnalysisRequest__" in d:
+            return CustomAnalysisRequest(**d["__pydantic_CustomAnalysisRequest__"])
         if "__pydantic_AnalysisSummary__" in d:
             return AnalysisSummary(**d["__pydantic_AnalysisSummary__"])
         if "__ndarray__" in d:
@@ -176,8 +179,8 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
         if not req:
             return
 
-        dataset_id = getattr(req, "dataset_id", "unknown")
-        variable_id = getattr(req, "variable_id", "unknown")
+        dataset_id = getattr(req, "dataset_id", getattr(req, "dataset_name", "unknown"))
+        variable_id = getattr(req, "variable_id", getattr(req, "variable_name", "unknown"))
         start_year = int(getattr(req, "start_year", 2000))
         end_year = int(getattr(req, "end_year", 2023))
         bbox = getattr(req, "bbox", None) or [-90.0, -180.0, 90.0, 180.0]
@@ -194,7 +197,38 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
         now = time.time()
 
         conn = get_db_connection()
+        pruned = False
         with _DB_LOCK:
+            # Deterministic LRU pruning: Evict oldest 20% when count >= CACHE_MAX_SIZE or total payload >= 80MB
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*), COALESCE(SUM(LENGTH(payload_compressed)), 0) FROM analysis_metadata_index;")
+            rec_count, total_bytes = cur.fetchone()
+            max_bytes = 80 * 1024 * 1024  # 80 MB threshold for bounded 128MB tmpfs
+
+            if rec_count >= settings.CACHE_MAX_SIZE or total_bytes >= max_bytes:
+                prune_count = max(1, int(rec_count * 0.20))
+                logger.info(
+                    "Deterministic LRU prune triggered: %d records, %d bytes (limit: %d rec, %d bytes). Evicting %d oldest records.",
+                    rec_count, total_bytes, settings.CACHE_MAX_SIZE, max_bytes, prune_count
+                )
+                cur.execute("""
+                    DELETE FROM spatial_cell_cache
+                    WHERE analysis_id IN (
+                        SELECT analysis_id FROM analysis_metadata_index
+                        ORDER BY last_accessed ASC
+                        LIMIT ?
+                    );
+                """, (prune_count,))
+                cur.execute("""
+                    DELETE FROM analysis_metadata_index
+                    WHERE analysis_id IN (
+                        SELECT analysis_id FROM analysis_metadata_index
+                        ORDER BY last_accessed ASC
+                        LIMIT ?
+                    );
+                """, (prune_count,))
+                pruned = True
+
             conn.execute("""
                 INSERT OR REPLACE INTO analysis_metadata_index (
                     analysis_id, dataset_id, variable_id, start_year, end_year,
@@ -214,7 +248,21 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
                 signed_bytes
             ))
             conn.commit()
+
+            if pruned:
+                try:
+                    conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
+                    conn.execute("PRAGMA incremental_vacuum;")
+                except Exception:
+                    try:
+                        conn.execute("PRAGMA wal_checkpoint(PASSIVE);")
+                    except Exception:
+                        pass
     except Exception as exc:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         logger.error("Error saving cache for analysis_id=%s: %s", analysis_id, exc)
 
 
@@ -349,6 +397,10 @@ def save_cell_to_db_cache(
             ))
             conn.commit()
     except Exception as exc:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
         logger.error("Error saving cell cache for key=%s: %s", f"{analysis_id}:{lat:.4f}:{lon:.4f}", exc)
 
 

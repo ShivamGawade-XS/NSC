@@ -26,7 +26,7 @@ def test_sqlite_db_cache_lifecycle(tmp_path):
         end_year=2020,
         bbox=[-100.0, 31.0, -95.0, 36.0],
         alpha=0.05,
-        apply_fdr=True
+        use_fdr=True
     )
     payload = {
         "req": req,
@@ -64,6 +64,7 @@ def test_sqlite_db_cache_lifecycle(tmp_path):
 def test_json_encoder_ndarray_pydantic_fidelity():
     """Verify safe JSON encoder/decoder round-trip for Pydantic models, ndarrays, and scalars."""
     import numpy as np
+
     from app.schemas.analysis import AnalysisRequest, AnalysisSummary
 
     test_id = f"ana_fidelity_{int(time.time() * 1000)}"
@@ -220,3 +221,156 @@ def test_spatial_cell_cache_read_write_lifecycle():
 
     # Test missing cell returns None
     assert load_cell_from_db_cache(analysis_id, 0.0, 0.0) is None
+
+
+def test_sqlite_concurrent_read_write_stress():
+    """
+    Verify high-concurrency stress testing across SQLite WAL database cache.
+    Executes 80 simultaneous save_to_db_cache, load_from_db_cache, and
+    find_cached_analysis_id operations across 16 worker threads.
+    Asserts zero sqlite3.OperationalError exceptions, 100% HMAC verification accuracy,
+    and zero cache collisions between use_fdr=True and use_fdr=False.
+    """
+    import concurrent.futures
+    import sqlite3
+
+    unique_batch = int(time.time() * 1000)
+    total_operations = 80
+    worker_threads = 16
+
+    def stress_worker(i: int) -> dict:
+        use_fdr = (i % 2 == 0)
+        group_idx = i // 2
+        var_id = f"STRESS_VAR_{unique_batch}_{group_idx}"
+        analysis_id = f"ana_stress_{unique_batch}_{i}_{use_fdr}"
+        bbox = [-100.0 + (group_idx * 0.005), 30.0, -90.0, 40.0]
+
+        req = AnalysisRequest(
+            dataset_id="merra2_reanalysis",
+            variable_id=var_id,
+            start_year=2000,
+            end_year=2020,
+            bbox=bbox,
+            alpha=0.05,
+            use_fdr=use_fdr
+        )
+        payload = {
+            "req": req,
+            "worker_index": i,
+            "use_fdr": use_fdr,
+            "token": f"hmac_verified_{i}_{unique_batch}"
+        }
+
+        # 1. save_to_db_cache
+        save_to_db_cache(analysis_id, payload)
+
+        # 2. load_from_db_cache (verifying HMAC integrity)
+        loaded = load_from_db_cache(analysis_id)
+        hmac_valid = (
+            loaded is not None
+            and loaded.get("token") == f"hmac_verified_{i}_{unique_batch}"
+            and loaded.get("use_fdr") == use_fdr
+        )
+
+        # 3. find_cached_analysis_id for matching use_fdr
+        found_id = find_cached_analysis_id(
+            dataset_id="merra2_reanalysis",
+            variable_id=var_id,
+            start_year=2000,
+            end_year=2020,
+            bbox=bbox,
+            alpha=0.05,
+            use_fdr=use_fdr
+        )
+        exact_match = (found_id == analysis_id)
+
+        # 4. Verify no collision with opposite use_fdr query
+        opposite_id = find_cached_analysis_id(
+            dataset_id="merra2_reanalysis",
+            variable_id=var_id,
+            start_year=2000,
+            end_year=2020,
+            bbox=bbox,
+            alpha=0.05,
+            use_fdr=not use_fdr
+        )
+        collision = (opposite_id == analysis_id)
+
+        # 5. Verify spatial_cell_cache roundtrip
+        cell_lat = round(30.0 + (i * 0.05), 4)
+        cell_lon = round(-95.0 + (i * 0.05), 4)
+        cell_payload = {
+            "lat": cell_lat,
+            "lon": cell_lon,
+            "slope": round(0.01 * (i + 1), 4),
+            "p_value": 0.001,
+            "worker_idx": i
+        }
+        save_cell_to_db_cache(analysis_id, cell_lat, cell_lon, cell_payload)
+        cell_loaded = load_cell_from_db_cache(analysis_id, cell_lat, cell_lon)
+        cell_valid = (
+            cell_loaded is not None
+            and cell_loaded.get("worker_idx") == i
+            and cell_loaded.get("slope") == round(0.01 * (i + 1), 4)
+        )
+
+        return {
+            "i": i,
+            "hmac_valid": hmac_valid,
+            "exact_match": exact_match,
+            "collision": collision,
+            "cell_valid": cell_valid
+        }
+
+    results = []
+    operational_errors = []
+    general_errors = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=worker_threads) as executor:
+        future_to_idx = {executor.submit(stress_worker, i): i for i in range(total_operations)}
+        for future in concurrent.futures.as_completed(future_to_idx):
+            idx = future_to_idx[future]
+            try:
+                res = future.result()
+                results.append(res)
+            except sqlite3.OperationalError as oe:
+                operational_errors.append((idx, str(oe)))
+                general_errors.append((idx, str(oe)))
+            except Exception as exc:
+                general_errors.append((idx, str(exc)))
+
+    # Assertions
+    # 1. Zero sqlite3.OperationalError exceptions (e.g. database locked, busy timeout)
+    assert len(operational_errors) == 0, (
+        f"Encountered {len(operational_errors)} sqlite3.OperationalError exceptions: {operational_errors}"
+    )
+    assert len(general_errors) == 0, (
+        f"Encountered {len(general_errors)} thread execution errors: {general_errors}"
+    )
+
+    # 2. 100% HMAC verification accuracy across all 80 loads
+    assert len(results) == total_operations
+    hmac_successes = sum(1 for r in results if r["hmac_valid"])
+    assert hmac_successes == total_operations, (
+        f"HMAC verification accuracy was {hmac_successes}/{total_operations} ({hmac_successes / total_operations:.1%})"
+    )
+
+    # 3. Exact matching of persisted records
+    exact_matches = sum(1 for r in results if r["exact_match"])
+    assert exact_matches == total_operations, (
+        f"Exact match count was {exact_matches}/{total_operations}"
+    )
+
+    # 4. Zero cache collisions between use_fdr=True and use_fdr=False
+    collisions = sum(1 for r in results if r["collision"])
+    assert collisions == 0, (
+        f"Detected {collisions} cache collisions between use_fdr=True and use_fdr=False"
+    )
+
+    # 5. 100% valid spatial_cell_cache roundtrips
+    cell_successes = sum(1 for r in results if r["cell_valid"])
+    assert cell_successes == total_operations, (
+        f"Spatial cell cache roundtrip accuracy was {cell_successes}/{total_operations} ({cell_successes / total_operations:.1%})"
+    )
+
+

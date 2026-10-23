@@ -152,9 +152,10 @@ def discover_candidate_signals(
             cell_ts = data_3d[:, i, j]
             valid_ts = ~np.isnan(cell_ts)
             if np.sum(valid_ts) >= 3:
-                res, _ = stats.kendalltau(np.arange(len(cell_ts))[valid_ts], cell_ts[valid_ts])
-                if not np.isnan(res):
-                    tau_val = round(float(res), 4)
+                kt_res = stats.kendalltau(np.arange(len(cell_ts))[valid_ts], cell_ts[valid_ts])
+                kt_val = float(getattr(kt_res, "statistic", 0.0))
+                if not np.isnan(kt_val):
+                    tau_val = round(kt_val, 4)
 
         sig_dict: dict[str, Any] = {
             "lat": float(latitudes[i]),

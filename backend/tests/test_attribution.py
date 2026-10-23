@@ -9,9 +9,10 @@ Verifies:
 """
 
 import numpy as np
-from app.science.attribution import compute_event_attribution
-from app.main import app
 from fastapi.testclient import TestClient
+
+from app.main import app
+from app.science.attribution import compute_event_attribution
 
 client = TestClient(app)
 
