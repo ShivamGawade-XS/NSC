@@ -5,9 +5,12 @@
  * Fully offline, Section 508 accessibility compliant, zero dependencies.
  */
 
+import { isAudioMuted } from './audio';
+
 let activeTimeouts = [];
 let activeGainNodes = [];
 let audioCtx = null;
+let masterCompressor = null;
 
 function getAudioContext() {
   if (typeof window === 'undefined') return null;
@@ -21,6 +24,19 @@ function getAudioContext() {
     audioCtx.resume().catch(() => {});
   }
   return audioCtx;
+}
+
+function getMasterCompressor(ctx) {
+  if (!masterCompressor || masterCompressor.context !== ctx) {
+    masterCompressor = ctx.createDynamicsCompressor();
+    masterCompressor.threshold.setValueAtTime(-20, ctx.currentTime);
+    masterCompressor.knee.setValueAtTime(25, ctx.currentTime);
+    masterCompressor.ratio.setValueAtTime(8, ctx.currentTime);
+    masterCompressor.attack.setValueAtTime(0.003, ctx.currentTime);
+    masterCompressor.release.setValueAtTime(0.15, ctx.currentTime);
+    masterCompressor.connect(ctx.destination);
+  }
+  return masterCompressor;
 }
 
 // Scientific Pentatonic Tuning (C4 - C6) for pleasing harmonic exploration
@@ -50,6 +66,11 @@ export function stopSonification() {
         gain.gain.cancelScheduledValues(now);
         gain.gain.setValueAtTime(gain.gain.value, now);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+        setTimeout(() => {
+          try {
+            gain.disconnect();
+          } catch {}
+        }, 60);
       } catch {
         // Safe cleanup
       }
@@ -77,7 +98,7 @@ export function sonifyTimeSeries(
 ) {
   stopSonification();
 
-  if (!years.length || !values.length) {
+  if (isAudioMuted() || !years.length || !values.length) {
     callbacks.onEnd?.();
     return;
   }
@@ -92,14 +113,8 @@ export function sonifyTimeSeries(
   const maxVal = Math.max(...values);
   const valRange = maxVal > minVal ? maxVal - minVal : 1;
 
-  // Master Compressor to prevent distortion on rapid bursts
-  const compressor = ctx.createDynamicsCompressor();
-  compressor.threshold.setValueAtTime(-20, ctx.currentTime);
-  compressor.knee.setValueAtTime(25, ctx.currentTime);
-  compressor.ratio.setValueAtTime(8, ctx.currentTime);
-  compressor.attack.setValueAtTime(0.003, ctx.currentTime);
-  compressor.release.setValueAtTime(0.15, ctx.currentTime);
-  compressor.connect(ctx.destination);
+  // Single Reusable Master Compressor to prevent distortion on rapid bursts
+  const compressor = getMasterCompressor(ctx);
 
   years.forEach((yr, idx) => {
     const timeoutId = setTimeout(() => {
@@ -123,14 +138,22 @@ export function sonifyTimeSeries(
         // Primary Oscillator (Tone)
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
         activeGainNodes.push(gain);
+
+        osc.onended = () => {
+          try {
+            osc.disconnect();
+            filter.disconnect();
+            gain.disconnect();
+          } catch {}
+        };
 
         // Warm timber for warming trends, crisp bell for cooling
         osc.type = slope >= 0 ? 'triangle' : 'sine';
         osc.frequency.setValueAtTime(freq, now);
 
         // Low-pass filter for smooth organic warmth
-        const filter = ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(Math.min(3000, freq * 3.5), now);
 
@@ -152,6 +175,13 @@ export function sonifyTimeSeries(
           const chimeOsc = ctx.createOscillator();
           const chimeGain = ctx.createGain();
           activeGainNodes.push(chimeGain);
+
+          chimeOsc.onended = () => {
+            try {
+              chimeOsc.disconnect();
+              chimeGain.disconnect();
+            } catch {}
+          };
 
           chimeOsc.type = 'sine';
           chimeOsc.frequency.setValueAtTime(1318.51, now); // E6 chime
@@ -178,7 +208,8 @@ export function sonifyTimeSeries(
         if (idx === years.length - 1) {
           const finalId = setTimeout(() => {
             callbacks.onEnd?.();
-          }, stepDurationMs);
+            stopSonification();
+          }, stepDurationMs + 100);
           activeTimeouts.push(finalId);
         }
       } catch {

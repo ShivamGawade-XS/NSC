@@ -1,15 +1,12 @@
 {
   "include": [
-    "."
+    "backend"
   ],
   "extraPaths": [
-    ".",
-    "C:/Users/ASHWITH/AppData/Local/Python/pythoncore-3.14-64/Lib/site-packages",
-    "c:/Users/ASHWITH/venv/Lib/site-packages",
-    "C:/Users/ASHWITH/AppData/Local/Programs/Python/Python313/Lib/site-packages"
+    "backend"
   ],
-  "pythonPath": "C:/Users/ASHWITH/AppData/Local/Python/pythoncore-3.14-64/python.exe",
-  "pythonVersion": "3.14",
-  "pythonPlatform": "Windows",
-  "reportMissingImports": "none"
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "standard",
+  "reportMissingImports": "error",
+  "reportMissingModuleSource": "none"
 }

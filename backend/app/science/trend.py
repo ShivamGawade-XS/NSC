@@ -4,8 +4,9 @@ Implements non-parametric Mann-Kendall test, Hamed & Rao (1998) autocorrelation 
 Sen's slope (Theil-Sen robust estimator), and Benjamini-Hochberg False Discovery Rate (FDR).
 """
 
-from typing import Any
+import math
 import warnings
+from typing import Any
 
 import numpy as np
 from scipy import stats
@@ -33,7 +34,7 @@ def hamed_rao_variance_correction(
     """
     data = np.asarray(data, dtype=float)
     if data.ndim == 1:
-        valid_mask = ~np.isnan(data)
+        valid_mask = np.isfinite(data)
         valid_data = data[valid_mask]
         n = len(valid_data)
         if n < 8:
@@ -74,8 +75,11 @@ def hamed_rao_variance_correction(
         if n_denom > 0:
             correction_factor = 1.0 + (2.0 / n_denom) * sum_terms
             # 6. Clamp correction factor floor to max(1.0, correction_factor)
+            if not math.isfinite(correction_factor):
+                return var_s
             correction_factor = max(1.0, float(correction_factor))
-            return float(var_s * correction_factor)
+            res = float(var_s * correction_factor)
+            return res if math.isfinite(res) else var_s
         return var_s
 
     elif data.ndim == 3:
@@ -137,8 +141,8 @@ def mann_kendall_test(
     Returns:
         Dict containing S, var_s, z, p_value, tau, and boolean 'significant'.
     """
-    # Clean NaNs
-    valid_mask = ~np.isnan(y)
+    # Clean NaNs and infs
+    valid_mask = np.isfinite(y)
     data = y[valid_mask]
     n = len(data)
 
@@ -174,7 +178,7 @@ def mann_kendall_test(
     if correct_autocorrelation and var_s > 0:
         var_s = hamed_rao_variance_correction(data, var_s)
 
-    if var_s <= 0:
+    if not math.isfinite(var_s) or var_s <= 0:
         z = 0.0
         p_val = 1.0
     else:
@@ -193,8 +197,17 @@ def mann_kendall_test(
     n_pairs = n * (n - 1) / 2.0
     tau = s / n_pairs if n_pairs > 0 else 0.0
 
+    if not math.isfinite(p_val):
+        p_val = 1.0
+    if not math.isfinite(z):
+        z = 0.0
+    if not math.isfinite(tau):
+        tau = 0.0
+    if not math.isfinite(var_s):
+        var_s = 0.0
+
     # Trend direction label
-    is_sig = p_val < alpha
+    is_sig = bool(p_val < alpha)
     if is_sig and s > 0:
         direction = "increasing"
     elif is_sig and s < 0:
@@ -206,7 +219,7 @@ def mann_kendall_test(
         "s": s,
         "var_s": float(var_s),
         "z": float(z),
-        "p_value": p_val,
+        "p_value": float(p_val),
         "tau": float(tau),
         "significant": is_sig,
         "direction": direction,
@@ -233,12 +246,12 @@ def sens_slope(
     Returns:
         Dict with 'slope', 'intercept', 'ci_lower', 'ci_upper'.
     """
-    valid_mask = ~np.isnan(y)
+    valid_mask = np.isfinite(y)
     data = y[valid_mask]
     n = len(data)
 
     if n < 2:
-        val = float(data[0]) if n == 1 else 0.0
+        val = float(data[0]) if n == 1 and np.isfinite(data[0]) else 0.0
         return {"slope": 0.0, "intercept": val, "ci_lower": 0.0, "ci_upper": 0.0}
 
     if time_steps is None:
@@ -251,13 +264,20 @@ def sens_slope(
     dy = data[None, :] - data[:, None]
     
     iu = np.triu_indices(n, k=1)
-    valid_pairs = dt[iu] != 0
+    valid_pairs = (dt[iu] != 0) & np.isfinite(dt[iu]) & np.isfinite(dy[iu])
     raw_slopes = dy[iu][valid_pairs] / dt[iu][valid_pairs]
-    slopes = np.sort(raw_slopes)
+    slopes = np.sort(raw_slopes[np.isfinite(raw_slopes)])
     n_prime = len(slopes)
 
     median_slope = float(np.median(slopes)) if n_prime > 0 else 0.0
-    intercept = float(np.median(data - median_slope * t))
+    if not math.isfinite(median_slope):
+        median_slope = 0.0
+
+    residuals = data - median_slope * t
+    residuals = residuals[np.isfinite(residuals)]
+    intercept = float(np.median(residuals)) if len(residuals) > 0 else 0.0
+    if not math.isfinite(intercept):
+        intercept = 0.0
 
     # Gilbert (1987) non-parametric confidence interval for slope
     if n_prime > 2:
@@ -303,10 +323,11 @@ def benjamini_hochberg_fdr(
     Returns:
         (adjusted_q_values, is_significant_fdr) with identical shape to input.
     """
-    orig_shape = p_values.shape
-    flat_p = p_values.flatten()
-    valid_mask = ~np.isnan(flat_p)
-    m = np.sum(valid_mask)
+    p_arr = np.asarray(p_values, dtype=float)
+    orig_shape = p_arr.shape
+    flat_p = p_arr.flatten()
+    valid_mask = np.isfinite(flat_p)
+    m = int(np.sum(valid_mask))
 
     q_vals = np.full(flat_p.shape, np.nan, dtype=float)
     sig_flags = np.zeros(flat_p.shape, dtype=bool)
@@ -315,7 +336,7 @@ def benjamini_hochberg_fdr(
         return q_vals.reshape(orig_shape), sig_flags.reshape(orig_shape)
 
     valid_indices = np.where(valid_mask)[0]
-    valid_p = flat_p[valid_mask]
+    valid_p = np.clip(flat_p[valid_mask], 0.0, 1.0)
 
     # Sort ascending
     sort_order = np.argsort(valid_p)
@@ -504,7 +525,7 @@ class SpatialPettittResult(dict):
         try:
             return self[name]
         except KeyError:
-            raise AttributeError(f"'SpatialPettittResult' object has no attribute '{name}'")
+            raise AttributeError(f"'SpatialPettittResult' object has no attribute '{name}'") from None
 
     def __iter__(self):
         return iter((self["changepoint_year"], self["changepoint_p_value"]))
@@ -532,7 +553,7 @@ def pettitt_changepoint_test(
             raise ValueError("Must provide 'series' or 'y'")
 
     series_arr = np.asarray(series, dtype=float)
-    valid_mask = ~np.isnan(series_arr)
+    valid_mask = np.isfinite(series_arr)
     valid_x = series_arr[valid_mask]
     T = len(valid_x)
 
@@ -659,7 +680,8 @@ def compute_spatial_pettitt(
         else:
             cp_year = cp_year_raw
     else:
-        cp_year = np.where(invalid_cells, None, cp_year_raw)
+        cp_year = np.array(cp_year_raw, dtype=object)
+        cp_year[invalid_cells] = None
 
     is_sig = (p_vals < alpha) & (~invalid_cells)
 

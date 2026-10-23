@@ -2,6 +2,9 @@
  * Curated NASA Space Apps 2026 Case Study Hotspots
  * Grounded in peer-reviewed literature and empirical NASA satellite reanalysis.
  * Synchronized with computational presets for real-time statistical inference.
+ * NOTE: 'rate' and 'significance' serve as initial loading fallback placeholders
+ * while isLoading is true; live computed domain mean/cell slope, p/q values, and
+ * Moran's I are dynamically rendered by JudgeTourOverlay.
  */
 
 export const CASE_STUDY_HOTSPOTS = [

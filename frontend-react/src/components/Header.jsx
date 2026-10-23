@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 import { playTactileClick } from '../utils/audio';
+import { safeStorage } from '../utils/safeStorage';
 
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const analysisData = useStore((s) => s.analysisData);
   const [utc, setUtc] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;
-    const savedTheme = localStorage.getItem('earthsift_theme');
+    const savedTheme = safeStorage.getItem('earthsift_theme');
     if (savedTheme) return savedTheme === 'dark';
     return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true;
   });
@@ -30,10 +32,10 @@ export default function Header() {
     setIsDark(nextDark);
     if (nextDark) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('earthsift_theme', 'dark');
+      safeStorage.setItem('earthsift_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('earthsift_theme', 'light');
+      safeStorage.setItem('earthsift_theme', 'light');
     }
   };
 
@@ -177,6 +179,37 @@ export default function Header() {
             )}
           </button>
 
+          {/* Provenance Integrity Status */}
+          {analysisData?.provenance && (
+            <div className="hidden xl:flex items-center pl-3 border-l border-[var(--color-border-subtle)]">
+              {analysisData.provenance.is_synthetic === true ? (
+                <div
+                  role="alert"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[11px] font-mono font-bold animate-pulse"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span>Synthetic test data — not NASA observations.</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-500/40 text-[11px] font-mono font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span>Verified NASA CF-1.8 Observations</span>
+                  {analysisData.provenance.doi && (
+                    <a
+                      href={`https://doi.org/${analysisData.provenance.doi.replace(/^https?:\/\/doi\.org\//, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-300 hover:text-emerald-100 underline decoration-emerald-500/50 text-[10px] ml-0.5"
+                      title={`View dataset DOI: ${analysisData.provenance.doi}`}
+                    >
+                      DOI ↗
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Observatory Clock */}
           <div className="pl-3 border-l border-[var(--color-border-subtle)] text-right">
             <div className="text-xs font-mono text-[var(--color-text-main)] tabular-nums font-medium">
@@ -306,7 +339,13 @@ export default function Header() {
 
           <div className="pt-2 flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)]">
             <span>{utc}</span>
-            <span className="text-[11px] text-[var(--color-text-secondary)]">CF-1.8 Compliant</span>
+            {analysisData?.provenance?.is_synthetic === true ? (
+              <span className="text-amber-400 font-bold">Synthetic test data — not NASA observations.</span>
+            ) : analysisData?.provenance?.is_synthetic === false ? (
+              <span className="text-emerald-400 font-semibold">Verified NASA CF-1.8 Observations</span>
+            ) : (
+              <span className="text-[11px] text-[var(--color-text-secondary)]">CF-1.8 Compliant</span>
+            )}
           </div>
         </div>
       )}

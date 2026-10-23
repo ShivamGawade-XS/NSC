@@ -7,6 +7,7 @@ Implements the Fraction of Attributable Risk (FAR) framework based on:
 """
 
 from typing import Any
+
 import numpy as np
 import scipy.stats as stats
 

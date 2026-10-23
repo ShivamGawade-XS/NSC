@@ -5,6 +5,7 @@ Provides enterprise rate limiting across compute-heavy and export endpoints.
 
 import os
 import sys
+
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.requests import Request
@@ -71,3 +72,17 @@ limiter = Limiter(
     headers_enabled=True,
     enabled=not is_test_env,
 )
+
+# Guard against slowapi crashing when endpoints do not take response: Response as an explicit argument
+_orig_inject_headers = limiter._inject_headers
+
+
+def _safe_inject_headers(response, current_limit):
+    from starlette.responses import Response
+    if response is None or not isinstance(response, Response):
+        return response
+    return _orig_inject_headers(response, current_limit)
+
+
+limiter._inject_headers = _safe_inject_headers
+

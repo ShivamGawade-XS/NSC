@@ -7,10 +7,11 @@ Tests for Championship Production Features:
 """
 
 import numpy as np
-from app.main import app
-from app.science.export import generate_jupyter_notebook
-from app.science.trend import compute_spatial_pettitt, pettitt_changepoint_test
 from fastapi.testclient import TestClient
+
+from app.main import app
+from app.science.export import _escape_latex, generate_jupyter_notebook, generate_nasa_latex_memorandum
+from app.science.trend import compute_spatial_pettitt, pettitt_changepoint_test
 
 client = TestClient(app)
 
@@ -99,11 +100,11 @@ def test_compute_spatial_pettitt_insufficient_samples():
     assert res["changepoint_p_value"].shape == (3, 3)
     assert np.all(res["changepoint_p_value"] == 1.0)
     assert np.all(np.isnan(res["changepoint_year"]))
-    assert np.all(res["significant"] == False)
+    assert np.all(~res["significant"])
 
 
 def test_jupyter_notebook_generation():
-    """Verify self-contained Jupyter Notebook generation matches nbformat 4."""
+    """Verify self-contained Jupyter Notebook generation matches nbformat 4 and executes standalone."""
     analysis_record = {
         "variable": "T2M",
         "units": "°C",
@@ -127,9 +128,87 @@ def test_jupyter_notebook_generation():
 
     nb = generate_jupyter_notebook(analysis_record)
     assert nb["nbformat"] == 4
-    assert len(nb["cells"]) >= 5
-    assert any("Pettitt" in cell.get("source", [""])[0] or "Pettitt" in "".join(cell.get("source", [])) for cell in nb["cells"])
-    assert any("Mann-Kendall" in "".join(cell.get("source", [])) for cell in nb["cells"])
+    assert len(nb["cells"]) >= 6
+
+    # Verify presence of all required scientific methodology components
+    all_code_sources = ["".join(cell.get("source", [])) for cell in nb["cells"]]
+    combined_source = "\n".join(all_code_sources)
+
+    assert "mann_kendall_test" in combined_source
+    assert "theil_sen_and_gilbert_ci" in combined_source
+    assert "pettitt_changepoint" in combined_source
+    assert "benjamini_hochberg_fdr" in combined_source
+    assert "years = np.array(" in combined_source
+    assert "time_series = np.array(" in combined_source
+    assert "grid_cells = [" in combined_source
+
+    # Verify standalone execution of all code cells in an isolated Python scope
+    import matplotlib
+    matplotlib.use("Agg")
+    scope = {}
+    for cell in nb["cells"]:
+        if cell["cell_type"] == "code":
+            code = "".join(cell["source"])
+            exec(code, scope)
+
+    assert "mk_result" in scope
+    assert "ts_result" in scope
+    assert "pettitt_result" in scope
+    assert "q_vals" in scope
+    assert "sig_flags" in scope
+
+
+def test_latex_escaping_and_memorandum():
+    """Verify LaTeX special character escaping and NASA Technical Memorandum output."""
+    # 1. Test helper function _escape_latex directly
+    raw_str = "T2M_AIR & SURFACE #1 %_test with $50 {curly}"
+    escaped = _escape_latex(raw_str)
+    assert r"\%" in escaped
+    assert r"\_" in escaped
+    assert r"\&" in escaped
+    assert r"\#" in escaped
+    assert r"\$" in escaped
+    assert r"\{" in escaped
+    assert r"\}" in escaped
+    assert escaped == r"T2M\_AIR \& SURFACE \#1 \%\_test with \$50 \{curly\}"
+
+    # 2. Test preservation of intentional math mode expressions
+    math_str = r"Variable $\Delta T_{max}$ with 50%_error"
+    math_escaped = _escape_latex(math_str)
+    assert r"$\Delta T_{max}$" in math_escaped
+    assert r"50\%" in math_escaped
+
+    # 3. Test generate_nasa_latex_memorandum with dynamic special characters
+    record = {
+        "variable_name": "T2M_AIR & PRECIP#1",
+        "dataset_id": "merra2_reanalysis_2026",
+        "units": "°C_%",
+        "provenance": {
+            "source": "NASA & Langley Research Center",
+            "doi": "10.5067/POWER/{10.0.0}_doi"
+        },
+        "results": {
+            "cells": [
+                {"lat": 32.0, "lon": -98.0, "slope": 0.45, "significant": True}
+            ]
+        }
+    }
+    latex = generate_nasa_latex_memorandum(record, hmac_signature="HMAC_TEST#123_456")
+
+    # Dynamic fields must be escaped
+    assert r"T2M\_AIR \& PRECIP\#1" in latex
+    assert r"merra2\_reanalysis\_2026" in latex
+    assert r"NASA \& Langley Research Center" in latex
+    assert r"10.5067/POWER/\{10.0.0\}\_doi" in latex
+    assert r"HMAC\_TEST\#123\_456" in latex
+
+    # Static template math equations and formulas must remain preserved
+    assert r"\documentclass[10pt,journal,compsoc]{IEEEtran}" in latex
+    assert r"\begin{equation}" in latex
+    assert r"\end{equation}" in latex
+    assert r"$\alpha = 0.05$" in latex
+    assert r"\text{Var}^*(S)" in latex
+    assert r"\|\vec{V}\|" in latex
 
 
 def test_system_metrics_and_readiness():

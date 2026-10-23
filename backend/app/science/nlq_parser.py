@@ -5,9 +5,8 @@ Supports multi-region bounding boxes, variable resolution, temporal extraction, 
 """
 
 import re
-from typing import Any
-from app.schemas.analysis import AnalysisRequest, NLQParseResponse
 
+from app.schemas.analysis import AnalysisRequest, NLQParseResponse
 
 # Knowledge base of major climate regions with bounding boxes [min_lon, min_lat, max_lon, max_lat]
 # Sorted by key length descending so longer specific region names match before shorter substrings

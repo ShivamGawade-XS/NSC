@@ -24,12 +24,13 @@ export default function ExportButtons() {
 
   const handleShareLink = () => {
     playTactileClick(700);
+    const shareUrl = useStore.getState().getShareableUrl();
     if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(window.location.href)
-        .then(() => toast.success('Workspace URL copied'))
-        .catch(() => toast('URL: ' + window.location.href));
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => toast.success('Workspace Permlink copied'))
+        .catch(() => toast('URL: ' + shareUrl));
     } else {
-      toast('URL: ' + window.location.href);
+      toast('URL: ' + shareUrl);
     }
   };
 

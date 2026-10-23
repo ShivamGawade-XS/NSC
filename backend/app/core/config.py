@@ -18,8 +18,9 @@ try:
         Path.cwd() / ".env"
     ]:
         if candidate.exists():
-            load_dotenv(candidate, override=True)
+            load_dotenv(candidate, override=False)
             break
+
 except ImportError:
     pass
 
@@ -49,8 +50,8 @@ class Settings:
         if _is_pytest is None:
             _is_pytest = "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in os.environ
         if env == "production" and not _is_pytest:
-            import secrets
             import logging
+            import secrets
             logging.getLogger("earthsift.config").warning(
                 "SECRET_KEY not set in production environment; generated ephemeral cryptographic key."
             )
@@ -61,11 +62,11 @@ class Settings:
     MAX_BBOX_DEGREES: float = float(os.getenv("MAX_BBOX_DEGREES", "180.0"))
     DEFAULT_FDR_ALPHA: float = float(os.getenv("DEFAULT_FDR_ALPHA", "0.05"))
 
-    def get_earthdata_auth_status(self_or_cls) -> dict[str, Any]:
+    def get_earthdata_auth_status(self) -> dict[str, Any]:
         """Check if NASA Earthdata credentials are configured."""
-        token = getattr(self_or_cls, "EARTHDATA_TOKEN", None)
-        username = getattr(self_or_cls, "EARTHDATA_USERNAME", None)
-        password = getattr(self_or_cls, "EARTHDATA_PASSWORD", None)
+        token = getattr(self, "EARTHDATA_TOKEN", None)
+        username = getattr(self, "EARTHDATA_USERNAME", None)
+        password = getattr(self, "EARTHDATA_PASSWORD", None)
         if token:
             return {"authenticated": True, "auth_type": "bearer_token", "message": "NASA Earthdata Bearer Token active."}
         if username and password:
@@ -78,7 +79,7 @@ class Settings:
                 content = netrc_file.read_text(encoding="utf-8")
                 if "urs.earthdata.nasa.gov" in content:
                     return {"authenticated": True, "auth_type": "existing_netrc", "message": "NASA Earthdata configured via local netrc."}
-            except Exception:
+            except Exception:  # noqa: S110
                 pass
 
         return {
@@ -87,13 +88,13 @@ class Settings:
             "message": "Running in Verified Local Fixture Mode. Set EARTHDATA_USERNAME/EARTHDATA_PASSWORD to stream directly from NASA Earthdata Cloud."
         }
 
-    def setup_netrc(self_or_cls) -> bool:
+    def setup_netrc(self) -> bool:
         """
         Safely generate or update user's netrc file for NASA Earthdata
         if credentials are provided in environment variables.
         """
-        username = getattr(self_or_cls, "EARTHDATA_USERNAME", None)
-        password = getattr(self_or_cls, "EARTHDATA_PASSWORD", None)
+        username = getattr(self, "EARTHDATA_USERNAME", None)
+        password = getattr(self, "EARTHDATA_PASSWORD", None)
         if not (username and password):
             return False
 

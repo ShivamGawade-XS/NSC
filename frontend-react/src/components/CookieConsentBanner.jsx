@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { playTactileClick } from '../utils/audio';
+import { safeStorage } from '../utils/safeStorage';
 
 export default function CookieConsentBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const consent = localStorage.getItem('earthsift_consent');
+    const consent = safeStorage.getItem('earthsift_consent');
     if (!consent) {
       // Delay slightly for smooth non-intrusive entrance
       const timer = setTimeout(() => setVisible(true), 1200);
@@ -16,13 +17,13 @@ export default function CookieConsentBanner() {
 
   const handleAccept = () => {
     playTactileClick(600);
-    localStorage.setItem('earthsift_consent', 'accepted');
+    safeStorage.setItem('earthsift_consent', 'accepted');
     setVisible(false);
   };
 
   const handleDecline = () => {
     playTactileClick(500);
-    localStorage.setItem('earthsift_consent', 'essential_only');
+    safeStorage.setItem('earthsift_consent', 'essential_only');
     setVisible(false);
   };
 

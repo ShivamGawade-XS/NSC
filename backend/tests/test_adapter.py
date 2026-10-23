@@ -12,6 +12,7 @@ Tests DatasetAdapter contract:
 
 import numpy as np
 import pytest
+
 from app.adapters.merra2 import MERRA2Adapter
 
 
@@ -95,22 +96,81 @@ def test_merra2_fetch_subset_pipeline():
 
 
 def test_merra2_real_netcdf_ingestion():
-    """Verify authentic NASA NetCDF dataset is ingested, sliced, and verified via NASAPowerAdapter."""
+    """Verify authentic NASA NetCDF fixtures (merra2_reanalysis.nc, nasa_merra2_t2m_na.nc, nasa_merra2_precip_na.nc)
+    are ingested with is_synthetic: False, strictly ascending lat/lon, and zero leaked file descriptors."""
+    import psutil
+
+    from app.adapters.merra2 import MERRA2Adapter
+    from app.adapters.nasa_power import NASAPowerAdapter
+
+    proc = psutil.Process()
+
+    # 1. Ingest merra2_reanalysis.nc via MERRA2Adapter(prefer_live=True)
+    merra2_adapter = MERRA2Adapter()
+    res_m2 = merra2_adapter.fetch(
+        variable="T2M",
+        start_year=2000,
+        end_year=2020,
+        bbox=[-100.0, 30.0, -90.0, 40.0],
+        prefer_live=True
+    )
+    assert res_m2["is_synthetic"] is False
+    assert "NASA GMAO MERRA-2" in res_m2["data_source_label"]
+    assert np.all(np.diff(res_m2["lat"]) > 0), "MERRA-2 latitudes must be strictly ascending"
+    assert np.all(np.diff(res_m2["lon"]) > 0), "MERRA-2 longitudes must be strictly ascending"
+
+    # 2. Ingest nasa_merra2_t2m_na.nc via NASAPowerAdapter
+    power_adapter = NASAPowerAdapter()
+    res_t2m = power_adapter.fetch(
+        variable="T2M",
+        start_year=2000,
+        end_year=2020,
+        bbox=[-101.0, 31.0, -95.0, 37.0],
+        prefer_live=False
+    )
+    assert res_t2m["is_synthetic"] is False
+    assert "NASA" in res_t2m["data_source_label"]
+    assert res_t2m["data"].shape[0] == 21
+    assert np.all(np.diff(res_t2m["lat"]) > 0), "NASA POWER T2M latitudes must be strictly ascending"
+    assert np.all(np.diff(res_t2m["lon"]) > 0), "NASA POWER T2M longitudes must be strictly ascending"
+    assert 10.0 < float(res_t2m["data"].mean()) < 35.0
+
+    # 3. Ingest nasa_merra2_precip_na.nc via NASAPowerAdapter
+    res_precip = power_adapter.fetch(
+        variable="PRECTOT",
+        start_year=2000,
+        end_year=2020,
+        bbox=[-101.0, 31.0, -95.0, 37.0],
+        prefer_live=False
+    )
+    assert res_precip["is_synthetic"] is False
+    assert "NASA" in res_precip["data_source_label"]
+    assert res_precip["data"].shape[0] == 21
+    assert np.all(np.diff(res_precip["lat"]) > 0), "NASA POWER PRECTOT latitudes must be strictly ascending"
+    assert np.all(np.diff(res_precip["lon"]) > 0), "NASA POWER PRECTOT longitudes must be strictly ascending"
+    assert 0.1 < float(res_precip["data"].mean()) < 25.0
+
+    # 4. Verify zero leaked NetCDF file descriptors across all three fixtures
+    open_nc = [f.path for f in proc.open_files() if f.path.endswith(".nc")]
+    assert len(open_nc) == 0, f"Leaked NetCDF file descriptors detected: {open_nc}"
+
+
+def test_nasa_power_exceeding_10_degree_bbox_clamping():
+    """Verify nasa_power queries exceeding 10° x 10° set provenance.bbox_clamped = True and populate provenance.warning."""
     from app.adapters.nasa_power import NASAPowerAdapter
     adapter = NASAPowerAdapter()
-    # Bbox within the bundled authentic NASA fixture coverage (Texas/Southern Plains)
-    res = adapter.fetch(variable="T2M", start_year=2000, end_year=2020,
-                        bbox=[-101.0, 31.0, -95.0, 37.0], prefer_live=False)
-    assert "data" in res
-    assert res["variable_id"] == "T2M"
-    assert res["is_synthetic"] is False
-    assert "NASA" in res["data_source_label"]
-    assert res["data"].shape[0] == 21       # 21 years inclusive
-    assert np.all(np.diff(res["lat"]) > 0)  # latitudes ascending
-    assert np.all(np.diff(res["lon"]) > 0)  # longitudes ascending
-    # Verify physically plausible temperatures (Texas: 17–22 °C annual mean)
-    assert float(res["data"].mean()) > 10.0
-    assert float(res["data"].mean()) < 35.0
+    data = adapter.fetch(
+        variable="T2M",
+        start_year=2000,
+        end_year=2010,
+        bbox=[-115.0, 25.0, -95.0, 45.0],  # 20° x 20° delta
+        prefer_live=False
+    )
+    prov = data["provenance"]
+    assert prov.get("bbox_clamped") is True
+    assert "warning" in prov and prov["warning"] is not None
+    assert "exceeded NASA POWER 10°" in prov["warning"]
+
 
 
 def test_nasa_power_adapter_live_metadata():
@@ -159,6 +219,7 @@ def test_nasa_power_live_retry_and_timeout():
     """Verify live HTTP calls retry on 429/503 with exponential backoff and timeout=12.0."""
     import urllib.error
     from unittest.mock import MagicMock, patch
+
     from app.adapters.nasa_power import NASAPowerAdapter
 
     adapter = NASAPowerAdapter()
@@ -169,7 +230,8 @@ def test_nasa_power_live_retry_and_timeout():
         attempts += 1
         assert timeout == 12.0
         if attempts == 1:
-            raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", {}, None)
+            from typing import Any, cast
+            raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", cast(Any, {}), None)
         mock_resp = MagicMock()
         mock_resp.status = 200
         mock_resp.read.return_value = b"authentic_nasa_netcdf_data" * 100

@@ -3,16 +3,17 @@ import os
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 import psutil
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
+from slowapi.middleware import SlowAPIASGIMiddleware
+from starlette.types import Message, Receive, Scope, Send
 
 from app.api.endpoints import router as api_router
 from app.core.config import settings
@@ -44,7 +45,7 @@ app = FastAPI(
 )
 
 # Connect SlowAPI limiter to FastAPI state and register custom exception handler with Retry-After header
-def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+def custom_rate_limit_exceeded_handler(request: Request, exc: Any) -> JSONResponse:
     retry_after = getattr(exc, "retry_after", 60) or 60
     response = JSONResponse(
         status_code=429,
@@ -60,13 +61,12 @@ def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded)
         limiter_obj = getattr(limiter_inst, "limiter", None) if limiter_inst else None
         if limiter_obj and hasattr(limiter_obj, "_inject_headers") and hasattr(getattr(request, "state", None), "view_rate_limit"):
             response = limiter_obj._inject_headers(response, request.state.view_rate_limit)
-    except Exception:
+    except Exception:  # noqa: S110
         pass  # Safety net: never crash the 429 handler
     return response
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, custom_rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
 
 
 @app.exception_handler(RequestValidationError)
@@ -74,7 +74,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     """Standardize input validation errors into clean, structured JSON."""
     errors = exc.errors()
     safe_errors = [
-        f"{' -> '.join(str(l) for l in err.get('loc', []))}: {err.get('msg', 'Validation error')}"
+        f"{' -> '.join(str(loc_item) for loc_item in err.get('loc', []))}: {err.get('msg', 'Validation error')}"
         for err in errors
     ]
     return JSONResponse(
@@ -103,89 +103,141 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 # Security headers and request size limiter
-class SecurityHardeningMiddleware(BaseHTTPMiddleware):
-    def _apply_security_headers(self, response: Response, request: Request) -> Response:
-        # Baseline security headers
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["X-XSS-Protection"] = "0"
-        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
-        response.headers["Permissions-Policy"] = (
-            "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
-        )
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+DEV_CSP = (
+    b"default-src 'self'; "
+    b"script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    b"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    b"font-src 'self' https://fonts.gstatic.com data:; "
+    b"img-src 'self' data: blob: https://*.arcgisonline.com https://server.arcgisonline.com "
+    b"https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
+    b"connect-src 'self' http://localhost:8000 http://localhost:3000 "
+    b"http://127.0.0.1:8000 http://127.0.0.1:3000 "
+    b"https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
+    b"frame-ancestors 'none'; "
+    b"base-uri 'self'; "
+    b"form-action 'self';"
+)
 
-        # Content Security Policy:
-        # In development mode, allow Swagger/ReDoc CDN assets for interactive documentation.
-        # For all production routes, enforce strict script-src 'self' with no unsafe-inline or CDN scripts.
-        is_dev_docs = (
-            request.url.path in ("/docs", "/redoc", "/openapi.json")
-            and os.getenv("ENVIRONMENT") != "production"
-        )
-        if is_dev_docs:
-            script_src = "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
-        else:
-            script_src = "script-src 'self';"
+PROD_CSP = (
+    b"default-src 'self'; "
+    b"script-src 'self'; "
+    b"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    b"font-src 'self' https://fonts.gstatic.com data:; "
+    b"img-src 'self' data: blob: https://*.arcgisonline.com https://server.arcgisonline.com "
+    b"https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
+    b"connect-src 'self' http://localhost:8000 http://localhost:3000 "
+    b"http://127.0.0.1:8000 http://127.0.0.1:3000 "
+    b"https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
+    b"frame-ancestors 'none'; "
+    b"base-uri 'self'; "
+    b"form-action 'self';"
+)
 
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            f"{script_src} "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com data:; "
-            "img-src 'self' data: blob: https://*.arcgisonline.com https://server.arcgisonline.com "
-            "https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
-            "connect-src 'self' http://localhost:8000 http://localhost:3000 "
-            "http://127.0.0.1:8000 http://127.0.0.1:3000 "
-            "https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
-            "frame-ancestors 'none'; "
-            "base-uri 'self'; "
-            "form-action 'self';"
-        )
-        return response
+BASE_SECURITY_HEADERS = (
+    (b"x-content-type-options", b"nosniff"),
+    (b"x-frame-options", b"DENY"),
+    (b"referrer-policy", b"strict-origin-when-cross-origin"),
+    (b"x-xss-protection", b"0"),
+    (b"cross-origin-opener-policy", b"same-origin"),
+    (b"cross-origin-resource-policy", b"same-origin"),
+    (b"permissions-policy", b"geolocation=(), camera=(), microphone=(), payment=(), usb=()"),
+    (b"strict-transport-security", b"max-age=31536000; includeSubDomains; preload"),
+)
 
-    async def dispatch(self, request: Request, call_next):
-        # Bound request payload size to prevent memory exhaustion
-        content_length = request.headers.get("content-length")
+
+class SecurityHardeningMiddleware:
+    """High-performance pure ASGI security middleware providing OWASP ASVS headers and DoS defense."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers_dict = {k.lower(): v for k, v in scope.get("headers", [])}
+        content_length = headers_dict.get(b"content-length")
         if content_length is not None:
             try:
-                if int(content_length) > MAX_CONTENT_LENGTH:
-                    return self._apply_security_headers(
-                        JSONResponse(
-                            status_code=413,
-                            content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
-                        ),
-                        request
-                    )
+                cl_val = int(content_length.decode("latin1"))
+                if cl_val > MAX_CONTENT_LENGTH:
+                    await self._send_json(send, 413, b'{"detail": "Payload Too Large: Maximum permitted request body is 2MB."}', scope)
+                    return
             except ValueError:
-                return self._apply_security_headers(
-                    JSONResponse(
-                        status_code=400,
-                        content={"detail": "Invalid Content-Length header: must be a valid integer."}
-                    ),
-                    request
-                )
+                await self._send_json(send, 400, b'{"detail": "Invalid Content-Length header: must be a valid integer."}', scope)
+                return
 
-        # Guard against chunked transfer encoding (missing Content-Length) streaming oversized bodies
-        if request.method in ("POST", "PUT", "PATCH"):
-            chunks: list[bytes] = []
+        # Check chunked streaming bodies for POST, PUT, PATCH without Content-Length
+        method = scope.get("method", "")
+        if method in ("POST", "PUT", "PATCH") and content_length is None:
+            buffered = []
             total_bytes = 0
-            async for chunk in request.stream():
-                total_bytes += len(chunk)
-                if total_bytes > MAX_CONTENT_LENGTH:
-                    return self._apply_security_headers(
-                        JSONResponse(
-                            status_code=413,
-                            content={"detail": "Payload Too Large: Maximum permitted request body is 2MB."}
-                        ),
-                        request
-                    )
-                chunks.append(chunk)
-            request._body = b"".join(chunks)
+            exhausted = False
+            while not exhausted:
+                msg = await receive()
+                if msg["type"] == "http.request":
+                    body = msg.get("body", b"")
+                    total_bytes += len(body)
+                    if total_bytes > MAX_CONTENT_LENGTH:
+                        await self._send_json(send, 413, b'{"detail": "Payload Too Large: Maximum permitted request body is 2MB."}', scope)
+                        return
+                    buffered.append(msg)
+                    if not msg.get("more_body", False):
+                        exhausted = True
+                elif msg["type"] == "http.disconnect":
+                    return
 
-        response = await call_next(request)
-        return self._apply_security_headers(response, request)
+            it = iter(buffered)
+            async def replay():
+                try:
+                    return next(it)
+                except StopIteration:
+                    return {"type": "http.request", "body": b"", "more_body": False}
+            receive = replay
+
+        async def send_wrapper(msg: Message):
+            if msg["type"] == "http.response.start":
+                h = list(msg.get("headers", []))
+                existing_keys = {header[0].lower() for header in h}
+                for k, v in BASE_SECURITY_HEADERS:
+                    if k not in existing_keys:
+                        h.append((k, v))
+                if b"content-security-policy" not in existing_keys:
+                    path = scope.get("path", "")
+                    is_dev_docs = (
+                        path in ("/docs", "/redoc", "/openapi.json")
+                        and os.getenv("ENVIRONMENT") != "production"
+                    )
+                    csp = DEV_CSP if is_dev_docs else PROD_CSP
+                    h.append((b"content-security-policy", csp))
+                msg["headers"] = h
+            await send(msg)
+
+        await self.app(scope, receive, send_wrapper)
+
+    async def _send_json(self, send: Send, status_code: int, body: bytes, scope: Scope):
+        path = scope.get("path", "")
+        is_dev_docs = (
+            path in ("/docs", "/redoc", "/openapi.json")
+            and os.getenv("ENVIRONMENT") != "production"
+        )
+        csp = DEV_CSP if is_dev_docs else PROD_CSP
+        headers = [
+            (b"content-type", b"application/json"),
+            (b"content-length", str(len(body)).encode("ascii")),
+            (b"x-content-type-options", b"nosniff"),
+            (b"x-frame-options", b"DENY"),
+            (b"referrer-policy", b"strict-origin-when-cross-origin"),
+            (b"x-xss-protection", b"0"),
+            (b"cross-origin-opener-policy", b"same-origin"),
+            (b"cross-origin-resource-policy", b"same-origin"),
+            (b"permissions-policy", b"geolocation=(), camera=(), microphone=(), payment=(), usb=()"),
+            (b"strict-transport-security", b"max-age=31536000; includeSubDomains; preload"),
+            (b"content-security-policy", csp),
+        ]
+        await send({"type": "http.response.start", "status": status_code, "headers": headers})
+        await send({"type": "http.response.body", "body": body, "more_body": False})
 
 
 app.add_middleware(SecurityHardeningMiddleware)
@@ -218,6 +270,7 @@ app.include_router(api_router, prefix="")
 
 
 @app.get("/metrics")
+@app.get("/api/v1/metrics")
 @limiter.limit("120/minute")
 def get_metrics(request: Request):
     """System telemetry and performance metrics."""
@@ -242,13 +295,16 @@ def get_metrics(request: Request):
     }
 
 
+@app.get("/ready")
 @app.get("/api/v1/ready")
 @limiter.limit("120/minute")
 def readiness_check(request: Request):
     """Kubernetes / Cloud readiness probe."""
-    return {"ready": True, "engine": "Mann-Kendall + Theil-Sen + Pettitt + LISA"}
+    return {"status": "ready", "ready": True, "engine": "Mann-Kendall + Theil-Sen + Pettitt + LISA"}
 
 
+
+@app.get("/auth/status")
 @app.get("/api/v1/auth/status")
 @limiter.limit("120/minute")
 def earthdata_auth_status(request: Request):
@@ -256,9 +312,8 @@ def earthdata_auth_status(request: Request):
     return settings.get_earthdata_auth_status()
 
 
-# Mount frontend web instrument (prefers React build with SPA support, falls back to legacy frontend)
+# Mount frontend web instrument (React SPA)
 react_dist_dir = Path(__file__).resolve().parent.parent.parent / "frontend-react" / "dist"
-frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"
 
 if react_dist_dir.exists() and (react_dist_dir / "index.html").exists():
     assets_dir = react_dist_dir / "assets"
@@ -267,12 +322,18 @@ if react_dist_dir.exists() and (react_dist_dir / "index.html").exists():
 
     @app.get("/{full_path:path}")
     async def serve_react_app(full_path: str):
-        file_path = react_dist_dir / full_path
-        if file_path.is_file():
-            return FileResponse(file_path)
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+
+        dist_root = react_dist_dir.resolve()
+        try:
+            candidate = (react_dist_dir / full_path).resolve()
+            if candidate.is_relative_to(dist_root) and candidate.is_file():
+                return FileResponse(candidate)
+        except (ValueError, RuntimeError):
+            pass
+
         return FileResponse(react_dist_dir / "index.html")
-elif frontend_dir.exists():
-    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
 
 if __name__ == "__main__":

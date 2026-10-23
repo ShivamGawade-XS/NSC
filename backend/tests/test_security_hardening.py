@@ -9,18 +9,19 @@ Verifies defense-in-depth security controls:
 """
 
 import logging
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
+from limits import parse
+from slowapi.errors import RateLimitExceeded
+from slowapi.wrappers import Limit
 
 from app.core.config import Settings, settings
 from app.core.db_cache import load_from_db_cache, save_to_db_cache
 from app.core.logging_security import SensitiveDataScrubber
 from app.main import app, custom_rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.wrappers import Limit
-from limits import parse
 
 client = TestClient(app)
 
@@ -99,23 +100,37 @@ def test_payload_size_limit_guard_blocks_dos():
         "Content-Length": "3145728",  # 3MB > 2MB limit
         "Content-Type": "application/json",
     }
+    # Test root endpoint
     res = client.post("/analysis", content=b"{}", headers=oversized_headers)
     assert res.status_code == 413
-    data = res.json()
-    assert "Payload Too Large" in data["detail"]
+    assert "Payload Too Large" in res.json()["detail"]
+
+    # Test /api/v1/analysis endpoint
+    res_api = client.post("/api/v1/analysis", content=b"{}", headers=oversized_headers)
+    assert res_api.status_code == 413
+    assert "Payload Too Large" in res_api.json()["detail"]
 
 
-def test_chunked_streaming_payload_exceeding_limit_returns_413():
-    """Verify chunked streaming requests exceeding 2MB without Content-Length are blocked with HTTP 413."""
+def test_chunked_request_body_size_limit_blocks_dos():
+    """Verify that a streamed >2MB request without a Content-Length header returns HTTP 413."""
     def chunk_generator():
         chunk = b"X" * (64 * 1024)
         for _ in range(35):  # 35 * 64KB = 2.29MB (> 2MB limit)
             yield chunk
 
+    # Test root endpoint
     res = client.post("/analysis", content=chunk_generator(), headers={"Content-Type": "application/json"})
     assert res.status_code == 413
-    data = res.json()
-    assert "Payload Too Large" in data["detail"]
+    assert "Payload Too Large" in res.json()["detail"]
+
+    # Test /api/v1/analysis endpoint
+    res_api = client.post("/api/v1/analysis", content=chunk_generator(), headers={"Content-Type": "application/json"})
+    assert res_api.status_code == 413
+    assert "Payload Too Large" in res_api.json()["detail"]
+
+
+# Backward compatibility alias
+test_chunked_streaming_payload_exceeding_limit_returns_413 = test_chunked_request_body_size_limit_blocks_dos
 
 
 def test_invalid_content_length_header_returns_400():
@@ -156,11 +171,14 @@ def test_custom_rate_limit_exceeded_handler_rfc_compliance():
 def test_limiter_proxy_aware_ip_resolution_and_spoofing_defense(monkeypatch):
     """Verify get_client_ip extracts right-most untrusted IP only when arriving via TRUSTED_PROXY_IPS."""
     from types import SimpleNamespace
+
     from app.core.limiter import get_client_ip
 
     monkeypatch.setenv("TRUSTED_PROXY_IPS", "10.0.0.1, 10.0.0.2")
 
-    def make_mock_req(host, xff=None):
+    from typing import Any
+
+    def make_mock_req(host: str, xff: str | None = None) -> Any:
         req = SimpleNamespace()
         req.client = SimpleNamespace(host=host) if host else None
         req.headers = {"x-forwarded-for": xff} if xff else {}
@@ -269,12 +287,25 @@ def test_path_traversal_sanitization_in_netcdf_filename():
     assert safe_id == "etcpasswd"
 
 
-def test_hmac_sha256_cache_tamper_detection():
+def test_hmac_sha256_cache_tamper_detection(monkeypatch, caplog):
     """Verify tampering with SQLite cache binary blob causes safe cryptographic rejection."""
     import sqlite3
+    import zlib
     from types import SimpleNamespace
+
+    import app.core.db_cache as db_cache_mod
     from app.core.db_cache import DB_PATH
-    
+
+    # Explicitly spy on deserialization to prove rejection happens strictly BEFORE deserialization
+    deserialized_payloads = []
+    orig_deserialize = db_cache_mod._deserialize_cache_payload
+
+    def spy_deserialize(raw_bytes):
+        deserialized_payloads.append(raw_bytes)
+        return orig_deserialize(raw_bytes)
+
+    monkeypatch.setattr(db_cache_mod, "_deserialize_cache_payload", spy_deserialize)
+
     test_analysis_id = "test_security_hmac_tamper_456"
     fake_req = SimpleNamespace(
         dataset_id="test", variable_id="test",
@@ -285,15 +316,17 @@ def test_hmac_sha256_cache_tamper_detection():
         "req": fake_req,
         "data": "original_authentic_data"
     }
-    
+
     # Save valid signed cache entry
     save_to_db_cache(test_analysis_id, fake_payload)
-    
-    # Verify valid load succeeds
+
+    # Verify valid load succeeds and calls deserialization exactly once
     loaded = load_from_db_cache(test_analysis_id)
     assert loaded is not None
     assert loaded["data"] == "original_authentic_data"
-    
+    assert len(deserialized_payloads) == 1
+    deserialized_payloads.clear()
+
     # Verify access_count telemetry was persisted upon cache hit
     conn = sqlite3.connect(str(DB_PATH))
     with conn:
@@ -302,28 +335,64 @@ def test_hmac_sha256_cache_tamper_detection():
         acc_count = cur.fetchone()[0]
         assert acc_count == 2, f"Expected access_count to increment to 2, got {acc_count}"
 
-    # Now simulate an attacker tampering with the payload in SQLite
-    conn = sqlite3.connect(str(DB_PATH))
+    # --- Vector A (Bit-flip tamper) ---
+    # Flip bytes in the signed payload and assert load_from_db_cache returns None without deserializing
     with conn:
         cur = conn.cursor()
         cur.execute("SELECT payload_compressed FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
         blob = cur.fetchone()[0]
-        # Flip bytes in the payload section (after 32-byte HMAC) to corrupt data
-        tampered_blob = blob[:35] + b"\xff\xff\xff\xff" + blob[39:]
-        conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (tampered_blob, test_analysis_id))
-    
-    # Verify cryptographic HMAC verification catches the tamper and refuses to deserialize
-    tampered_load = load_from_db_cache(test_analysis_id)
-    assert tampered_load is None, "Insecure deserialization: tampered payload was not rejected!"
+        # A1: Corrupt signature portion (byte 10)
+        tampered_sig = blob[:10] + bytes([blob[10] ^ 0xFF]) + blob[11:]
+        conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (tampered_sig, test_analysis_id))
 
-    # Simulate an attacker injecting a truncated payload <= 32 bytes
+    caplog.clear()
+    tampered_sig_load = load_from_db_cache(test_analysis_id)
+    assert tampered_sig_load is None, "Vector A1 failed: signature bit-flipped tampered payload was not rejected!"
+    assert len(deserialized_payloads) == 0, "Vector A1 failed: deserialization executed on tampered signature!"
+    assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
+
+    # A2: Corrupt payload portion (byte 35)
     with conn:
-        conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (b"short_malicious_chunk", test_analysis_id))
-    short_load = load_from_db_cache(test_analysis_id)
-    assert short_load is None, "Insecure deserialization: short payload (<=32 bytes) was not rejected!"
-    
+        tampered_payload_blob = blob[:35] + bytes([blob[35] ^ 0xFF]) + blob[36:]
+        conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (tampered_payload_blob, test_analysis_id))
+
+    caplog.clear()
+    tampered_payload_load = load_from_db_cache(test_analysis_id)
+    assert tampered_payload_load is None, "Vector A2 failed: payload bit-flipped tampered payload was not rejected!"
+    assert len(deserialized_payloads) == 0, "Vector A2 failed: deserialization executed on tampered payload!"
+    assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
+
+    # --- Vector B (Unsigned valid zlib payload injection — the former RCE vector) ---
+    # Case B1: Short unsigned valid zlib payload (<= 32 bytes)
+    valid_compressed_payload = zlib.compress(b'{"pwned": true}')
+    assert len(valid_compressed_payload) <= 32
+    caplog.clear()
+    with conn:
+        conn.execute(
+            "UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;",
+            (valid_compressed_payload, test_analysis_id)
+        )
+    short_injected_load = load_from_db_cache(test_analysis_id)
+    assert short_injected_load is None, "Vector B1 failed: unsigned valid zlib (<=32 bytes) was not rejected!"
+    assert len(deserialized_payloads) == 0, "Vector B1 failed: deserialization was invoked on unsigned payload!"
+    assert any("Security alert: cache payload too small" in r.message for r in caplog.records)
+
+    # Case B2: Valid zlib payload preceded by a forged 32-byte HMAC prefix (> 32 bytes)
+    forged_32b_prefix = b"\xaa" * 32
+    forged_payload = forged_32b_prefix + valid_compressed_payload
+    assert len(forged_payload) > 32
+    caplog.clear()
+    with conn:
+        conn.execute(
+            "UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;",
+            (forged_payload, test_analysis_id)
+        )
+    forged_injected_load = load_from_db_cache(test_analysis_id)
+    assert forged_injected_load is None, "Vector B2 failed: valid zlib with forged HMAC prefix was not rejected!"
+    assert len(deserialized_payloads) == 0, "Vector B2 failed: deserialization was invoked on forged HMAC payload!"
+    assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
+
     # Clean up test entry
-    conn = sqlite3.connect(str(DB_PATH))
     with conn:
         conn.execute("DELETE FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
 
@@ -394,7 +463,12 @@ def test_sensitive_data_logging_scrubber_nested_dict_args():
     )
     scrubber.filter(record)
     # Check scrubbed args
-    cleaned = record.args if isinstance(record.args, dict) else record.args[0]
+    if isinstance(record.args, tuple) and len(record.args) > 0:
+        cleaned: Any = record.args[0]
+    elif isinstance(record.args, dict):
+        cleaned = record.args
+    else:
+        cleaned = {}
     assert cleaned["config"]["env"]["SECRET_KEY"] == "SECRET_KEY=[REDACTED]"
     assert cleaned["config"]["env"]["EARTHDATA_TOKEN"] == "EARTHDATA_TOKEN=[REDACTED]"
     assert cleaned["config"]["env"]["EARTHDATA_PASSWORD"] == "EARTHDATA_PASSWORD=[REDACTED]"
@@ -429,7 +503,8 @@ def test_sensitive_data_logging_scrubber_exc_text():
 
 
 def test_netrc_file_permissions_isolation(tmp_path, monkeypatch):
-    """Verify netrc setup writes credentials to the correct platform-specific netrc file."""
+    """Verify netrc setup writes credentials to the correct platform-specific netrc file and enforces 0600 on POSIX."""
+    import os
     import sys
     # On Windows it's _netrc, on POSIX it's .netrc
     netrc_name = "_netrc" if sys.platform.startswith("win") else ".netrc"
@@ -451,6 +526,15 @@ def test_netrc_file_permissions_isolation(tmp_path, monkeypatch):
         import stat
         mode = stat.S_IMODE(test_netrc.stat().st_mode)
         assert mode == 0o600
+
+    # Also test POSIX permissions enforcement logic explicitly via mock
+    chmod_calls = []
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(os, "chmod", lambda path, mode: chmod_calls.append((path, mode)))
+    posix_netrc = tmp_path / ".netrc"
+    posix_netrc.write_text("machine urs.earthdata.nasa.gov login test pass\n", encoding="utf-8")
+    settings.setup_netrc()
+    assert any(c[1] == 0o600 for c in chmod_calls), "Expected setup_netrc to enforce 0600 permissions on POSIX"
 
 
 def test_netrc_injection_rejection(tmp_path, monkeypatch):
@@ -486,3 +570,16 @@ def test_standardized_error_format_on_validation_failure():
     data = res.json()
     assert "detail" in data
     assert "errors" in data
+
+
+def test_api_404_never_returns_spa_html():
+    """Verify GET /api/v1/nonexistent_endpoint returns HTTP 404 JSON, not index.html."""
+    for path in ["/api/v1/nonexistent_route", "/api/v1/nonexistent_endpoint", "/api/v1/unknown"]:
+        res = client.get(path)
+        assert res.status_code == 404
+        assert res.headers.get("content-type", "").startswith("application/json")
+        data = res.json()
+        assert data.get("detail") == "API endpoint not found"
+        assert "<!doctype html>" not in res.text.lower()
+        assert "<html" not in res.text.lower()
+

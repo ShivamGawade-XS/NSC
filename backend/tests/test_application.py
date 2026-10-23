@@ -10,9 +10,10 @@ Verifies:
 - malformed AI request handling
 """
 
+from fastapi.testclient import TestClient
+
 from app.api.endpoints import ANALYSIS_CACHE
 from app.main import app
-from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -73,12 +74,13 @@ def test_offline_demo_mode_data_provenance():
     assert res.status_code == 200
     prov = res.json()["provenance"]
     assert prov["is_synthetic"] is True
-    assert "Synthetic test data" in prov["data_source_label"]
+    assert prov["data_source_label"] == "Synthetic test data — not NASA observations."
 
 
 def test_real_netcdf_mode_data_provenance():
-    """Verify NASA POWER adapter returns verified observational labels in the API response."""
-    payload = {
+    """Verify NASA POWER adapter and MERRA-2 prefer_live=True return verified observational labels and handle clamping."""
+    # 1. NASA POWER authentic NetCDF ingestion
+    payload_power = {
         "dataset_id": "nasa_power",
         "variable_id": "T2M",
         "start_year": 2000,
@@ -86,11 +88,43 @@ def test_real_netcdf_mode_data_provenance():
         "bbox": [-101.0, 31.0, -95.0, 37.0],
         "prefer_live": False
     }
-    res = client.post("/analysis", json=payload)
+    res = client.post("/analysis", json=payload_power)
     assert res.status_code == 200
     prov = res.json()["provenance"]
     assert prov["is_synthetic"] is False
     assert "NASA" in prov["data_source_label"]
+
+    # 2. MERRA-2 prefer_live=True authentic NetCDF ingestion
+    payload_merra2_real = {
+        "dataset_id": "merra2_reanalysis",
+        "variable_id": "T2M",
+        "start_year": 2000,
+        "end_year": 2020,
+        "bbox": [-100.0, 30.0, -90.0, 40.0],
+        "prefer_live": True
+    }
+    res_m2 = client.post("/analysis", json=payload_merra2_real)
+    assert res_m2.status_code == 200
+    prov_m2 = res_m2.json()["provenance"]
+    assert prov_m2["is_synthetic"] is False
+    assert "NASA GMAO MERRA-2" in prov_m2["data_source_label"]
+
+    # 3. NASA POWER bbox exceeding 10° x 10° sets bbox_clamped and warning
+    payload_clamped = {
+        "dataset_id": "nasa_power",
+        "variable_id": "T2M",
+        "start_year": 2000,
+        "end_year": 2010,
+        "bbox": [-115.0, 25.0, -95.0, 45.0],  # 20° x 20°
+        "prefer_live": False
+    }
+    res_clamp = client.post("/analysis", json=payload_clamped)
+    assert res_clamp.status_code == 200
+    prov_clamp = res_clamp.json()["provenance"]
+    assert prov_clamp.get("bbox_clamped") is True
+    assert "warning" in prov_clamp and prov_clamp["warning"] is not None
+    assert "exceeded NASA POWER 10°" in prov_clamp["warning"]
+
 
 
 def test_nasa_power_spatial_trend_quality():

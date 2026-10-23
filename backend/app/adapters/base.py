@@ -13,7 +13,6 @@ Interface adheres to:
 from abc import ABC, abstractmethod
 from typing import Any
 
-
 import numpy as np
 
 
@@ -95,46 +94,40 @@ class BaseDatasetAdapter(ABC):
             norm_data["time"] = norm_data["years"]
 
         # 1. 3D shape contract
-        assert "data" in norm_data, "norm_data must contain 'data' key"
-        assert "years" in norm_data, "norm_data must contain 'years' coordinate"
-        assert "lat" in norm_data, "norm_data must contain 'lat' coordinate"
-        assert "lon" in norm_data, "norm_data must contain 'lon' coordinate"
+        if not ("data" in norm_data and "years" in norm_data and "lat" in norm_data and "lon" in norm_data):
+            raise AssertionError("norm_data must contain 'data', 'years', 'lat', and 'lon' coordinates")
 
-        assert norm_data["data"].ndim == 3, f"Expected data.ndim == 3, got {norm_data['data'].ndim}"
-        assert norm_data["data"].shape == (
-            len(norm_data["years"]),
-            len(norm_data["lat"]),
-            len(norm_data["lon"]),
-        ), (
-            f"Data shape {norm_data['data'].shape} does not match "
-            f"({len(norm_data['years'])}, {len(norm_data['lat'])}, {len(norm_data['lon'])})"
-        )
+        if norm_data["data"].ndim != 3:
+            raise AssertionError(f"Expected data.ndim == 3, got {norm_data['data'].ndim}")
+
+        expected_shape = (len(norm_data["years"]), len(norm_data["lat"]), len(norm_data["lon"]))
+        if norm_data["data"].shape != expected_shape:
+            raise AssertionError(f"Data shape {norm_data['data'].shape} does not match {expected_shape}")
 
         # 2. Ascending 1D spatial coordinates
         lat = norm_data["lat"]
         lon = norm_data["lon"]
-        assert isinstance(lat, np.ndarray) and lat.ndim == 1, f"lat must be a 1D numpy array, got {type(lat)}"
-        assert isinstance(lon, np.ndarray) and lon.ndim == 1, f"lon must be a 1D numpy array, got {type(lon)}"
-        assert np.all(np.diff(lat) > 0), "lat coordinates must be strictly ascending"
-        assert np.all(np.diff(lon) > 0), "lon coordinates must be strictly ascending"
+        if not (isinstance(lat, np.ndarray) and lat.ndim == 1):
+            raise TypeError(f"lat must be a 1D numpy array, got {type(lat)}")
+        if not (isinstance(lon, np.ndarray) and lon.ndim == 1):
+            raise TypeError(f"lon must be a 1D numpy array, got {type(lon)}")
+        if not np.all(np.diff(lat) > 0):
+            raise AssertionError("lat coordinates must be strictly ascending")
+        if not np.all(np.diff(lon) > 0):
+            raise AssertionError("lon coordinates must be strictly ascending")
 
         # 3. Provenance and synthetic data labeling invariants
-        assert "is_synthetic" in norm_data and isinstance(norm_data["is_synthetic"], (bool, np.bool_)), (
-            "is_synthetic must exist at top-level and be a boolean"
-        )
-        assert "data_source_label" in norm_data and isinstance(norm_data["data_source_label"], str), (
-            "data_source_label must exist at top-level and be a string"
-        )
-        assert "provenance" in norm_data and isinstance(norm_data["provenance"], dict), (
-            "norm_data must contain a dictionary under 'provenance'"
-        )
+        if not ("is_synthetic" in norm_data and isinstance(norm_data["is_synthetic"], (bool, np.bool_))):
+            raise AssertionError("is_synthetic must exist at top-level and be a boolean")
+        if not ("data_source_label" in norm_data and isinstance(norm_data["data_source_label"], str)):
+            raise AssertionError("data_source_label must exist at top-level and be a string")
+        if not ("provenance" in norm_data and isinstance(norm_data["provenance"], dict)):
+            raise AssertionError("norm_data must contain a dictionary under 'provenance'")
         prov = norm_data["provenance"]
-        assert "is_synthetic" in prov and isinstance(prov["is_synthetic"], (bool, np.bool_)), (
-            "is_synthetic must exist in norm_data['provenance'] and be a boolean"
-        )
-        assert "data_source_label" in prov and isinstance(prov["data_source_label"], str), (
-            "data_source_label must exist in norm_data['provenance'] and be a string"
-        )
+        if not ("is_synthetic" in prov and isinstance(prov["is_synthetic"], (bool, np.bool_))):
+            raise AssertionError("is_synthetic must exist in norm_data['provenance'] and be a boolean")
+        if not ("data_source_label" in prov and isinstance(prov["data_source_label"], str)):
+            raise AssertionError("data_source_label must exist in norm_data['provenance'] and be a string")
 
         return norm_data
 

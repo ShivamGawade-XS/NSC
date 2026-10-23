@@ -5,10 +5,67 @@ import { formatCoords, formatPVal, LISA_LABELS } from '../utils/helpers';
 import * as api from '../api/client';
 import { playTactileClick, playTelemetryChime } from '../utils/audio';
 
+function ProvenanceBadge({ provenance }) {
+  if (!provenance) return null;
+  const doiClean = provenance.doi ? provenance.doi.replace(/^https?:\/\/doi\.org\//, '') : '';
+
+  return (
+    <div className="space-y-2">
+      {provenance.is_synthetic === true && (
+        <div
+          role="alert"
+          className="p-3 rounded bg-amber-500/15 border border-amber-500/50 text-amber-300 font-mono text-xs flex items-center gap-2.5 shadow-sm"
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+          <span className="font-bold tracking-wide">
+            Synthetic test data — not NASA observations.
+          </span>
+        </div>
+      )}
+
+      {provenance.is_synthetic === false && (
+        <div className="flex items-center justify-between p-2.5 rounded bg-emerald-950/30 border border-emerald-500/40 text-emerald-400 font-mono text-xs">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-bold">Verified NASA CF-1.8 Observations</span>
+          </div>
+          {doiClean ? (
+            <a
+              href={`https://doi.org/${doiClean}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-emerald-300 hover:text-emerald-100 underline decoration-emerald-500/50 flex items-center gap-1 font-semibold"
+              title={`View dataset DOI: ${doiClean}`}
+            >
+              <span>DOI</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          ) : null}
+        </div>
+      )}
+
+      {provenance.bbox_clamped === true && provenance.warning && (
+        <div
+          role="alert"
+          className="p-2.5 rounded bg-amber-950/30 border border-amber-500/40 text-amber-300 font-mono text-[11px] flex items-start gap-2"
+        >
+          <svg className="w-4 h-4 text-[#f59e0b] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <span>{provenance.warning}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function EvidencePanel() {
   const selectedCell = useStore((s) => s.selectedCell);
   const isAnomalyMode = useStore((s) => s.isAnomalyMode);
   const toggleAnomalyMode = useStore((s) => s.toggleAnomalyMode);
+  const analysisData = useStore((s) => s.analysisData);
 
   const [aiResult, setAiResult] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -16,13 +73,16 @@ export default function EvidencePanel() {
 
   if (!selectedCell) {
     return (
-      <div className="interface-card p-4">
-        <h3 className="eyebrow-label mb-2">
-          Evidence Record
-        </h3>
-        <p className="text-xs text-zinc-500 font-mono">
-          Select any observation cell on the map or pick from the signal rankings to inspect its evidence record.
-        </p>
+      <div className="space-y-3">
+        <ProvenanceBadge provenance={analysisData?.provenance} />
+        <div className="interface-card p-4">
+          <h3 className="eyebrow-label mb-2">
+            Evidence Record
+          </h3>
+          <p className="text-xs text-zinc-500 font-mono">
+            Select any observation cell on the map or pick from the signal rankings to inspect its evidence record.
+          </p>
+        </div>
       </div>
     );
   }
@@ -61,6 +121,9 @@ export default function EvidencePanel() {
 
   return (
     <div className="space-y-3">
+      {/* Provenance Alert / Verification Header */}
+      <ProvenanceBadge provenance={analysisData?.provenance} />
+
       {/* Active Target Card */}
       <motion.div
         key={`${cell.lat}-${cell.lon}`}
@@ -296,6 +359,13 @@ export default function EvidencePanel() {
               <Row label="Copula Risk" value="Joint Compound Return Period > 50 Years" />
               <Row label="Grid Resolution" value="0.5° × 0.5° NASA Reanalysis Assimilation" />
               <Row label="Source" value={ev?.source || 'NASA Ingestion (POWER & MERRA-2)'} />
+              <Row label="Integrity">
+                {analysisData?.provenance?.is_synthetic === true ? (
+                  <span className="text-amber-400 font-bold">Synthetic test data — not NASA observations.</span>
+                ) : (
+                  <span className="text-emerald-400 font-semibold">Verified NASA CF-1.8 Observations</span>
+                )}
+              </Row>
               <Row label="Limitations" value={ev?.scientific_limitation || 'Multivariate divergence across observed temporal period.'} />
             </>
           ) : (
@@ -315,12 +385,19 @@ export default function EvidencePanel() {
                   {LISA_LABELS[cluster] || cluster}
                 </span>
               </Row>
-              {cell.changepoint_year && cell.changepoint_p_value < 0.05 && (
+              {cell.changepoint_year && cell.changepoint_p_value !== undefined && cell.changepoint_p_value !== null && Number(cell.changepoint_p_value) <= 0.05 && (
                 <Row label="Regime Shift" value={`${cell.changepoint_year} (p = ${formatPVal(cell.changepoint_p_value)})`} />
               )}
               <Row label="Coverage" value={ev?.coverage || `${cell.years?.length || 0} consecutive annual records`} />
               <Row label="Method" value={ev?.method || "Mann-Kendall (1945) & Sen's Slope (1968)"} />
               <Row label="Source" value={ev?.source || 'NASA Observation'} />
+              <Row label="Integrity">
+                {analysisData?.provenance?.is_synthetic === true ? (
+                  <span className="text-amber-400 font-bold">Synthetic test data — not NASA observations.</span>
+                ) : (
+                  <span className="text-emerald-400 font-semibold">Verified NASA CF-1.8 Observations</span>
+                )}
+              </Row>
               <Row label="Limitations" value={ev?.scientific_limitation || 'Empirical monotonic trend — period-dependent'} />
             </>
           )}
