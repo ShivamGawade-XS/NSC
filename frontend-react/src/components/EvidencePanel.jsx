@@ -191,7 +191,9 @@ export default function EvidencePanel() {
             <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
               <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Kendall τ</div>
               <div className="text-sm font-bold font-mono text-[var(--color-accent-blue)] tabular-nums font-semibold">
-                {cell.tau !== undefined ? cell.tau.toFixed(3) : ((cell.slope ?? 0) > 0 ? '+0.420' : '-0.380')}
+                {cell.tau !== undefined && cell.tau !== null && !isNaN(cell.tau)
+                  ? `${cell.tau > 0 ? '+' : ''}${Number(cell.tau).toFixed(3)}`
+                  : 'N/A'}
               </div>
               <div className="text-[8px] text-[var(--color-text-muted)] font-mono">Rank Correlation</div>
             </div>

@@ -198,6 +198,9 @@ def export_to_netcdf(
     finally:
         ds.close()
 
+    if nc_bytes is None:
+        raise RuntimeError("Failed to generate NetCDF-4 binary format across h5netcdf, scipy, and netcdf4 engines.")
+
     if out_file_path is not None:
         Path(out_file_path).write_bytes(nc_bytes)
         return str(out_file_path)
