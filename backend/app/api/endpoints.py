@@ -243,6 +243,7 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
     ci_lower = trend_results.get("ci_lower", np.zeros_like(slopes))
     ci_upper = trend_results.get("ci_upper", np.zeros_like(slopes))
     lisa_clusters = trend_results.get("lisa_clusters", np.full_like(slopes, "NS", dtype=object))
+    tau_arr = trend_results.get("tau", np.zeros_like(slopes))
 
     for i in range(h_len):
         for j in range(w_len):
@@ -264,6 +265,7 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
                 ci_upper=round(float(ci_upper[i, j]), 4),
                 p_value=round(float(p_vals[i, j]), 5),
                 q_value=round(float(q_vals[i, j]), 5),
+                tau=round(float(tau_arr[i, j]), 4),
                 is_significant_raw=bool(sig_raw[i, j]),
                 is_significant_fdr=bool(sig_fdr[i, j]),
                 direction=direction,
@@ -552,6 +554,7 @@ def run_custom_analysis(request: Request, req: CustomAnalysisRequest) -> Analysi
             ci_upper=round(c_item["ci_upper"], 4),
             p_value=round(c_item["p_value"], 5),
             q_value=round(c_item["q_value"], 5),
+            tau=round(float(c_item.get("tau", 0.0)), 4) if c_item.get("tau") is not None else None,
             is_significant_raw=bool(c_item["is_significant_raw"]),
             is_significant_fdr=bool(c_item["is_significant_fdr"]),
             direction=c_item["direction"],

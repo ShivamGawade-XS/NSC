@@ -491,6 +491,13 @@ def compute_spatial_trends(
     q_values, is_sig_fdr = benjamini_hochberg_fdr(p_values, alpha=alpha)
     is_sig_raw = p_values < alpha
 
+    # 5. Kendall's Tau: S / N_pairs
+    tau_2d = np.zeros((h_len, w_len), dtype=float)
+    with np.errstate(all="ignore"):
+        tau_2d = np.where(N_pairs > 0, s_2d / np.maximum(N_pairs, 1.0), 0.0)
+    tau_2d[n_samples < 5] = 0.0
+    tau_2d = np.clip(tau_2d, -1.0, 1.0)
+
     # Spatial Autocorrelation: Global Moran's I & Anselin Local Moran's I (LISA)
     try:
         from app.science.spatial import compute_global_morans_i, compute_lisa_clusters
@@ -507,6 +514,7 @@ def compute_spatial_trends(
         "ci_upper": ci_upper,
         "p_values": p_values,
         "q_values": q_values,
+        "tau": tau_2d,
         "is_significant_raw": is_sig_raw,
         "is_significant_fdr": is_sig_fdr,
         "n_samples": n_samples,

@@ -109,8 +109,15 @@ export function sonifyTimeSeries(
     return;
   }
 
-  const minVal = Math.min(...values);
-  const maxVal = Math.max(...values);
+  let minVal = Infinity;
+  let maxVal = -Infinity;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (v < minVal) minVal = v;
+    if (v > maxVal) maxVal = v;
+  }
+  if (!isFinite(minVal)) minVal = 0;
+  if (!isFinite(maxVal)) maxVal = 1;
   const valRange = maxVal > minVal ? maxVal - minVal : 1;
 
   // Single Reusable Master Compressor to prevent distortion on rapid bursts

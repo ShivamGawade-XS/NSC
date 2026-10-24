@@ -112,6 +112,7 @@ class SpatialGridPoint(BaseModel):
     ci_upper: float | None = None
     p_value: float
     q_value: float
+    tau: float | None = None
     is_significant_raw: bool
     is_significant_fdr: bool
     direction: str
