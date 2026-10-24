@@ -7,21 +7,24 @@ Asserts zero unhandled crashes (ZeroDivisionError, FloatingPointError, 500 Serve
 
 import json
 import math
+
 import numpy as np
 import pytest
-from hypothesis import given, settings as hyp_settings, strategies as st
+from hypothesis import given
+from hypothesis import settings as hyp_settings
+from hypothesis import strategies as st
 from starlette.testclient import TestClient
 
 from app.main import app
-from app.science.trend import (
-    mann_kendall_test,
-    sens_slope,
-    pettitt_changepoint_test,
-    benjamini_hochberg_fdr,
-)
-from app.science.spatial import compute_global_morans_i, compute_lisa_clusters
-from app.science.copula_hazard import fit_bivariate_copula
 from app.science.climate_velocity import compute_climate_velocity
+from app.science.copula_hazard import fit_bivariate_copula
+from app.science.spatial import compute_global_morans_i, compute_lisa_clusters
+from app.science.trend import (
+    benjamini_hochberg_fdr,
+    mann_kendall_test,
+    pettitt_changepoint_test,
+    sens_slope,
+)
 
 client = TestClient(app)
 

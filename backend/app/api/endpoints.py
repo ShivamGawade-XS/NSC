@@ -170,7 +170,7 @@ def list_variables(request: Request) -> list[VariableInfo]:
 
 @router.post("/analysis", response_model=AnalysisResponse)
 @limiter.limit("10/minute")
-def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse:
+def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | Response:
     """Execute spatiotemporal trend analysis across requested domain."""
     adapter = ADAPTERS.get(req.dataset_id)
     if not adapter:

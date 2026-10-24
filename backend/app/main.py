@@ -6,13 +6,12 @@ from pathlib import Path
 from typing import Any
 
 import psutil
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIASGIMiddleware
 from starlette.types import Message, Receive, Scope, Send
 
 from app.api.endpoints import router as api_router

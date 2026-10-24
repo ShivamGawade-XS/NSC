@@ -4,6 +4,7 @@ Provides L2 persistent caching, database indexing, and query optimization
 for computed NASA Earth-system trend analyses and coordinate time series.
 """
 
+import contextlib
 import hashlib
 import hmac
 import json
@@ -174,6 +175,7 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
     Save analysis to persistent SQLite database with compressed payload
     and indexed query dimensions.
     """
+    conn: sqlite3.Connection | None = None
     try:
         req = payload.get("req")
         if not req:
@@ -250,19 +252,15 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
             conn.commit()
 
             if pruned:
-                try:
+                with contextlib.suppress(Exception):
                     conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
                     conn.execute("PRAGMA incremental_vacuum;")
-                except Exception:
-                    try:
-                        conn.execute("PRAGMA wal_checkpoint(PASSIVE);")
-                    except Exception:
-                        pass
+                with contextlib.suppress(Exception):
+                    conn.execute("PRAGMA wal_checkpoint(PASSIVE);")
     except Exception as exc:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
+        if conn is not None:
+            with contextlib.suppress(Exception):
+                conn.rollback()
         logger.error("Error saving cache for analysis_id=%s: %s", analysis_id, exc)
 
 
@@ -361,6 +359,7 @@ def save_cell_to_db_cache(
     Save coordinate drilldown cell to persistent spatial_cell_cache table
     with HMAC-SHA256 signed and compressed JSON payload.
     """
+    conn: sqlite3.Connection | None = None
     try:
         cell_key = f"{analysis_id}:{lat:.4f}:{lon:.4f}"
         slope = cell_payload.get("slope")
@@ -397,10 +396,9 @@ def save_cell_to_db_cache(
             ))
             conn.commit()
     except Exception as exc:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
+        if conn is not None:
+            with contextlib.suppress(Exception):
+                conn.rollback()
         logger.error("Error saving cell cache for key=%s: %s", f"{analysis_id}:{lat:.4f}:{lon:.4f}", exc)
 
 

@@ -84,5 +84,5 @@ def _safe_inject_headers(response, current_limit):
     return _orig_inject_headers(response, current_limit)
 
 
-limiter._inject_headers = _safe_inject_headers
+limiter._inject_headers = _safe_inject_headers  # type: ignore[assignment]
 
