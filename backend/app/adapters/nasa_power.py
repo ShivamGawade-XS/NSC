@@ -216,8 +216,8 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                 else:
                     logger.warning("Cached file %s has invalid NetCDF magic bytes, removing.", cache_target.name)
                     cache_target.unlink(missing_ok=True)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Error inspecting cached granule %s: %s", cache_target.name, exc)
 
         url = (
             f"{self.BASE_URL}?"

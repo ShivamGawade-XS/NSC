@@ -13,3 +13,4 @@ psutil>=5.9.0
 slowapi>=0.1.9
 limits>=3.10.0
 python-dotenv>=1.0.1
+hypothesis>=6.100.0
