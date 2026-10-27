@@ -48,6 +48,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
     TEMPORAL_RANGE = [1980, 2024]
     DEFAULT_BBOX = [-125.0, 25.0, -65.0, 50.0]
     COVERAGE_BBOX = [-170.0, 15.0, -50.0, 75.0]
+    MISSIONS_AND_MODELS = "NASA GMAO GEOS-5 Atmospheric Data Assimilation System (ADAS) integrating Terra/Aqua MODIS, Aura OMI, Aqua AIRS, and MetOp/NOAA Sounders"
 
     VARIABLES = {
         "T2M": {
@@ -55,14 +56,38 @@ class MERRA2Adapter(BaseDatasetAdapter):
             "source_units": "K",
             "display_units": "°C",
             "slope_units": "°C / decade",
-            "description": "Surface air temperature at 2 meters above displacement height."
+            "description": "Surface air temperature at 2 meters above displacement height.",
+            "product_type": "reanalysis_assimilation",
+            "native_resolution": "0.5° latitude x 0.625° longitude",
+            "mission_source": "NASA GMAO GEOS-5 ADAS assimilation model assimilating Terra/Aqua AIRS, AMSU-A, and satellite radiance observations",
+            "discontinuity_warning": None,
+            "physical_domain": "Thermal & Temperature",
+            "earliest_year": 1980,
+            "latest_year": 2024,
+            "temporal_aggregation": "annual_mean",
+            "suitable_analysis_types": ["monotonic_trend", "compound_hazard", "climate_velocity", "regional_comparison", "robustness_lab"],
+            "scientific_references": [
+                "Gelaro et al. (2017) The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2). J. Climate, 30(14), 5419-5454."
+            ]
         },
         "PRECTOT": {
             "name": "Total Precipitation Rate",
             "source_units": "kg m-2 s-1",
             "display_units": "mm / day",
             "slope_units": "mm / day / decade",
-            "description": "Surface total precipitation flux including convective and large-scale rain/snow."
+            "description": "Surface total precipitation flux including convective and large-scale rain/snow.",
+            "product_type": "reanalysis_assimilation",
+            "native_resolution": "0.5° latitude x 0.625° longitude",
+            "mission_source": "NASA GMAO GEOS-5 atmospheric general circulation model driven by satellite precipitation microwave imagers and corrected with CPC gauge data",
+            "discontinuity_warning": None,
+            "physical_domain": "Hydrology & Precipitation",
+            "earliest_year": 1980,
+            "latest_year": 2024,
+            "temporal_aggregation": "annual_mean",
+            "suitable_analysis_types": ["monotonic_trend", "compound_hazard", "regional_comparison", "robustness_lab"],
+            "scientific_references": [
+                "Reichle et al. (2017) Assessment of the MERRA-2 Land Surface Hydrology Estimates. J. Climate, 30(8), 2937-2960."
+            ]
         }
     }
 
@@ -89,7 +114,9 @@ class MERRA2Adapter(BaseDatasetAdapter):
                         "short_name": short_name,
                         "cmr_status": "accessible" if count > 0 else "not_found",
                         "granules_found_sample": count,
-                        "doi": self.DOI
+                        "doi": self.DOI,
+                        "missions_and_models": self.MISSIONS_AND_MODELS,
+                        "mission_source": self.VARIABLES.get(var, {}).get("mission_source")
                     })
                 if results:
                     return results
@@ -106,7 +133,9 @@ class MERRA2Adapter(BaseDatasetAdapter):
                 "name": info["name"],
                 "units": info["display_units"],
                 "cmr_status": "offline_catalog",
-                "doi": self.DOI
+                "doi": self.DOI,
+                "missions_and_models": self.MISSIONS_AND_MODELS,
+                "mission_source": info.get("mission_source")
             })
         return results
 
@@ -122,7 +151,8 @@ class MERRA2Adapter(BaseDatasetAdapter):
             "variables": self.VARIABLES,
             "default_bbox": self.DEFAULT_BBOX,
             "live_access_available": HAS_EARTHACCESS,
-            "citation": "Gelaro et al., 2017: The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2). J. Climate, 30, 5419-5454."
+            "citation": "Gelaro et al., 2017: The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2). J. Climate, 30, 5419-5454.",
+            "missions_and_models": self.MISSIONS_AND_MODELS
         }
 
     def validate(
@@ -291,7 +321,8 @@ class MERRA2Adapter(BaseDatasetAdapter):
                                     "grid_shape": list(raw_vals.shape[1:]),
                                     "sample_count": len(years_arr),
                                     "is_synthetic": False,
-                                    "data_source_label": source_label
+                                    "data_source_label": source_label,
+                                    "missions_and_models": self.MISSIONS_AND_MODELS
                                 }
                             }
                 except Exception as e:
@@ -357,7 +388,8 @@ class MERRA2Adapter(BaseDatasetAdapter):
                 "grid_shape": [h_len, w_len],
                 "sample_count": t_len,
                 "is_synthetic": True,
-                "data_source_label": "Synthetic test data — not NASA observations."
+                "data_source_label": "Synthetic test data — not NASA observations.",
+                "missions_and_models": self.MISSIONS_AND_MODELS
             }
         }
 

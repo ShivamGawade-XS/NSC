@@ -101,12 +101,58 @@ export const LISA_LABELS = {
 // Dataset variables map
 export const DATASET_VARIABLES = {
   nasa_power: [
-    { id: 'T2M', label: '2-Meter Air Temperature (T2M) [°C]' },
-    { id: 'PRECTOTCORR', label: 'Total Corrected Precipitation [mm/day]' },
+    {
+      id: 'T2M',
+      label: '2-Meter Air Temperature (T2M) [°C]',
+      domain: 'Thermal & Temperature',
+      units: '°C',
+      description: 'Surface air temperature 2m above ground level',
+    },
+    {
+      id: 'PRECTOTCORR',
+      label: 'Total Corrected Precipitation [mm/day]',
+      domain: 'Hydrology & Precipitation',
+      units: 'mm/day',
+      description: 'Precipitation rate corrected for gauge undercatch',
+    },
+    {
+      id: 'ALLSKY_SFC_SW_DWN',
+      label: 'Solar Irradiance (ALLSKY_SFC_SW_DWN) [MJ/m²/day]',
+      domain: 'Radiative & Solar Energy',
+      units: 'MJ/m²/day',
+      description: 'All-sky downward shortwave flux (2000/2001 sensor transition)',
+      discontinuityWarning: 'Crosses GEWEX SRB to CERES SYN1deg satellite transition in 2000.',
+    },
+    {
+      id: 'WS10M',
+      label: '10-Meter Wind Speed (WS10M) [m/s]',
+      domain: 'Atmospheric Dynamics',
+      units: 'm/s',
+      description: 'Surface wind velocity at 10m altitude from GEOS-5 FP-IT',
+    },
+    {
+      id: 'RH2M',
+      label: '2-Meter Relative Humidity (RH2M) [%]',
+      domain: 'Moisture & Humidity',
+      units: '%',
+      description: 'Surface relative humidity percentage',
+    },
   ],
   merra2_reanalysis: [
-    { id: 'T2M', label: '2-Meter Air Temperature (T2M) [°C]' },
-    { id: 'PRECTOT', label: 'Total Precipitation Rate (PRECTOT) [mm/day]' },
+    {
+      id: 'T2M',
+      label: '2-Meter Air Temperature (T2M) [°C]',
+      domain: 'Thermal & Temperature',
+      units: '°C',
+      description: 'GMAO GEOS-5 Atmospheric Data Assimilation System 2m temperature',
+    },
+    {
+      id: 'PRECTOT',
+      label: 'Total Precipitation Rate (PRECTOT) [mm/day]',
+      domain: 'Hydrology & Precipitation',
+      units: 'mm/day',
+      description: 'Total convective and large-scale precipitation flux',
+    },
   ],
 };
 

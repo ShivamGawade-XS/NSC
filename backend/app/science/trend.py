@@ -386,9 +386,9 @@ def compute_spatial_trends(
     """
     t_len, h_len, w_len = data_3d.shape
 
-    if t_len < 2:
+    if t_len < 2 or h_len == 0 or w_len == 0:
         empty_zeros = np.zeros((h_len, w_len), dtype=float)
-        n_samples = np.sum(~np.isnan(data_3d), axis=0)
+        n_samples = np.sum(~np.isnan(data_3d), axis=0) if (h_len > 0 and w_len > 0) else np.zeros((h_len, w_len), dtype=int)
         return {
             "slopes": empty_zeros.copy(),
             "intercepts": empty_zeros.copy(),

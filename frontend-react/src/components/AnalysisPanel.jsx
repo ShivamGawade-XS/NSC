@@ -2,16 +2,18 @@ import { useState } from 'react';
 import useStore from '../store/useStore';
 import { DATASET_VARIABLES, DETECTIVE_PRESETS } from '../utils/helpers';
 import { playTactileClick } from '../utils/audio';
+import QualityGatePanel from './QualityGatePanel';
 
 export default function AnalysisPanel() {
   const {
     dataset, variable, startYear, endYear, bbox, useFdr, isLoading,
     setFormField, setBbox, clearBbox, executeAnalysis, executeCompoundAnalysis, loadPreset,
-    setCustomDataModalOpen,
+    setCustomDataModalOpen, setDiscoveryModalOpen, setRegionalCompareModalOpen, setQualityGateResult,
   } = useStore();
 
   const [validationError, setValidationError] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
+  const [gateResult, setGateResult] = useState(null);
 
   const variables = DATASET_VARIABLES[dataset] || DATASET_VARIABLES.nasa_power;
   const yearCount = Math.max(0, endYear - startYear + 1);
@@ -278,6 +280,22 @@ export default function AnalysisPanel() {
         </div>
       )}
 
+      {/* Pre-flight Scientific Quality Gate */}
+      <QualityGatePanel
+        dataset={dataset}
+        variable={variable}
+        startYear={startYear}
+        endYear={endYear}
+        bbox={(bbox.minLon !== '' && bbox.minLat !== '' && bbox.maxLon !== '' && bbox.maxLat !== '') ? [
+          parseFloat(bbox.minLon), parseFloat(bbox.minLat),
+          parseFloat(bbox.maxLon), parseFloat(bbox.maxLat)
+        ] : null}
+        onGateResult={(res) => {
+          setGateResult(res);
+          setQualityGateResult(res);
+        }}
+      />
+
       <div className="w-full h-px bg-[var(--color-border-subtle)]" />
 
       {/* Action Buttons with Spam Protection / Cooldown */}
@@ -285,7 +303,7 @@ export default function AnalysisPanel() {
         <button
           type="button"
           onClick={() => handleExecute(false)}
-          disabled={isLoading || isCooldown}
+          disabled={isLoading || isCooldown || gateResult?.can_execute === false}
           className="w-full interface-btn-primary !py-2.5 !text-xs !tracking-wider uppercase font-semibold disabled:opacity-50 disabled:cursor-not-allowed justify-center"
         >
           {isLoading ? (
@@ -298,7 +316,7 @@ export default function AnalysisPanel() {
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
               </svg>
-              <span>{isCooldown ? 'Cooldown Active...' : 'Execute Trend Detection'}</span>
+              <span>{isCooldown ? 'Cooldown Active...' : (gateResult?.can_execute === false ? 'Execution Blocked by Gate' : 'Execute Trend Detection')}</span>
             </span>
           )}
         </button>
@@ -306,7 +324,7 @@ export default function AnalysisPanel() {
         <button
           type="button"
           onClick={() => handleExecute(true)}
-          disabled={isLoading || isCooldown}
+          disabled={isLoading || isCooldown || gateResult?.can_execute === false}
           className="w-full interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-[#f59e0b]/40 hover:text-[#f59e0b] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-3.5 h-3.5 shrink-0 text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
@@ -314,6 +332,32 @@ export default function AnalysisPanel() {
           </svg>
           <span>Compound Hazard Analysis (T & P)</span>
         </button>
+
+        {/* EarthSift 2.0 Exploratory Launchers */}
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(700);
+              setDiscoveryModalOpen(true);
+            }}
+            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[#0066ff]/40"
+            title="Launch autonomous multi-variable trend discovery scan"
+          >
+            <span>🔭 Discovery Scan</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(700);
+              setRegionalCompareModalOpen(true);
+            }}
+            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[#f59e0b]/40"
+            title="Side-by-side regional trend detective with hypothesis test"
+          >
+            <span>🌍 Compare Regions</span>
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -19,13 +19,23 @@ export default function SignalsList() {
 
   if (!hasData) {
     return (
-      <div className="interface-card p-4">
-        <h3 className="eyebrow-label mb-2">
+      <div className="interface-card p-4 space-y-2.5">
+        <h3 className="eyebrow-label mb-1">
           Discovery Signals
         </h3>
         <p className="text-xs text-[var(--color-text-muted)] font-mono">
-          Execute an analysis or select a regional preset to populate candidate trend signals.
+          Execute an analysis or launch the multi-variable scan to populate candidate trend signals.
         </p>
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick(700);
+            useStore.getState().setDiscoveryModalOpen(true);
+          }}
+          className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center w-full hover:border-[#0066ff]/40"
+        >
+          <span>🔭 Autonomous Discovery Scan</span>
+        </button>
       </div>
     );
   }

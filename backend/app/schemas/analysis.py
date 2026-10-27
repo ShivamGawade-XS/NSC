@@ -84,23 +84,52 @@ class AnalysisRequest(BaseModel):
 
 
 class CustomCellInput(BaseModel):
-    """Single cell input for user-uploaded custom datasets."""
-    lat: float
-    lon: float
-    years: list[int] | None = None
-    values: list[float] | None = None
-    slope: float | None = None
-    p_value: float | None = None
+    """Single cell input for user-uploaded custom datasets with strict physical coordinate guards."""
+    lat: float = Field(..., ge=-90.0, le=90.0, description="Latitude [-90.0, 90.0]")
+    lon: float = Field(..., ge=-180.0, le=180.0, description="Longitude [-180.0, 180.0]")
+    years: list[int] | None = Field(default=None, max_length=150, description="Observation year integers (max 150)")
+    values: list[float] | None = Field(default=None, max_length=150, description="Observation values (max 150)")
+    slope: float | None = Field(default=None, description="Precomputed decadal slope")
+    p_value: float | None = Field(default=None, ge=0.0, le=1.0, description="Precomputed p-value [0.0, 1.0]")
+
+    @model_validator(mode="after")
+    def validate_cell_integrity(self) -> "CustomCellInput":
+        if not (math.isfinite(self.lat) and math.isfinite(self.lon)):
+            raise ValueError("Coordinates (lat, lon) must be finite floating-point numbers.")
+        if self.slope is not None and not math.isfinite(self.slope):
+            raise ValueError("Precomputed slope must be a finite floating-point number.")
+        if self.p_value is not None and not math.isfinite(self.p_value):
+            raise ValueError("Precomputed p_value must be a finite floating-point number.")
+        if self.values is not None:
+            if not all(math.isfinite(v) for v in self.values):
+                raise ValueError("All observations in values array must be finite numbers.")
+        if self.years is not None and self.values is not None:
+            if len(self.years) != len(self.values):
+                raise ValueError(
+                    f"Mismatched array lengths: years has {len(self.years)} entries but values has {len(self.values)}."
+                )
+        return self
 
 
 class CustomAnalysisRequest(BaseModel):
-    """Request payload to analyze user-uploaded custom coordinate records."""
-    dataset_name: str
-    variable_name: str = "Custom Variable"
-    units: str = "units"
-    alpha: float = 0.05
-    use_fdr: bool = True
-    cells: list[CustomCellInput] = Field(..., max_length=5000, description="List of coordinate records (max 5000)")
+    """Request payload to analyze user-uploaded custom coordinate records with computational complexity bounds."""
+    dataset_name: str = Field(..., min_length=1, max_length=128, description="Dataset identifier")
+    variable_name: str = Field(default="Custom Variable", min_length=1, max_length=128, description="Variable display name")
+    units: str = Field(default="units", min_length=1, max_length=64, description="Measurement units")
+    alpha: float = Field(default=0.05, ge=0.001, le=0.20, description="Significance threshold [0.001, 0.20]")
+    use_fdr: bool = Field(default=True, description="Apply Benjamini-Hochberg FDR control")
+    cells: list[CustomCellInput] = Field(..., max_length=2500, description="List of coordinate records (max 2500)")
+
+    @model_validator(mode="after")
+    def validate_request_bounds(self) -> "CustomAnalysisRequest":
+        if not math.isfinite(self.alpha):
+            raise ValueError("alpha must be a finite floating-point number.")
+        total_obs = sum(len(c.values) for c in self.cells if c.values is not None)
+        if total_obs > 250000:
+            raise ValueError(
+                f"Total temporal observation points across all cells ({total_obs}) exceeds system safety threshold (250,000)."
+            )
+        return self
 
 
 class SpatialGridPoint(BaseModel):
@@ -134,6 +163,22 @@ class AnalysisSummary(BaseModel):
     max_slope: float
     min_slope: float
     spatial_autocorrelation: dict[str, Any] | None = None
+    meets_climatological_duration_threshold: bool = Field(
+        default=True,
+        description="True if the analysis temporal window spans >= 20 years."
+    )
+    is_climatological_normal: bool = Field(
+        default=True,
+        description="Backward-compatible alias for meets_climatological_duration_threshold. Standard normals refer to 30-year reference baseline means per WMO-No. 1203."
+    )
+    climatological_qualification: str | None = Field(
+        default=None,
+        description="Scientific caveat when window is too short for climatological duration threshold."
+    )
+    temporal_aggregation: str = Field(
+        default="annual_mean",
+        description="Temporal aggregation mode of analyzed observations (e.g. 'annual_mean')."
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -249,7 +294,7 @@ class ProvenanceResponse(BaseModel):
 
 
 class VariableInfo(BaseModel):
-    """Physical variable catalog schema."""
+    """Physical variable catalog schema with domain categorization and scientific lineage."""
     variable_id: str
     name: str
     source_units: str
@@ -257,6 +302,16 @@ class VariableInfo(BaseModel):
     slope_units: str
     description: str
     dataset_id: str
+    mission_source: str | None = None
+    product_type: str | None = None
+    discontinuity_warning: str | None = None
+    physical_domain: str | None = "Atmospheric"
+    earliest_year: int = 1981
+    latest_year: int = 2024
+    temporal_aggregation: str = "annual_mean"
+    native_resolution: str | None = None
+    suitable_analysis_types: list[str] = Field(default_factory=list)
+    scientific_references: list[str] = Field(default_factory=list)
 
 
 class DatasetVariable(BaseModel):
@@ -267,6 +322,16 @@ class DatasetVariable(BaseModel):
     display_units: str
     slope_units: str
     description: str
+    mission_source: str | None = None
+    product_type: str | None = None
+    discontinuity_warning: str | None = None
+    physical_domain: str | None = "Atmospheric"
+    earliest_year: int = 1981
+    latest_year: int = 2024
+    temporal_aggregation: str = "annual_mean"
+    native_resolution: str | None = None
+    suitable_analysis_types: list[str] = Field(default_factory=list)
+    scientific_references: list[str] = Field(default_factory=list)
 
 
 class DatasetMetadata(BaseModel):
@@ -279,6 +344,7 @@ class DatasetMetadata(BaseModel):
     source: str
     doi: str
     variables: list[DatasetVariable]
+    missions_and_models: str | None = None
 
 
 class ExplainRequest(BaseModel):
@@ -427,4 +493,177 @@ class LatexExportResponse(BaseModel):
     latex_code: str
     hmac_sha256_hash: str
     qr_verification_url: str
+
+
+# ==========================================
+# EarthSift 2.0 Core Excellence & Intelligence Schemas
+# ==========================================
+
+class QualityGateRequest(BaseModel):
+    """Pre-flight quality gate request to validate data suitability before running full analysis."""
+    dataset_id: str = Field(default="nasa_power", min_length=2, max_length=64)
+    variable_id: str = Field(default="T2M", min_length=1, max_length=64)
+    start_year: int = Field(default=2000, ge=1980, le=2026)
+    end_year: int = Field(default=2023, ge=1980, le=2026)
+    bbox: list[float] | None = None
+    alpha: float = Field(default=0.05, ge=0.001, le=0.20)
+
+
+class QualityGateAssessment(BaseModel):
+    """Pre-flight evaluation classifying analysis suitability and actionable guidance."""
+    status: str = Field(description="SUPPORTED, SUPPORTED_WITH_LIMITATIONS, INSUFFICIENT_DATA, or UNSUPPORTED_FOR_THIS_METHOD")
+    status_label: str
+    can_execute: bool
+    observation_count: int
+    meets_climatological_threshold: bool
+    grid_intersection_cells: int
+    sensor_continuity: str
+    limitations: list[str] = Field(default_factory=list)
+    actionable_recommendations: list[str] = Field(default_factory=list)
+    recommended_window: list[int] | None = None
+
+
+class WindowSensitivityItem(BaseModel):
+    """Single temporal perturbation window result in Trend Robustness Lab."""
+    window: str
+    start_year: int
+    end_year: int
+    n_years: int
+    slope: float
+    p_value: float
+    direction: str
+    significant: bool
+
+
+class EstimatorComparisonItem(BaseModel):
+    """Comparison of statistical trend estimators on the same time series."""
+    estimator: str
+    slope: float
+    intercept: float
+    se: float | None = None
+    p_value: float | None = None
+    details: str
+
+
+class RobustnessRequest(BaseModel):
+    """Request payload to test trend sensitivity to analytical choices in Robustness Lab."""
+    analysis_id: str | None = Field(default=None, max_length=128)
+    lat: float | None = None
+    lon: float | None = None
+
+
+class RobustnessResponse(BaseModel):
+    """Comprehensive Trend Robustness Lab report quantifying sensitivity to analytical choices."""
+    analysis_id: str
+    coordinate: dict[str, float] | None = None
+    stability_rating: str = Field(description="ROBUST, MODERATELY_SENSITIVE, or HIGHLY_SENSITIVE")
+    sign_agreement_pct: float
+    significance_retention_pct: float
+    base_slope: float
+    jackknife_slope_se: float
+    window_sensitivity: list[WindowSensitivityItem]
+    estimator_comparison: list[EstimatorComparisonItem]
+    autocorrelation_sensitivity: dict[str, Any]
+    summary_narrative: str
+
+
+class RegionalComparisonRequest(BaseModel):
+    """Request payload for comparing two geographic regions over a common time interval."""
+    dataset_id: str = Field(default="nasa_power", min_length=2, max_length=64)
+    variable_id: str = Field(default="T2M", min_length=1, max_length=64)
+    start_year: int = Field(default=2000, ge=1980, le=2026)
+    end_year: int = Field(default=2023, ge=1980, le=2026)
+    region_a_bbox: list[float] = Field(description="[min_lon, min_lat, max_lon, max_lat] for Region A")
+    region_a_name: str = Field(default="Region A", max_length=128)
+    region_b_bbox: list[float] = Field(description="[min_lon, min_lat, max_lon, max_lat] for Region B")
+    region_b_name: str = Field(default="Region B", max_length=128)
+    alpha: float = Field(default=0.05, ge=0.001, le=0.20)
+
+
+class RegionalComparisonResponse(BaseModel):
+    """Side-by-side regional trend detective with formal two-sample slope divergence hypothesis test."""
+    variable_id: str
+    variable_name: str
+    time_span: str
+    slope_units: str
+    region_a: dict[str, Any]
+    region_b: dict[str, Any]
+    slope_difference: float
+    z_statistic: float
+    p_value: float
+    is_divergence_significant: bool
+    divergence_interpretation: str
+    spatial_compatibility_notes: list[str] = Field(default_factory=list)
+
+
+class DiscoveryCandidate(BaseModel):
+    """Ranked discovery finding across candidate variables in an exploratory search."""
+    variable_id: str
+    variable_name: str
+    physical_domain: str
+    lat: float
+    lon: float
+    slope: float
+    slope_units: str
+    p_value: float
+    q_value: float
+    tau: float
+    direction: str
+    morans_i: float | None = None
+    discovery_score: float
+    discovery_badge: str
+    ranking_rationale: str
+
+
+class DiscoveryScanRequest(BaseModel):
+    """Request payload for autonomous exploratory trend discovery across variables in a region."""
+    dataset_id: str = Field(default="nasa_power", min_length=2, max_length=64)
+    bbox: list[float] = Field(description="[min_lon, min_lat, max_lon, max_lat]")
+    start_year: int = Field(default=2000, ge=1980, le=2026)
+    end_year: int = Field(default=2023, ge=1980, le=2026)
+    variable_ids: list[str] | None = None
+    alpha: float = Field(default=0.05, ge=0.001, le=0.20)
+
+
+class DiscoveryScanResponse(BaseModel):
+    """Autonomous discovery findings ranked with transparent multi-criteria and FDR multiplicity control."""
+    scan_id: str
+    bbox: list[float]
+    time_span: str
+    total_tests_conducted: int
+    fdr_discovery_count: int
+    ranked_candidates: list[DiscoveryCandidate]
+    methodology_disclaimer: str
+
+
+class DataQualityProfileResponse(BaseModel):
+    """Data Quality and Source Continuity profile for an analysis."""
+    analysis_id: str
+    variable_id: str
+    variable_name: str
+    temporal_completeness_pct: float
+    total_expected_records: int
+    valid_records: int
+    missing_intervals: list[int]
+    outliers_detected: list[dict[str, Any]]
+    outlier_handling_note: str
+    sensor_lineage: str
+    temporal_aggregation: str
+    native_resolution: str
+    metric_scale_km: dict[str, float]
+    quality_rating: str
+
+
+class ReproducibilityManifestResponse(BaseModel):
+    """Cryptographic reproducibility record and Python replication recipe."""
+    analysis_id: str
+    sha256_fingerprint: str
+    timestamp_utc: str
+    software_version: str
+    dataset: dict[str, Any]
+    analysis_parameters: dict[str, Any]
+    scientific_summary: dict[str, Any]
+    python_replication_code: str
+    bibtex_citations: list[str]
+
 

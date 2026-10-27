@@ -46,7 +46,7 @@ function ProvenanceBadge({ provenance }) {
         </div>
       )}
 
-      {provenance.bbox_clamped === true && provenance.warning && (
+      {(provenance.warning || provenance.discontinuity_warning) && (
         <div
           role="alert"
           className="p-2.5 rounded bg-amber-950/30 border border-amber-500/40 text-amber-300 font-mono text-[11px] flex items-start gap-2"
@@ -54,7 +54,7 @@ function ProvenanceBadge({ provenance }) {
           <svg className="w-4 h-4 text-[#f59e0b] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
-          <span>{provenance.warning}</span>
+          <span>{provenance.warning || provenance.discontinuity_warning}</span>
         </div>
       )}
     </div>
@@ -359,7 +359,7 @@ export default function EvidencePanel() {
               <Row label="Hydro Drift" value={`${cell.precip_slope > 0 ? '+' : ''}${cell.precip_slope?.toFixed(4)} mm/day / decade`} />
               <Row label="CAI Index" value={`+${cell.tau?.toFixed(3) || '0.000'} (Climate Aridification Index)`} />
               <Row label="Copula Risk" value="Joint Compound Return Period > 50 Years" />
-              <Row label="Grid Resolution" value="0.5° × 0.5° NASA Reanalysis Assimilation" />
+              <Row label="Grid Resolution" value={analysisData?.provenance?.resolution || '0.5° × 0.5° NASA Reanalysis Assimilation'} />
               <Row label="Source" value={ev?.source || 'NASA Ingestion (POWER & MERRA-2)'} />
               <Row label="Integrity">
                 {analysisData?.provenance?.is_synthetic === true ? (
@@ -477,6 +477,37 @@ export default function EvidencePanel() {
             </div>
           </motion.div>
         )}
+      </div>
+
+      {/* EarthSift 2.0 Scientific Intelligence Actions */}
+      <div className="interface-card p-3 space-y-2">
+        <div className="eyebrow-label text-zinc-400 mb-1">
+          Scientific Intelligence & Robustness
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(700);
+              useStore.getState().setRobustnessModalOpen(true);
+            }}
+            className="interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-[#10b981]/40 hover:text-[#10b981]"
+            title="Evaluate trend sensitivity across window trims, estimators, and autocorrelation"
+          >
+            <span>🔬 Robustness Lab</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(700);
+              useStore.getState().setQualityProfileModalOpen(true);
+            }}
+            className="interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-[#60a5fa]/40 hover:text-[#60a5fa]"
+            title="Inspect temporal completeness, sensor transitions, and physical outliers"
+          >
+            <span>📊 Data Quality</span>
+          </button>
+        </div>
       </div>
 
       {/* Dual-Location Comparison Result Card */}

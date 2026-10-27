@@ -20,13 +20,13 @@ services:
       - HOST=0.0.0.0
       - MERRA2_DATA_DIR=/app/backend/data/fixtures
       - EARTHSIFT_DB_PATH=/app/cache/earthdata_cache.db
+      - NASA_POWER_CACHE_DIR=/app/cache/nasa_power
       - SECRET_KEY=${SECRET_KEY:-}
       # Optional: Add GEMINI_API_KEY or OPENAI_API_KEY for live AI explanation
       # - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     tmpfs:
       - /tmp:size=128M,mode=1777,noexec,nosuid,nodev
-      - /app/cache:size=128M,mode=0700,uid=10001,gid=10001,noexec,nosuid,nodev
-      - /app/backend/data:size=256M,mode=1770,uid=10001,gid=10001,noexec,nosuid,nodev
+      - /app/cache:size=256M,mode=0700,uid=10001,gid=10001,noexec,nosuid,nodev
     deploy:
       resources:
         limits:

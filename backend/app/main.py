@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.types import Message, Receive, Scope, Send
 
 from app.api.endpoints import router as api_router
@@ -167,9 +168,9 @@ class SecurityHardeningMiddleware:
                 await self._send_json(send, 400, b'{"detail": "Invalid Content-Length header: must be a valid integer."}', scope)
                 return
 
-        # Check chunked streaming bodies for POST, PUT, PATCH without Content-Length
+        # Check chunked streaming bodies and count all POST, PUT, PATCH request bodies byte-by-byte
         method = scope.get("method", "")
-        if method in ("POST", "PUT", "PATCH") and content_length is None:
+        if method in ("POST", "PUT", "PATCH"):
             buffered = []
             total_bytes = 0
             exhausted = False
@@ -202,14 +203,21 @@ class SecurityHardeningMiddleware:
                 for k, v in BASE_SECURITY_HEADERS:
                     if k not in existing_keys:
                         h.append((k, v))
+                path = scope.get("path", "")
                 if b"content-security-policy" not in existing_keys:
-                    path = scope.get("path", "")
                     is_dev_docs = (
                         path in ("/docs", "/redoc", "/openapi.json")
                         and os.getenv("ENVIRONMENT") != "production"
                     )
                     csp = DEV_CSP if is_dev_docs else PROD_CSP
                     h.append((b"content-security-policy", csp))
+                if b"cache-control" not in existing_keys:
+                    if path.startswith("/api/") or path in ("/analysis", "/variables", "/metrics", "/ready", "/auth/status") or "/export" in path:
+                        if path.startswith("/api/v1/variables") or path == "/variables" or path == "/datasets" or path.startswith("/api/v1/datasets"):
+                            h.append((b"cache-control", b"public, max-age=300"))
+                        else:
+                            h.append((b"cache-control", b"private, no-cache, no-store, must-revalidate"))
+                            h.append((b"pragma", b"no-cache"))
                 msg["headers"] = h
             await send(msg)
 
@@ -225,20 +233,16 @@ class SecurityHardeningMiddleware:
         headers = [
             (b"content-type", b"application/json"),
             (b"content-length", str(len(body)).encode("ascii")),
-            (b"x-content-type-options", b"nosniff"),
-            (b"x-frame-options", b"DENY"),
-            (b"referrer-policy", b"strict-origin-when-cross-origin"),
-            (b"x-xss-protection", b"0"),
-            (b"cross-origin-opener-policy", b"same-origin"),
-            (b"cross-origin-resource-policy", b"same-origin"),
-            (b"permissions-policy", b"geolocation=(), camera=(), microphone=(), payment=(), usb=()"),
-            (b"strict-transport-security", b"max-age=31536000; includeSubDomains; preload"),
+            (b"cache-control", b"no-store, private"),
+            (b"pragma", b"no-cache"),
+            *BASE_SECURITY_HEADERS,
             (b"content-security-policy", csp),
         ]
         await send({"type": "http.response.start", "status": status_code, "headers": headers})
         await send({"type": "http.response.body", "body": body, "more_body": False})
 
 
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(SecurityHardeningMiddleware)
 
 
@@ -260,7 +264,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "Accept", "X-Requested-With"],
-    expose_headers=["Content-Disposition", "Retry-After"],
+    expose_headers=[
+        "Content-Disposition",
+        "Retry-After",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
+    ],
 )
 
 # Mount both versioned and root paths for all typed endpoints
@@ -338,4 +348,5 @@ if react_dist_dir.exists() and (react_dist_dir / "index.html").exists():
 if __name__ == "__main__":
     import uvicorn
     bind_host = os.getenv("HOST", "127.0.0.1")
-    uvicorn.run("app.main:app", host=bind_host, port=8000, reload=True)  # nosec B104
+    is_dev = os.getenv("ENVIRONMENT", "production").lower() in ("development", "dev", "local")
+    uvicorn.run("app.main:app", host=bind_host, port=8000, reload=is_dev)  # nosec B104

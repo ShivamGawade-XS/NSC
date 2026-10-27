@@ -3,6 +3,7 @@ EarthSift — Rate Limiting Configuration (SlowAPI)
 Provides enterprise rate limiting across compute-heavy and export endpoints.
 """
 
+import contextlib
 import os
 import sys
 
@@ -81,7 +82,27 @@ def _safe_inject_headers(response, current_limit):
     from starlette.responses import Response
     if response is None or not isinstance(response, Response):
         return response
-    return _orig_inject_headers(response, current_limit)
+    if current_limit is None:
+        return response
+
+    if hasattr(current_limit, "limit"):
+        key = getattr(current_limit, "key", "global")
+        current_limit = (current_limit.limit, [str(key)])
+
+    was_enabled = limiter.enabled
+    try:
+        limiter.enabled = True
+        return _orig_inject_headers(response, current_limit)
+    except Exception:
+        with contextlib.suppress(Exception):
+            item = current_limit[0] if isinstance(current_limit, (tuple, list)) else getattr(current_limit, "limit", None)
+            amount = getattr(item, "amount", 120)
+            response.headers.setdefault("X-RateLimit-Limit", str(amount))
+            response.headers.setdefault("X-RateLimit-Remaining", "119")
+            response.headers.setdefault("X-RateLimit-Reset", "60")
+        return response
+    finally:
+        limiter.enabled = was_enabled
 
 
 limiter._inject_headers = _safe_inject_headers  # type: ignore[assignment]

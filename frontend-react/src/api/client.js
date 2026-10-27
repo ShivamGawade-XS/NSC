@@ -113,11 +113,13 @@ export async function apiFetch(path, options = {}) {
       internalController.signal.aborted;
 
     if (isAborted) {
-      if (suppressAbort === false) {
-        throw err;
+      if (suppressAbort === true) {
+        return Promise.resolve(undefined);
       }
-      // Suppress AbortError cleanly so cancelled requests do not trigger error toasts
-      return new Promise(() => {});
+      const abortErr = isAbortError(err)
+        ? err
+        : new DOMException('The operation was aborted.', 'AbortError');
+      throw abortErr;
     }
 
     throw err;
@@ -139,6 +141,7 @@ export async function runAnalysis(payload, options = {}) {
     flightKey: 'analysis',
     ...options,
   });
+  if (!res) return undefined;
   return res.json();
 }
 
@@ -150,6 +153,7 @@ export async function runCompoundAnalysis(payload, options = {}) {
     flightKey: 'analysis',
     ...options,
   });
+  if (!res) return undefined;
   return res.json();
 }
 
@@ -161,6 +165,7 @@ export async function runCustomAnalysis(payload, options = {}) {
     flightKey: 'analysis',
     ...options,
   });
+  if (!res) return undefined;
   return res.json();
 }
 
@@ -295,4 +300,66 @@ export function downloadBlob(blob, filename, mimeType) {
     a.parentNode?.removeChild(a);
   }, 30000);
 }
+
+// EarthSift 2.0 Scientific Intelligence Client Functions
+export async function assessQualityGate(payload, options = {}) {
+  const res = await apiFetch('/analysis/quality-gate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    flightKey: 'quality-gate',
+    ...options,
+  });
+  return res.json();
+}
+
+export async function getRobustnessLab(analysisId, payload = {}, options = {}) {
+  const res = await apiFetch(`/analysis/${analysisId}/robustness`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    flightKey: 'robustness-lab',
+    ...options,
+  });
+  return res.json();
+}
+
+export async function compareRegions(payload, options = {}) {
+  const res = await apiFetch('/analysis/compare-regions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    flightKey: 'compare-regions',
+    ...options,
+  });
+  return res.json();
+}
+
+export async function discoverTrends(payload, options = {}) {
+  const res = await apiFetch('/analysis/discover-trends', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    flightKey: 'discover-trends',
+    ...options,
+  });
+  return res.json();
+}
+
+export async function getDataQualityProfile(analysisId, options = {}) {
+  const res = await apiFetch(`/analysis/${analysisId}/quality-profile`, {
+    flightKey: 'quality-profile',
+    ...options,
+  });
+  return res.json();
+}
+
+export async function getReproducibilityManifest(analysisId, options = {}) {
+  const res = await apiFetch(`/analysis/${analysisId}/reproducibility`, {
+    flightKey: 'reproducibility',
+    ...options,
+  });
+  return res.json();
+}
+
 

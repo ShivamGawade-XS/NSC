@@ -27,7 +27,7 @@ QUEEN_KERNEL = np.array([
 def compute_global_morans_i(
     values_2d: np.ndarray,
     min_valid: int = 6,
-    contiguity: str = "rook",
+    contiguity: str = "queen",
     kernel: np.ndarray | None = None
 ) -> dict[str, Any]:
     """
@@ -38,14 +38,14 @@ def compute_global_morans_i(
     Parameters:
         values_2d: 2D numpy array (lat x lon) of values (e.g. trend slopes).
         min_valid: Minimum number of non-NaN values required.
-        contiguity: Spatial neighborhood topology ('rook' [4-neighbor] or 'queen' [8-neighbor]).
+        contiguity: Spatial neighborhood topology ('queen' [8-neighbor] or 'rook' [4-neighbor]).
         kernel: Optional custom convolution kernel.
 
     Returns:
         Dict with moran_i, expected_i, z_score, p_value, interpretation, var_i, s1, s2.
     """
     if kernel is None:
-        kernel = ROOK_KERNEL if contiguity.lower() == "rook" else QUEEN_KERNEL
+        kernel = QUEEN_KERNEL if contiguity.lower() == "queen" else ROOK_KERNEL
 
     h, w = values_2d.shape
     valid_mask = ~np.isnan(values_2d)
@@ -164,7 +164,7 @@ def compute_lisa_clusters(
     values_2d: np.ndarray,
     p_values_2d: np.ndarray | None = None,
     alpha: float = 0.05,
-    contiguity: str = "rook",
+    contiguity: str = "queen",
     kernel: np.ndarray | None = None
 ) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -175,7 +175,7 @@ def compute_lisa_clusters(
         values_2d: 2D array of slopes or values.
         p_values_2d: Optional 2D array of trend significance p-values.
         alpha: Significance cutoff.
-        contiguity: Neighborhood topology ('rook' [4-neighbor] or 'queen' [8-neighbor]).
+        contiguity: Neighborhood topology ('queen' [8-neighbor] or 'rook' [4-neighbor]).
         kernel: Optional custom convolution kernel.
 
     Returns:
@@ -183,7 +183,7 @@ def compute_lisa_clusters(
         Cluster labels: 'HH' (Hotspot), 'LL' (Refugium), 'HL' (High Outlier), 'LH' (Low Outlier), 'NS' (Not Sig).
     """
     if kernel is None:
-        kernel = ROOK_KERNEL if contiguity.lower() == "rook" else QUEEN_KERNEL
+        kernel = QUEEN_KERNEL if contiguity.lower() == "queen" else ROOK_KERNEL
 
     h, w = values_2d.shape
     valid_mask = ~np.isnan(values_2d)
@@ -210,7 +210,7 @@ def compute_lisa_clusters(
     local_i = np.where(valid_mask, (z / s2) * lag, 0.0)
 
     # Classify clusters
-    is_eval = valid_mask & (np.abs(z) > 1e-4) & (np.abs(lag) > 1e-4)
+    is_eval = valid_mask.copy()
     if p_values_2d is not None:
         is_eval = is_eval & (p_values_2d <= alpha)
     else:
