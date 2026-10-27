@@ -11,17 +11,29 @@ from app.science.spatial import compute_global_morans_i, compute_lisa_clusters
 
 
 def test_morans_i_checkerboard_negative_autocorrelation():
-    """Construct an alternating 8x8 checkerboard grid and assert strong negative spatial autocorrelation."""
+    """Construct an alternating 8x8 checkerboard grid and assert strong negative spatial autocorrelation under rook contiguity."""
     i, j = np.indices((8, 8))
     grid = ((-1.0) ** (i + j)).astype(float)
 
-    res = compute_global_morans_i(grid)
+    res = compute_global_morans_i(grid, contiguity="rook")
 
     assert res["moran_i"] < -0.5, f"Expected moran_i < -0.5, got {res['moran_i']}"
     assert res["z_score"] < -3.0, f"Expected z_score < -3.0, got {res['z_score']}"
     assert res["p_value"] < 0.01, f"Expected p_value < 0.01, got {res['p_value']}"
     assert "negative spatial dispersion" in res["interpretation"], (
         f"Expected 'negative spatial dispersion' in interpretation, got {res['interpretation']}"
+    )
+
+
+def test_morans_i_queen_contiguity_default():
+    """Verify default contiguity is queen (8-neighbor) and captures clustered spatial patterns."""
+    i, j = np.indices((10, 10))
+    grid = (i + j).astype(float)
+    res = compute_global_morans_i(grid)
+    assert res["moran_i"] > 0.5, f"Expected moran_i > 0.5, got {res['moran_i']}"
+    assert res["p_value"] < 0.01, f"Expected p_value < 0.01, got {res['p_value']}"
+    assert "positive spatial clustering" in res["interpretation"], (
+        f"Expected 'positive spatial clustering' in interpretation, got {res['interpretation']}"
     )
 
 

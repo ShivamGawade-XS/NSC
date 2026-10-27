@@ -1,9 +1,9 @@
 {
   "include": [
-    "backend"
+    "."
   ],
   "extraPaths": [
-    "backend"
+    "."
   ],
   "pythonVersion": "3.12",
   "typeCheckingMode": "standard",

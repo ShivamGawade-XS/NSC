@@ -43,6 +43,7 @@ def get_db_connection() -> sqlite3.Connection:
         conn.row_factory = sqlite3.Row
         # Enable Write-Ahead Logging for high-concurrency read performance
         conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA foreign_keys = ON;")
         conn.execute("PRAGMA synchronous=NORMAL;")
         conn.execute("PRAGMA busy_timeout=30000;")
         conn.execute("PRAGMA cache_size=-16000;")  # 16MB in-memory SQLite page cache
@@ -56,6 +57,8 @@ def init_db() -> None:
     """Initialize SQLite tables and performance B-Tree indexes."""
     conn = get_db_connection()
     with conn:
+        conn.execute("PRAGMA foreign_keys = ON;")
+        conn.execute("PRAGMA auto_vacuum = INCREMENTAL;")
         # Table 1: Primary Analysis Metadata & Serialized Cache Index
         conn.execute("""
             CREATE TABLE IF NOT EXISTS analysis_metadata_index (
@@ -201,11 +204,12 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
         conn = get_db_connection()
         pruned = False
         with _DB_LOCK:
-            # Deterministic LRU pruning: Evict oldest 20% when count >= CACHE_MAX_SIZE or total payload >= 80MB
+            conn.execute("PRAGMA foreign_keys = ON;")
+            # Deterministic LRU pruning: Evict oldest 20% when count >= CACHE_MAX_SIZE or total payload >= 96MB
             cur = conn.cursor()
             cur.execute("SELECT COUNT(*), COALESCE(SUM(LENGTH(payload_compressed)), 0) FROM analysis_metadata_index;")
             rec_count, total_bytes = cur.fetchone()
-            max_bytes = 80 * 1024 * 1024  # 80 MB threshold for bounded 128MB tmpfs
+            max_bytes = getattr(settings, "CACHE_MAX_BYTES", 96 * 1024 * 1024)  # 96MB size ceiling
 
             if rec_count >= settings.CACHE_MAX_SIZE or total_bytes >= max_bytes:
                 prune_count = max(1, int(rec_count * 0.20))
@@ -214,21 +218,15 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
                     rec_count, total_bytes, settings.CACHE_MAX_SIZE, max_bytes, prune_count
                 )
                 cur.execute("""
-                    DELETE FROM spatial_cell_cache
-                    WHERE analysis_id IN (
-                        SELECT analysis_id FROM analysis_metadata_index
-                        ORDER BY last_accessed ASC
-                        LIMIT ?
-                    );
+                    SELECT analysis_id FROM analysis_metadata_index
+                    ORDER BY last_accessed ASC
+                    LIMIT ?;
                 """, (prune_count,))
-                cur.execute("""
-                    DELETE FROM analysis_metadata_index
-                    WHERE analysis_id IN (
-                        SELECT analysis_id FROM analysis_metadata_index
-                        ORDER BY last_accessed ASC
-                        LIMIT ?
-                    );
-                """, (prune_count,))
+                evict_ids = [r[0] for r in cur.fetchall()]
+                if evict_ids:
+                    placeholders = ",".join("?" for _ in evict_ids)
+                    # PRAGMA foreign_keys = ON cascades deletions to spatial_cell_cache
+                    cur.execute(f"DELETE FROM analysis_metadata_index WHERE analysis_id IN ({placeholders});", evict_ids)  # noqa: S608
                 pruned = True
 
             conn.execute("""
@@ -291,18 +289,17 @@ def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
             logger.error("HMAC-SHA256 verification failed for analysis_id=%s", analysis_id)
             return None
 
-        if hmac.compare_digest(sig, expected_sig):
-            decompressed = zlib.decompress(raw_payload)
-            payload = _deserialize_cache_payload(decompressed)
+        decompressed = zlib.decompress(raw_payload)
+        payload = _deserialize_cache_payload(decompressed)
 
-            with _DB_LOCK, conn:
-                conn.execute("""
-                    UPDATE analysis_metadata_index
-                    SET last_accessed = ?, access_count = access_count + 1
-                    WHERE analysis_id = ?;
-                """, (time.time(), analysis_id))
+        with _DB_LOCK, conn:
+            conn.execute("""
+                UPDATE analysis_metadata_index
+                SET last_accessed = ?, access_count = access_count + 1
+                WHERE analysis_id = ?;
+            """, (time.time(), analysis_id))
 
-            return payload
+        return payload
     except Exception as exc:
         logger.error("Error loading cache for analysis_id=%s: %s", analysis_id, exc)
         return None
@@ -430,9 +427,8 @@ def load_cell_from_db_cache(analysis_id: str, lat: float, lon: float) -> dict[st
             logger.error("HMAC-SHA256 verification failed for cell_key=%s", cell_key)
             return None
 
-        if hmac.compare_digest(sig, expected_sig):
-            decompressed = zlib.decompress(raw_payload)
-            return _deserialize_cache_payload(decompressed)
+        decompressed = zlib.decompress(raw_payload)
+        return _deserialize_cache_payload(decompressed)
     except Exception as exc:
         logger.error("Error loading cell cache for key=%s: %s", cell_key, exc)
         return None

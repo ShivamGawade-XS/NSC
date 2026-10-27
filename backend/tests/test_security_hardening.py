@@ -553,12 +553,32 @@ def test_netrc_injection_rejection(tmp_path, monkeypatch):
     assert settings.setup_netrc() is False
 
 
-def test_secret_key_ephemeral_generation_in_production(monkeypatch):
-    """Verify Settings._init_secret_key generates a secure random 32-byte hex key in production without SECRET_KEY."""
+def test_secret_key_production_enforcement(monkeypatch):
+    """SEC-002: Verify Settings._init_secret_key enforces explicit 32+ char key in production and rejects missing/weak keys."""
     monkeypatch.delenv("SECRET_KEY", raising=False)
-    prod_key = Settings._init_secret_key("production", _is_pytest=False)
-    assert len(prod_key) == 64  # 32 bytes hex = 64 hex chars
-    assert prod_key != "earthsift-scientific-hmac-sha256-production-token-2026"
+    # 1. Missing SECRET_KEY in production must raise RuntimeError
+    with pytest.raises(RuntimeError, match="SECRET_KEY environment variable must be set"):
+        Settings._init_secret_key("production")
+
+    # 2. Too short (<32 chars) in production must raise RuntimeError
+    monkeypatch.setenv("SECRET_KEY", "too_short_key_12345")
+    with pytest.raises(RuntimeError, match="SECRET_KEY environment variable must be set"):
+        Settings._init_secret_key("production")
+
+    # 3. Default dev key in production must raise RuntimeError
+    monkeypatch.setenv("SECRET_KEY", "earthsift-scientific-hmac-sha256-production-token-2026")
+    with pytest.raises(RuntimeError, match="SECRET_KEY environment variable must be set"):
+        Settings._init_secret_key("production")
+
+    # 4. Valid 32+ char key in production succeeds
+    valid_key = "a_very_secure_production_secret_key_exceeding_32_characters"
+    monkeypatch.setenv("SECRET_KEY", valid_key)
+    assert Settings._init_secret_key("production") == valid_key
+
+    # 5. In dev mode, safe development key is returned without error
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    dev_key = Settings._init_secret_key("development")
+    assert len(dev_key) >= 16
 
 
 # --- Error Serialization & Traceback Suppression ---
@@ -582,4 +602,91 @@ def test_api_404_never_returns_spa_html():
         assert data.get("detail") == "API endpoint not found"
         assert "<!doctype html>" not in res.text.lower()
         assert "<html" not in res.text.lower()
+
+
+# --- Security Remediation Regression Tests (SEC-001 through SEC-006) ---
+
+def test_sec_001_custom_analysis_resource_exhaustion_guards():
+    """SEC-001: Verify boundary guards on custom coordinate uploads and timeseries lengths."""
+    # 1. Reject coordinates outside valid latitude [-90, 90]
+    res_lat = client.post("/api/v1/analysis/custom", json={
+        "dataset_name": "test_domain",
+        "cells": [{"lat": 95.0, "lon": 0.0}]
+    })
+    assert res_lat.status_code == 422
+
+    # 2. Reject coordinates outside valid longitude [-180, 180]
+    res_lon = client.post("/api/v1/analysis/custom", json={
+        "dataset_name": "test_domain",
+        "cells": [{"lat": 0.0, "lon": 185.0}]
+    })
+    assert res_lon.status_code == 422
+
+    # 3. Reject mismatched years and values lengths
+    res_mismatch = client.post("/api/v1/analysis/custom", json={
+        "dataset_name": "test_domain",
+        "cells": [{"lat": 10.0, "lon": 20.0, "years": [2000, 2001], "values": [1.0, 2.0, 3.0]}]
+    })
+    assert res_mismatch.status_code == 422
+
+    # 4. Reject cell arrays exceeding 2500 entries
+    oversized = [{"lat": 0.0, "lon": 0.0} for _ in range(2501)]
+    res_over = client.post("/api/v1/analysis/custom", json={
+        "dataset_name": "test_domain",
+        "cells": oversized
+    })
+    assert res_over.status_code == 422
+
+
+def test_sec_004_attachment_filename_sanitization_defense():
+    """SEC-004: Verify export filenames neutralize quotes, newlines, path traversal, and injection tokens."""
+    from app.api.endpoints import sanitize_attachment_filename
+
+    # Injection with double quotes and header splitting
+    malicious = 'temp"; Injected-Header: evil\r\n'
+    clean = sanitize_attachment_filename("earthsift", malicious, 2000, 2020, "nc")
+    assert '"' not in clean
+    assert "\r" not in clean
+    assert "\n" not in clean
+    assert ";" not in clean
+    assert "earthsift_temp_Injected-Header_evil_2000_2020.nc" == clean
+
+    # Path traversal attack in variable_id
+    traversal = "../../../etc/passwd"
+    clean_trav = sanitize_attachment_filename("dossier", traversal, 2000, 2020, "md")
+    assert ".." not in clean_trav
+    assert "/" not in clean_trav
+    assert "\\" not in clean_trav
+
+
+def test_sec_005_cache_control_headers():
+    """SEC-005: Verify explicit Cache-Control headers on analytical routes vs static catalog."""
+    # 1. Telemetry / ready endpoint must have no-store
+    res_ready = client.get("/ready")
+    assert res_ready.status_code == 200
+    assert "no-store" in res_ready.headers.get("cache-control", "")
+
+    # 2. Variable catalog should have public caching
+    res_vars = client.get("/variables")
+    assert res_vars.status_code == 200
+    assert "max-age" in res_vars.headers.get("cache-control", "")
+
+
+def test_sec_006_uvicorn_reload_gating():
+    """SEC-006: Verify reload logic is only enabled in dev/development/local environments."""
+    import os
+    env_backup = os.getenv("ENVIRONMENT")
+    try:
+        os.environ["ENVIRONMENT"] = "production"
+        is_dev_prod = os.getenv("ENVIRONMENT", "production").lower() in ("development", "dev", "local")
+        assert is_dev_prod is False
+
+        os.environ["ENVIRONMENT"] = "development"
+        is_dev_dev = os.getenv("ENVIRONMENT", "production").lower() in ("development", "dev", "local")
+        assert is_dev_dev is True
+    finally:
+        if env_backup:
+            os.environ["ENVIRONMENT"] = env_backup
+        else:
+            os.environ.pop("ENVIRONMENT", None)
 

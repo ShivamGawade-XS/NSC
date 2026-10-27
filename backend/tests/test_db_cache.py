@@ -196,6 +196,18 @@ def test_spatial_cell_cache_read_write_lifecycle():
     lat = 34.0522
     lon = -118.2437
 
+    # Ensure parent record exists in analysis_metadata_index to satisfy foreign key constraint
+    req = AnalysisRequest(
+        dataset_id="merra2_reanalysis",
+        variable_id="T2M",
+        start_year=2010,
+        end_year=2013,
+        bbox=[-120.0, 30.0, -115.0, 40.0],
+        alpha=0.05,
+        use_fdr=True
+    )
+    save_to_db_cache(analysis_id, {"req": req, "status": "ok"})
+
     cell_payload = {
         "lat": lat,
         "lon": lon,
@@ -372,5 +384,174 @@ def test_sqlite_concurrent_read_write_stress():
     assert cell_successes == total_operations, (
         f"Spatial cell cache roundtrip accuracy was {cell_successes}/{total_operations} ({cell_successes / total_operations:.1%})"
     )
+
+
+def test_sqlite_lru_eviction_and_foreign_key_cascade(monkeypatch, tmp_path):
+    """
+    Verify automated LRU pruning when row count >= settings.CACHE_MAX_SIZE (or size >= 96MB),
+    ensuring PRAGMA foreign_keys = ON cascades deletions to spatial_cell_cache,
+    and PRAGMA incremental_vacuum completes successfully.
+    """
+    from app.core import db_cache
+    from app.core.config import settings
+
+    # Isolate database for deterministic eviction testing
+    test_db = tmp_path / "test_lru.db"
+    monkeypatch.setattr(db_cache, "DB_PATH", test_db)
+    monkeypatch.setattr(settings, "CACHE_MAX_SIZE", 10)
+
+    # Reset thread-local connection and initialize new schema
+    db_cache._TLS.conn = None
+    try:
+        db_cache.init_db()
+        conn = db_cache.get_db_connection()
+
+        created_ids = []
+        # Seed 10 records
+        for i in range(10):
+            aid = f"ana_lru_{i:02d}"
+            created_ids.append(aid)
+            req = AnalysisRequest(
+                dataset_id="merra2_reanalysis",
+                variable_id="T2M",
+                start_year=2000,
+                end_year=2020,
+                bbox=[-100.0, 30.0, -90.0, 40.0],
+                alpha=0.05,
+                use_fdr=True
+            )
+            save_to_db_cache(aid, {"req": req, "idx": i})
+            # Save a linked cell in spatial_cell_cache
+            save_cell_to_db_cache(aid, 30.0 + i * 0.1, -95.0, {"slope": 0.01 * i})
+
+            # Artificially space last_accessed so eviction order is deterministic
+            with conn:
+                conn.execute(
+                    "UPDATE analysis_metadata_index SET last_accessed = ? WHERE analysis_id = ?;",
+                    (1000.0 + i, aid)
+                )
+
+        # Verify all 10 analysis records and cells exist
+        cur = conn.cursor()
+        placeholders = ",".join("?" for _ in created_ids)
+        cur.execute(f"SELECT COUNT(*) FROM analysis_metadata_index WHERE analysis_id IN ({placeholders});", created_ids)  # noqa: S608
+        assert cur.fetchone()[0] == 10
+        cur.execute(f"SELECT COUNT(*) FROM spatial_cell_cache WHERE analysis_id IN ({placeholders});", created_ids)  # noqa: S608
+        assert cur.fetchone()[0] == 10
+
+        # Insert 11th record which triggers LRU eviction: count (10) >= CACHE_MAX_SIZE (10)
+        # Oldest 20% (max(1, int(10 * 0.20)) = 2 records) must be evicted: created_ids[0] and created_ids[1]
+        aid_11 = "ana_lru_11"
+        req_11 = AnalysisRequest(
+            dataset_id="merra2_reanalysis",
+            variable_id="T2M",
+            start_year=2000,
+            end_year=2020,
+            bbox=[-100.0, 30.0, -90.0, 40.0],
+            alpha=0.05,
+            use_fdr=True
+        )
+        save_to_db_cache(aid_11, {"req": req_11, "idx": 11})
+
+        # Verify that the 2 oldest records were evicted from analysis_metadata_index
+        cur.execute(
+            "SELECT analysis_id FROM analysis_metadata_index WHERE analysis_id IN (?, ?);",
+            (created_ids[0], created_ids[1])
+        )
+        remaining_parents = [r[0] for r in cur.fetchall()]
+        assert len(remaining_parents) == 0, f"Expected oldest records to be evicted, got {remaining_parents}"
+
+        # Verify that FOREIGN KEY cascade automatically removed linked rows from spatial_cell_cache
+        cur.execute(
+            "SELECT cell_key FROM spatial_cell_cache WHERE analysis_id IN (?, ?);",
+            (created_ids[0], created_ids[1])
+        )
+        orphaned_cells = [r[0] for r in cur.fetchall()]
+        assert len(orphaned_cells) == 0, f"Expected foreign key cascade to delete cells, but found orphans: {orphaned_cells}"
+
+        # Verify the 11th record exists and newer records remain
+        assert load_from_db_cache(aid_11) is not None
+        assert load_from_db_cache(created_ids[2]) is not None
+    finally:
+        db_cache._TLS.conn = None
+
+
+def test_sqlite_lru_size_ceiling_eviction(monkeypatch, tmp_path):
+    """
+    Verify automated LRU eviction triggers when compressed payload size
+    exceeds CACHE_MAX_BYTES (default 96MB), even when record count is below CACHE_MAX_SIZE.
+    """
+    from app.core import db_cache
+    from app.core.config import settings
+
+    test_db = tmp_path / "test_size_lru.db"
+    monkeypatch.setattr(db_cache, "DB_PATH", test_db)
+    # High record limit so size ceiling triggers eviction
+    monkeypatch.setattr(settings, "CACHE_MAX_SIZE", 1000)
+    # Set size ceiling to 1000 bytes for deterministic test
+    monkeypatch.setattr(settings, "CACHE_MAX_BYTES", 1000)
+
+    db_cache._TLS.conn = None
+    try:
+        db_cache.init_db()
+        conn = db_cache.get_db_connection()
+
+        # Seed 5 records with ~300 bytes each (total ~1500 bytes > 1000 bytes)
+        created_ids = []
+        for i in range(5):
+            aid = f"ana_size_{i:02d}"
+            created_ids.append(aid)
+            req = AnalysisRequest(
+                dataset_id="merra2_reanalysis",
+                variable_id="T2M",
+                start_year=2000,
+                end_year=2020,
+                bbox=[-100.0, 30.0, -90.0, 40.0],
+                alpha=0.05,
+                use_fdr=True
+            )
+            # Add padding to ensure each payload is substantial
+            payload = {"req": req, "idx": i, "padding": "x" * 250}
+            save_to_db_cache(aid, payload)
+            save_cell_to_db_cache(aid, 30.0 + i * 0.1, -95.0, {"slope": 0.05})
+
+            with conn:
+                conn.execute(
+                    "UPDATE analysis_metadata_index SET last_accessed = ? WHERE analysis_id = ?;",
+                    (2000.0 + i, aid)
+                )
+
+        # Trigger 6th insert: total bytes now exceed CACHE_MAX_BYTES
+        aid_trigger = "ana_size_trigger"
+        req_trigger = AnalysisRequest(
+            dataset_id="merra2_reanalysis",
+            variable_id="T2M",
+            start_year=2000,
+            end_year=2020,
+            bbox=[-100.0, 30.0, -90.0, 40.0],
+            alpha=0.05,
+            use_fdr=True
+        )
+        save_to_db_cache(aid_trigger, {"req": req_trigger, "padding": "y" * 250})
+
+        # Oldest record (created_ids[0]) must be evicted
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT analysis_id FROM analysis_metadata_index WHERE analysis_id = ?;",
+            (created_ids[0],)
+        )
+        assert cur.fetchone() is None, "Oldest record was not evicted when size limit exceeded"
+
+        # Verify child cell was cascade-deleted
+        cur.execute(
+            "SELECT cell_key FROM spatial_cell_cache WHERE analysis_id = ?;",
+            (created_ids[0],)
+        )
+        assert cur.fetchone() is None, "Foreign key cascade failed on size ceiling eviction"
+    finally:
+        db_cache._TLS.conn = None
+
+
+
 
 

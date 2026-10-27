@@ -49,6 +49,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
     TEMPORAL_RANGE = [1981, 2023]
     DEFAULT_BBOX = [-102.0, 30.0, -94.0, 38.0]
     COVERAGE_BBOX = [-180.0, -90.0, 180.0, 90.0]
+    MISSIONS_AND_MODELS = "NASA Terra (MODIS, CERES), Aqua (AIRS), TRMM/GPM, and GMAO GEOS-5 FP-IT Assimilation Model"
 
     BASE_URL = "https://power.larc.nasa.gov/api/temporal/monthly/regional"
 
@@ -59,7 +60,20 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             "source_units": "°C",
             "display_units": "°C",
             "slope_units": "°C / decade",
-            "description": "Monthly surface air temperature at 2 meters above ground level."
+            "description": "Monthly surface air temperature at 2 meters above ground level.",
+            "product_type": "reanalysis_assimilation",
+            "native_resolution": "0.5° latitude x 0.625° longitude (re-gridded to 0.5° x 0.5°)",
+            "mission_source": "NASA GMAO GEOS-5 FP-IT assimilation model informed by Terra/Aqua sounders and CERES",
+            "discontinuity_warning": None,
+            "physical_domain": "Thermal & Temperature",
+            "earliest_year": 1981,
+            "latest_year": 2024,
+            "temporal_aggregation": "annual_mean",
+            "suitable_analysis_types": ["monotonic_trend", "compound_hazard", "climate_velocity", "regional_comparison", "robustness_lab"],
+            "scientific_references": [
+                "Gelaro et al. (2017) The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2). J. Climate, 30(14), 5419-5454.",
+                "Stackhouse et al. (2018) NASA POWER Release 8.0: Global Solar and Meteorological Datasets."
+            ]
         },
         "PRECTOT": {
             "name": "Total Corrected Precipitation",
@@ -67,7 +81,19 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             "source_units": "mm / day",
             "display_units": "mm / day",
             "slope_units": "mm / day / decade",
-            "description": "Monthly average precipitation rate corrected for gauge undercatch."
+            "description": "Monthly average precipitation rate corrected for gauge undercatch.",
+            "product_type": "satellite_gauge_assimilated",
+            "native_resolution": "0.1° / 0.5° satellite-gauge assimilation",
+            "mission_source": "TRMM and GPM satellite constellation combined with GEOS-5 FP-IT gauge-corrected precipitation analysis",
+            "discontinuity_warning": None,
+            "physical_domain": "Hydrology & Precipitation",
+            "earliest_year": 1981,
+            "latest_year": 2024,
+            "temporal_aggregation": "annual_mean",
+            "suitable_analysis_types": ["monotonic_trend", "compound_hazard", "regional_comparison", "robustness_lab"],
+            "scientific_references": [
+                "Huffman et al. (2020) Integrated Multi-satellitE Retrievals for GPM (IMERG) Technical Documentation. NASA GSFC."
+            ]
         },
         "PRECTOTCORR": {
             "name": "Total Corrected Precipitation",
@@ -75,7 +101,80 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             "source_units": "mm / day",
             "display_units": "mm / day",
             "slope_units": "mm / day / decade",
-            "description": "Monthly average precipitation rate corrected for gauge undercatch."
+            "description": "Monthly average precipitation rate corrected for gauge undercatch.",
+            "product_type": "satellite_gauge_assimilated",
+            "native_resolution": "0.1° / 0.5° satellite-gauge assimilation",
+            "mission_source": "TRMM and GPM satellite constellation combined with GEOS-5 FP-IT gauge-corrected precipitation analysis",
+            "discontinuity_warning": None,
+            "physical_domain": "Hydrology & Precipitation",
+            "earliest_year": 1981,
+            "latest_year": 2024,
+            "temporal_aggregation": "annual_mean",
+            "suitable_analysis_types": ["monotonic_trend", "compound_hazard", "regional_comparison", "robustness_lab"],
+            "scientific_references": [
+                "Huffman et al. (2020) Integrated Multi-satellitE Retrievals for GPM (IMERG) Technical Documentation. NASA GSFC."
+            ]
+        },
+        "ALLSKY_SFC_SW_DWN": {
+            "name": "All Sky Surface Shortwave Downward Irradiance",
+            "nasa_param": "ALLSKY_SFC_SW_DWN",
+            "source_units": "MJ/m^2/day",
+            "display_units": "MJ/m^2/day",
+            "slope_units": "MJ/m^2/day / decade",
+            "description": "Total downward shortwave solar flux incident on horizontal surface under all-sky conditions.",
+            "product_type": "satellite_retrieval_and_model_composite",
+            "native_resolution": "1.0° latitude x 1.0° longitude (CERES SYN1deg / re-gridded to 0.5°)",
+            "mission_source": "GEWEX SRB (1981-2000), CERES SYN1deg on Terra/Aqua (2000-present), and GMAO GEOS-5 FP-IT near-real-time",
+            "discontinuity_warning": "Discontinuity Notice: Multi-decadal solar irradiance trends span the 2000 transition from GEWEX SRB satellite retrievals to CERES SYN1deg (Terra/Aqua) and subsequent near-real-time GEOS-5 model assimilation. Cross-sensor regime changes can introduce artificial step-discontinuities in trend slope estimates.",
+            "physical_domain": "Radiative & Solar Energy",
+            "earliest_year": 1984,
+            "latest_year": 2024,
+            "temporal_aggregation": "annual_mean",
+            "suitable_analysis_types": ["monotonic_trend", "regional_comparison", "robustness_lab"],
+            "scientific_references": [
+                "Wielicki et al. (1996) Clouds and the Earth's Radiant Energy System (CERES): An Earth Observing System Experiment. Bull. Amer. Meteor. Soc.",
+                "Stackhouse et al. (2011) 24.5-Year Surface Radiation Budget Dataset. GEWEX News."
+            ]
+        },
+        "WS10M": {
+            "name": "10-Meter Wind Speed",
+            "nasa_param": "WS10M",
+            "source_units": "m/s",
+            "display_units": "m/s",
+            "slope_units": "m/s / decade",
+            "description": "Monthly surface wind speed at 10 meters above ground or water.",
+            "product_type": "reanalysis_assimilation",
+            "native_resolution": "0.5° latitude x 0.625° longitude (GEOS-5 FP-IT / re-gridded to 0.5°)",
+            "mission_source": "NASA GMAO GEOS-5 FP-IT atmospheric assimilation system",
+            "discontinuity_warning": None,
+            "physical_domain": "Atmospheric Dynamics",
+            "earliest_year": 1981,
+            "latest_year": 2024,
+            "temporal_aggregation": "annual_mean",
+            "suitable_analysis_types": ["monotonic_trend", "regional_comparison", "robustness_lab"],
+            "scientific_references": [
+                "Rienecker et al. (2011) MERRA: NASA's Modern-Era Retrospective Analysis for Research and Applications. J. Climate."
+            ]
+        },
+        "RH2M": {
+            "name": "2-Meter Relative Humidity",
+            "nasa_param": "RH2M",
+            "source_units": "%",
+            "display_units": "%",
+            "slope_units": "% / decade",
+            "description": "Monthly relative humidity at 2 meters above surface.",
+            "product_type": "reanalysis_assimilation",
+            "native_resolution": "0.5° latitude x 0.625° longitude (GEOS-5 FP-IT / re-gridded to 0.5°)",
+            "mission_source": "NASA GMAO GEOS-5 FP-IT atmospheric assimilation system",
+            "discontinuity_warning": None,
+            "physical_domain": "Moisture & Humidity",
+            "earliest_year": 1981,
+            "latest_year": 2024,
+            "temporal_aggregation": "annual_mean",
+            "suitable_analysis_types": ["monotonic_trend", "compound_hazard", "regional_comparison", "robustness_lab"],
+            "scientific_references": [
+                "Gelaro et al. (2017) The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2). J. Climate."
+            ]
         }
     }
 
@@ -103,7 +202,11 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                 "temporal_range": self.TEMPORAL_RANGE,
                 "doi": self.DOI,
                 "conventions": self.CONVENTIONS,
-                "is_synthetic": False
+                "is_synthetic": False,
+                "missions_and_models": self.MISSIONS_AND_MODELS,
+                "mission_source": meta.get("mission_source"),
+                "product_type": meta.get("product_type"),
+                "discontinuity_warning": meta.get("discontinuity_warning")
             })
         return catalog
 
@@ -120,7 +223,8 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             "variables": self.VARIABLES,
             "default_bbox": self.DEFAULT_BBOX,
             "live_access_available": True,
-            "citation": "Stackhouse, P. W., et al. (2023). NASA POWER Project Version 10.0.0. NASA Langley Research Center."
+            "citation": "Stackhouse, P. W., et al. (2023). NASA POWER Project Version 10.0.0. NASA Langley Research Center.",
+            "missions_and_models": self.MISSIONS_AND_MODELS
         }
 
     def validate(
@@ -147,6 +251,14 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             raise ValueError(
                 f"Insufficient sample window ({end_year - start_year + 1} years). "
                 "Minimum required for non-parametric trend analysis is 5 years."
+            )
+
+        if variable in ("ALLSKY_SFC_SW_DWN",) and start_year < 2001 and end_year >= 2001:
+            raise ValueError(
+                "Multi-decadal solar irradiance analysis across the 2000/2001 instrument transition boundary "
+                "(GEWEX SRB to CERES SYN1deg) cannot support a single homogeneous trend without introducing "
+                "artificial step-discontinuities. Please partition your query into either the SRB regime "
+                "(1984–2000) or the CERES regime (2001–2023)."
             )
 
         if bbox is not None:
@@ -178,7 +290,6 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         return (
             data.startswith(b"CDF")
             or data.startswith(b"\x89HDF\r\n\x1a\n")
-            or data.startswith(b"authentic_nasa_netcdf_data")
         )
 
     def fetch_live_granule(
@@ -197,13 +308,23 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         nasa_param = self.VARIABLES[variable]["nasa_param"]
         min_lon, min_lat, max_lon, max_lat = bbox
 
-        # Clamp max delta to 10 degrees to respect NASA POWER regional API limit
+        # Clamp min delta to 2.0 degrees (NASA POWER regional API requirement) and max delta to 9.9 degrees
         lat_range = max_lat - min_lat
         lon_range = max_lon - min_lon
+        span_lat = max(2.0, min(lat_range, 9.9))
+        span_lon = max(2.0, min(lon_range, 9.9))
+
         req_min_lat = min_lat
-        req_max_lat = min_lat + min(lat_range, 9.9)
+        req_max_lat = min_lat + span_lat
+        if req_max_lat > 90.0:
+            req_max_lat = 90.0
+            req_min_lat = max(-90.0, 90.0 - span_lat)
+
         req_min_lon = min_lon
-        req_max_lon = min_lon + min(lon_range, 9.9)
+        req_max_lon = min_lon + span_lon
+        if req_max_lon > 180.0:
+            req_max_lon = 180.0
+            req_min_lon = max(-180.0, 180.0 - span_lon)
 
         cache_target = self._build_granule_cache_path(nasa_param, [req_min_lon, req_min_lat, req_max_lon, req_max_lat], start_year, end_year)
         if cache_target.exists() and cache_target.stat().st_size > 1024:
@@ -333,6 +454,8 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             if not target_var:
                 target_var = next(iter(ds.data_vars.keys()))
 
+            is_variable_substituted = bool(target_var not in (nasa_param, variable))
+
             da = ds[target_var]
             time_coord = "time" if "time" in da.coords else next(iter(da.coords.keys()))
             lat_coord = "lat" if "lat" in da.coords else "latitude"
@@ -396,15 +519,30 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                     "publisher": publisher,
                     "doi": self.DOI,
                     "conventions": conventions,
-                    "resolution": self.NATIVE_RESOLUTION,
+                    "resolution": var_meta.get("native_resolution", self.NATIVE_RESOLUTION),
+                    "temporal_aggregation": "annual_mean",
+                    "temporal_resolution": "annual_mean",
                     "time_span": f"{years_arr[0]} - {years_arr[-1]}" if len(years_arr) > 0 else f"{start_year} - {end_year}",
                     "grid_shape": list(raw_vals.shape[1:]),
                     "sample_count": len(years_arr),
                     "is_synthetic": False,
                     "granule_file": nc_path.name,
+                    "is_fallback_fixture": "fixtures" in str(nc_path.parent) or nc_path.parent == self.fixtures_dir,
+                    "is_variable_substituted": is_variable_substituted,
                     "data_source_label": source_label,
+                    "missions_and_models": self.MISSIONS_AND_MODELS,
+                    "mission_source": var_meta.get("mission_source"),
+                    "product_type": var_meta.get("product_type"),
+                    "discontinuity_warning": var_meta.get("discontinuity_warning"),
                     "bbox_clamped": was_clamped,
-                    "warning": "Requested spatial extent exceeded NASA POWER 10° regional API limit and was constrained to 9.9°." if was_clamped else None
+                    "warning": (
+                        f"Requested variable '{variable}' was not found in offline fixture and '{target_var}' was substituted for demonstration."
+                        if is_variable_substituted
+                        else (
+                            "Requested spatial extent exceeded NASA POWER 10° regional API limit and was constrained to 9.9°. "
+                            "For unbounded continental domains, select MERRA-2 Reanalysis."
+                        ) if was_clamped else var_meta.get("discontinuity_warning")
+                    )
                 }
             }
 

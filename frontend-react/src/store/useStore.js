@@ -57,6 +57,12 @@ const useStore = create((set, get) => ({
   colabData: null,
   customDataModalOpen: false,
   preprintModalOpen: false,
+  robustnessModalOpen: false,
+  qualityProfileModalOpen: false,
+  reproducibilityModalOpen: false,
+  regionalCompareModalOpen: false,
+  discoveryModalOpen: false,
+  qualityGateResult: null,
 
   // Actions
   setFormField: (field, value) => {
@@ -71,30 +77,56 @@ const useStore = create((set, get) => ({
   setBbox: (bbox) => set({ bbox }),
   setCurtainSplit: (val) => set({ curtainSplit: val }),
   toggleCurtainMode: () => set((s) => ({ showCurtainMode: !s.showCurtainMode })),
+  setQualityGateResult: (result) => set({ qualityGateResult: result }),
 
   closeAllModals: () => set({
     nlqModalOpen: false,
     latexModalOpen: false,
     customDataModalOpen: false,
     preprintModalOpen: false,
+    robustnessModalOpen: false,
+    qualityProfileModalOpen: false,
+    reproducibilityModalOpen: false,
+    regionalCompareModalOpen: false,
+    discoveryModalOpen: false,
     isCaseStudyTourOpen: false,
     isJudgeTourActive: false,
   }),
   setNlqModalOpen: (open) => set({
     nlqModalOpen: open,
-    ...(open ? { latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setLatexModalOpen: (open) => set({
     latexModalOpen: open,
-    ...(open ? { nlqModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setCustomDataModalOpen: (open) => set({
     customDataModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, preprintModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setPreprintModalOpen: (open) => set({
     preprintModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setRobustnessModalOpen: (open) => set({
+    robustnessModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setQualityProfileModalOpen: (open) => set({
+    qualityProfileModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setReproducibilityModalOpen: (open) => set({
+    reproducibilityModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setRegionalCompareModalOpen: (open) => set({
+    regionalCompareModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setDiscoveryModalOpen: (open) => set({
+    discoveryModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   loadCustomGridData: (customData) => set({
     analysisData: customData,
@@ -210,6 +242,7 @@ const useStore = create((set, get) => ({
 
     try {
       const data = await api.runAnalysis(payload);
+      if (!data) return;
       // Load signals
       let signals = [];
       try {
@@ -256,6 +289,7 @@ const useStore = create((set, get) => ({
       }
       get().syncUrl();
     } catch (err) {
+      if (api.isAbortError?.(err)) return;
       set({ isLoading: false, error: err.message });
     }
   },
@@ -282,6 +316,7 @@ const useStore = create((set, get) => ({
 
     try {
       const data = await api.runCompoundAnalysis(payload);
+      if (!data) return;
       set({
         analysisData: { ...data, isCompound: true },
         analysisId: data.analysis_id,
@@ -307,6 +342,7 @@ const useStore = create((set, get) => ({
       }
       get().syncUrl();
     } catch (err) {
+      if (api.isAbortError?.(err)) return;
       set({ isLoading: false, error: err.message });
     }
   },
@@ -371,9 +407,11 @@ const useStore = create((set, get) => ({
 
     try {
       const cell = await api.getCellTimeseries(analysisId, lat, lon);
+      if (!cell) return;
       set({ selectedCell: cell });
       get().syncUrl();
     } catch (err) {
+      if (api.isAbortError?.(err)) return;
       console.error('Failed to load cell:', err);
     }
   },

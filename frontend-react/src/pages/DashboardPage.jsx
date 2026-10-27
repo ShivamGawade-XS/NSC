@@ -12,6 +12,11 @@ import CommandPaletteModal from '../components/CommandPaletteModal';
 import LatexModal from '../components/LatexModal';
 import CustomDataModal from '../components/CustomDataModal';
 import PreprintModal from '../components/PreprintModal';
+import RobustnessLabModal from '../components/RobustnessLabModal';
+import RegionalCompareModal from '../components/RegionalCompareModal';
+import DataQualityModal from '../components/DataQualityModal';
+import ReproducibilityModal from '../components/ReproducibilityModal';
+import DiscoveryModal from '../components/DiscoveryModal';
 import useStore from '../store/useStore';
 import { trackPageView } from '../utils/analytics';
 import { playTactileClick } from '../utils/audio';
@@ -22,6 +27,12 @@ export default function DashboardPage() {
   const error = useStore((s) => s.error);
   const analysisData = useStore((s) => s.analysisData);
   const selectedCell = useStore((s) => s.selectedCell);
+  const analysisId = useStore((s) => s.analysisId);
+  const robustnessModalOpen = useStore((s) => s.robustnessModalOpen);
+  const qualityProfileModalOpen = useStore((s) => s.qualityProfileModalOpen);
+  const reproducibilityModalOpen = useStore((s) => s.reproducibilityModalOpen);
+  const regionalCompareModalOpen = useStore((s) => s.regionalCompareModalOpen);
+  const discoveryModalOpen = useStore((s) => s.discoveryModalOpen);
   const hasInitialized = useRef(false);
 
   useEffect(() => {
@@ -120,6 +131,11 @@ export default function DashboardPage() {
           storeState.latexModalOpen ||
           storeState.customDataModalOpen ||
           storeState.preprintModalOpen ||
+          storeState.robustnessModalOpen ||
+          storeState.qualityProfileModalOpen ||
+          storeState.reproducibilityModalOpen ||
+          storeState.regionalCompareModalOpen ||
+          storeState.discoveryModalOpen ||
           storeState.isCaseStudyTourOpen ||
           storeState.isJudgeTourActive
         ) {
@@ -267,6 +283,34 @@ export default function DashboardPage() {
         <LatexModal />
         <CustomDataModal />
         <PreprintModal />
+        {robustnessModalOpen && (
+          <RobustnessLabModal
+            analysisId={analysisId}
+            onClose={() => useStore.getState().setRobustnessModalOpen(false)}
+          />
+        )}
+        {qualityProfileModalOpen && (
+          <DataQualityModal
+            analysisId={analysisId}
+            onClose={() => useStore.getState().setQualityProfileModalOpen(false)}
+          />
+        )}
+        {reproducibilityModalOpen && (
+          <ReproducibilityModal
+            analysisId={analysisId}
+            onClose={() => useStore.getState().setReproducibilityModalOpen(false)}
+          />
+        )}
+        {regionalCompareModalOpen && (
+          <RegionalCompareModal
+            onClose={() => useStore.getState().setRegionalCompareModalOpen(false)}
+          />
+        )}
+        {discoveryModalOpen && (
+          <DiscoveryModal
+            onClose={() => useStore.getState().setDiscoveryModalOpen(false)}
+          />
+        )}
         <Toaster
           position="bottom-right"
           toastOptions={{

@@ -43,7 +43,9 @@ def compute_event_attribution(
         clean_s = np.array([], dtype=float)
 
     if len(clean_s) >= 10:
-        mu_1 = float(np.mean(clean_s))
+        # Factual current state mean is the recent end-of-period mean (last ~20% of series)
+        recent_window = max(2, len(clean_s) // 5)
+        mu_1 = float(np.mean(clean_s[-recent_window:]))
         sigma = float(np.std(clean_s, ddof=1)) if np.std(clean_s, ddof=1) > 1e-4 else 1.0
 
         # Empirical Sen/OLS residual standard error of decadal slope SE(beta)
@@ -51,7 +53,7 @@ def compute_event_attribution(
         t = np.arange(n_pts, dtype=float) / 10.0  # Decadal time axis
         t_diff = t - np.mean(t)
         ss_tt = float(np.sum(t_diff ** 2))
-        residuals = (clean_s - np.mean(clean_s)) - slope * t_diff
+        residuals = clean_s - (np.mean(clean_s) + slope * t_diff)
         res_var = float(np.sum(residuals ** 2)) / max(1, n_pts - 2)
         se_slope = np.sqrt(res_var / max(1e-9, ss_tt))
         scale = max(0.005, float(se_slope))

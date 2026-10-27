@@ -63,6 +63,9 @@ RUN mkdir -p /app/cache /app/backend/data /app/data && \
 ENV PYTHONPATH=/app/backend \
     PYTHONUNBUFFERED=1 \
     ENVIRONMENT=production \
+    HOME=/app/cache \
+    NETRC_DIR=/app/cache \
+    NASA_POWER_CACHE_DIR=/app/cache/nasa_power \
     MERRA2_DATA_DIR=/app/backend/data/fixtures \
     EARTHSIFT_DB_PATH=/app/cache/earthdata_cache.db
 

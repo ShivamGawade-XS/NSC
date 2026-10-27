@@ -234,7 +234,7 @@ def test_nasa_power_live_retry_and_timeout():
             raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", cast(Any, {}), None)
         mock_resp = MagicMock()
         mock_resp.status = 200
-        mock_resp.read.return_value = b"authentic_nasa_netcdf_data" * 100
+        mock_resp.read.return_value = b"\x89HDF\r\n\x1a\n" + (b"authentic_nasa_netcdf_data" * 100)
         mock_resp.__enter__.return_value = mock_resp
         mock_resp.__exit__.return_value = None
         return mock_resp

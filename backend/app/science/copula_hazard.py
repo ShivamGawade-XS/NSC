@@ -88,7 +88,7 @@ def evaluate_gumbel_cdf(u: np.ndarray, v: np.ndarray, theta: float) -> np.ndarra
 def compute_compound_copula_return_periods(
     temp_slopes: np.ndarray,
     precip_slopes: np.ndarray,
-    base_timestep_years: float = 10.0
+    base_timestep_years: float = 1.0
 ) -> dict[str, Any]:
     """
     Calculate spatial compound risk return periods using copula modeling.
@@ -98,14 +98,14 @@ def compute_compound_copula_return_periods(
     valid_mask = ~np.isnan(temp_slopes) & ~np.isnan(precip_slopes)
     n_valid = int(np.sum(valid_mask))
 
-    return_periods = np.full(shape, 10.0, dtype=float)
+    return_periods = np.full(shape, base_timestep_years, dtype=float)
 
     if n_valid < 6:
         return {
             "copula_model": {"copula_type": "gumbel", "theta": 1.0, "tau": 0.0},
             "joint_return_periods_years": return_periods,
-            "max_return_period_years": 10.0,
-            "mean_return_period_years": 10.0,
+            "max_return_period_years": base_timestep_years,
+            "mean_return_period_years": base_timestep_years,
             "compound_extreme_cells": 0
         }
 
