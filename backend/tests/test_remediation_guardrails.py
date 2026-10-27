@@ -192,16 +192,16 @@ def test_adapter_cache_isolation_with_tmp_path(tmp_path: Path):
     import urllib.request
     from email.message import Message
 
-    def mock_urlopen(req, timeout=12.0):
-        url = req.full_url if hasattr(req, "full_url") else str(req)
-        requested_urls.append(url)
-        raise urllib.error.HTTPError(url, 500, "Mock Test Halt", Message(), None)
+    def mock_urlopen(url, *args, **kwargs):
+        full_url = url.full_url if hasattr(url, "full_url") else str(url)
+        requested_urls.append(full_url)
+        raise urllib.error.HTTPError(full_url, 500, "Mock Test Halt", Message(), None)
 
     orig_urlopen = urllib.request.urlopen
-    urllib.request.urlopen = mock_urlopen
+    urllib.request.urlopen = mock_urlopen  # type: ignore[assignment]
     try:
         adapter.fetch_live_granule("T2M", 2020, 2021, [-95.0, 30.0, -94.0, 31.0])
     finally:
-        urllib.request.urlopen = orig_urlopen
+        urllib.request.urlopen = orig_urlopen  # type: ignore[assignment]
 
     assert len(requested_urls) > 0, "When cache_dir is isolated, urlopen MUST be called"
