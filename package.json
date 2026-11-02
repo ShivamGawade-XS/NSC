@@ -1,0 +1,16 @@
+{
+  "name": "earthsift-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "description": "EarthSift — Autonomous Spatial Trend Discovery Instrument for NASA Earth Observations",
+  "scripts": {
+    "dev": "npm --prefix frontend-react run dev",
+    "build": "npm --prefix frontend-react run build",
+    "lint": "npm --prefix frontend-react run lint",
+    "preview": "npm --prefix frontend-react run preview",
+    "test:frontend": "npm --prefix frontend-react run lint",
+    "backend": "python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8000 --reload",
+    "test:backend": "pytest backend/tests -q",
+    "test:security": "python scripts/test_red_team_audit.py"
+  }
+}
