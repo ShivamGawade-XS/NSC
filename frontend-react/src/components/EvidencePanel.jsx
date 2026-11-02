@@ -61,6 +61,29 @@ function ProvenanceBadge({ provenance }) {
   );
 }
 
+function getCellMetricScale(lat, resolutionStr, datasetId) {
+  if (lat === undefined || lat === null || isNaN(lat)) return null;
+  const phi = (Math.abs(lat) * Math.PI) / 180;
+  const isMerra = datasetId === 'merra2' || resolutionStr?.includes('0.625');
+  const isCeres = resolutionStr?.includes('1.0°');
+
+  const dLatDeg = isCeres ? 1.0 : 0.5;
+  const dLonDeg = isCeres ? 1.0 : (isMerra ? 0.625 : 0.5);
+
+  const dLatKm = dLatDeg * 111.13;
+  const dLonKm = dLonDeg * 111.32 * Math.cos(phi);
+  const areaKm2 = dLatKm * dLonKm;
+
+  return {
+    dLatKm: dLatKm.toFixed(1),
+    dLonKm: Math.max(0.1, dLonKm).toFixed(1),
+    areaKm2: Math.round(areaKm2).toLocaleString(),
+    scaleFormula: isMerra 
+      ? `55.6 km × (69.6 × cos(${Math.abs(lat).toFixed(1)}°) km)` 
+      : `55.6 km × (55.6 × cos(${Math.abs(lat).toFixed(1)}°) km)`,
+  };
+}
+
 export default function EvidencePanel() {
   const selectedCell = useStore((s) => s.selectedCell);
   const isAnomalyMode = useStore((s) => s.isAnomalyMode);
@@ -90,6 +113,10 @@ export default function EvidencePanel() {
   const cell = selectedCell;
   const ev = cell.evidence_record;
   const cluster = cell.lisa_cluster || ev?.lisa_cluster || 'NS';
+  const datasetId = analysisData?.dataset_id;
+  const resolutionStr = analysisData?.provenance?.resolution;
+  const datasetName = analysisData?.provenance?.dataset_name || (datasetId === 'merra2' ? 'NASA MERRA-2' : 'NASA POWER');
+  const metricScale = getCellMetricScale(cell.lat, resolutionStr, datasetId);
 
   const handleAiExplain = async () => {
     playTactileClick(750);
@@ -137,7 +164,7 @@ export default function EvidencePanel() {
               Cell {formatCoords(cell.lat, cell.lon)}
             </h3>
             <p className="text-[10px] text-[var(--color-text-secondary)] font-mono">
-              NASA POWER • 0.5° SYNOPTIC • {cell.variable_name || 'T2M'}
+              {datasetName} • {resolutionStr || (datasetId === 'merra2' ? '0.5° × 0.625°' : '0.5° × 0.5°')} • {cell.variable_name || analysisData?.variable_id || 'T2M'}
             </p>
           </div>
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono tracking-wider uppercase ${
@@ -359,7 +386,10 @@ export default function EvidencePanel() {
               <Row label="Hydro Drift" value={`${cell.precip_slope > 0 ? '+' : ''}${cell.precip_slope?.toFixed(4)} mm/day / decade`} />
               <Row label="CAI Index" value={`+${cell.tau?.toFixed(3) || '0.000'} (Climate Aridification Index)`} />
               <Row label="Copula Risk" value="Joint Compound Return Period > 50 Years" />
-              <Row label="Grid Resolution" value={analysisData?.provenance?.resolution || '0.5° × 0.5° NASA Reanalysis Assimilation'} />
+              <Row label="Grid Resolution" value={resolutionStr || (datasetId === 'merra2' ? '0.5° × 0.625° NASA MERRA-2 Reanalysis' : '0.5° × 0.5° NASA Synoptic Ingestion')} />
+              {metricScale && (
+                <Row label="Metric Scale" value={`≈ ${metricScale.dLatKm} km (N-S) × ${metricScale.dLonKm} km (E-W) [${metricScale.areaKm2} km²] (${metricScale.scaleFormula})`} />
+              )}
               <Row label="Source" value={ev?.source || 'NASA Ingestion (POWER & MERRA-2)'} />
               <Row label="Integrity">
                 {analysisData?.provenance?.is_synthetic === true ? (
@@ -392,6 +422,10 @@ export default function EvidencePanel() {
               )}
               <Row label="Coverage" value={ev?.coverage || `${cell.years?.length || 0} consecutive annual records`} />
               <Row label="Method" value={ev?.method || "Mann-Kendall (1945) & Sen's Slope (1968)"} />
+              <Row label="Grid Resolution" value={resolutionStr || (datasetId === 'merra2' ? '0.5° × 0.625° NASA MERRA-2 Reanalysis' : '0.5° × 0.5° NASA Synoptic Ingestion')} />
+              {metricScale && (
+                <Row label="Metric Scale" value={`≈ ${metricScale.dLatKm} km (N-S) × ${metricScale.dLonKm} km (E-W) [${metricScale.areaKm2} km²] (${metricScale.scaleFormula})`} />
+              )}
               <Row label="Source" value={ev?.source || 'NASA Observation'} />
               <Row label="Integrity">
                 {analysisData?.provenance?.is_synthetic === true ? (
