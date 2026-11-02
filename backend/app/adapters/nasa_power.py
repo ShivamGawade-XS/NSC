@@ -52,6 +52,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
     MISSIONS_AND_MODELS = "NASA Terra (MODIS, CERES), Aqua (AIRS), TRMM/GPM, and GMAO GEOS-5 FP-IT Assimilation Model"
 
     BASE_URL = "https://power.larc.nasa.gov/api/temporal/monthly/regional"
+    POINT_API_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point"
 
     VARIABLES = {
         "T2M": {
@@ -392,6 +393,155 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                 break
 
         return None
+
+    def fetch_point(
+        self,
+        variable: str,
+        start_year: int,
+        end_year: int,
+        lat: float,
+        lon: float,
+        timeout_seconds: float = 12.0
+    ) -> dict[str, Any] | None:
+        """
+        Fetch time series for a single point from NASA POWER Point API.
+        Returns pipeline-compatible dict with data shaped (T, 1, 1) or None on failure.
+        Used as a graceful fallback when a bounding box doesn't intersect any grid cell centers.
+        """
+        import json as _json
+
+        var_meta = self.VARIABLES.get(variable)
+        if not var_meta:
+            return None
+
+        nasa_param = var_meta["nasa_param"]
+        url = (
+            f"{self.POINT_API_URL}?"
+            f"latitude={lat:.4f}&longitude={lon:.4f}&"
+            f"parameters={nasa_param}&community=AG&"
+            f"start={start_year}&end={end_year}&format=JSON"
+        )
+
+        logger.info("Requesting point data from NASA POWER Point API: %s", url)
+        if not url.startswith("https://power.larc.nasa.gov/"):
+            return None
+
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "EarthSift-NASASpaceApps/2.0 (Scientific Research Instrument)"}
+            )
+            with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # noqa: S310
+                if response.status != 200:
+                    return None
+                raw = response.read()
+                data = _json.loads(raw)
+        except Exception as exc:
+            logger.warning("NASA POWER Point API request failed: %s", exc)
+            return None
+
+        # Parse JSON response: data["properties"]["parameter"][param][YYYYMM] = value
+        try:
+            param_data = data["properties"]["parameter"][nasa_param]
+        except (KeyError, TypeError):
+            logger.warning("Unexpected NASA POWER Point API response structure.")
+            return None
+
+        # Extract annual means (YYYY13) or compute from monthly values
+        annual_values: dict[int, float] = {}
+        for key, val in param_data.items():
+            try:
+                yyyymm = int(key)
+            except (ValueError, TypeError):
+                continue
+            year = yyyymm // 100
+            month = yyyymm % 100
+            if month == 13 and start_year <= year <= end_year:
+                if val is not None and val != -999.0:
+                    annual_values[year] = float(val)
+
+        if not annual_values:
+            # Fallback: compute annual means from monthly values
+            monthly_by_year: dict[int, list[float]] = {}
+            for key, val in param_data.items():
+                try:
+                    yyyymm = int(key)
+                except (ValueError, TypeError):
+                    continue
+                year = yyyymm // 100
+                month = yyyymm % 100
+                if 1 <= month <= 12 and start_year <= year <= end_year:
+                    if val is not None and val != -999.0:
+                        monthly_by_year.setdefault(year, []).append(float(val))
+            for yr, vals in monthly_by_year.items():
+                if len(vals) >= 6:  # Require at least 6 months for a meaningful annual mean
+                    annual_values[yr] = sum(vals) / len(vals)
+
+        if len(annual_values) < 3:
+            logger.warning("Insufficient annual data points from Point API (%d).", len(annual_values))
+            return None
+
+        sorted_years = sorted(annual_values.keys())
+        years_arr = np.array(sorted_years, dtype=int)
+        values_arr = np.array([annual_values[y] for y in sorted_years], dtype=float)
+
+        # Determine the snapped grid point lat/lon from the API response
+        point_lat = data.get("geometry", {}).get("coordinates", [lon, lat])[1]
+        point_lon = data.get("geometry", {}).get("coordinates", [lon, lat])[0]
+
+        # Shape as (T, 1, 1) for pipeline compatibility
+        data_3d = values_arr.reshape(-1, 1, 1)
+        lats_out = np.array([float(point_lat)], dtype=float)
+        lons_out = np.array([float(point_lon)], dtype=float)
+
+        source_label = "NASA POWER Point API (Nearest-Neighbor Grid Cell)"
+
+        return {
+            "dataset_id": self.DATASET_ID,
+            "variable_id": variable,
+            "variable_name": var_meta["name"],
+            "data": data_3d,
+            "time": years_arr,
+            "years": years_arr,
+            "lat": lats_out,
+            "lon": lons_out,
+            "source_units": var_meta["source_units"],
+            "display_units": var_meta["display_units"],
+            "slope_units": var_meta["slope_units"],
+            "is_synthetic": False,
+            "data_source_label": source_label,
+            "provenance": {
+                "source": self.NAME,
+                "provider": self.PROVIDER,
+                "publisher": "NASA LaRC",
+                "doi": self.DOI,
+                "conventions": self.CONVENTIONS,
+                "resolution": var_meta.get("native_resolution", self.NATIVE_RESOLUTION),
+                "temporal_aggregation": "annual_mean",
+                "temporal_resolution": "annual_mean",
+                "time_span": f"{years_arr[0]} - {years_arr[-1]}",
+                "grid_shape": [1, 1],
+                "sample_count": len(years_arr),
+                "is_synthetic": False,
+                "granule_file": "point_api_query",
+                "is_fallback_fixture": False,
+                "is_variable_substituted": False,
+                "is_point_mode": True,
+                "point_coordinates": {"lat": float(point_lat), "lon": float(point_lon)},
+                "data_source_label": source_label,
+                "missions_and_models": self.MISSIONS_AND_MODELS,
+                "mission_source": var_meta.get("mission_source"),
+                "product_type": var_meta.get("product_type"),
+                "discontinuity_warning": var_meta.get("discontinuity_warning"),
+                "bbox_clamped": False,
+                "warning": (
+                    f"Requested bounding box was too small to intersect any grid cell centers. "
+                    f"Point-mode fallback retrieved nearest-neighbor data for "
+                    f"({point_lat:.2f}°N, {point_lon:.2f}°E)."
+                )
+            }
+        }
+
 
     def fetch(
         self,

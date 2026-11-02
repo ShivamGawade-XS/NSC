@@ -92,7 +92,7 @@ def test_quality_gate_solar_transition_blocked():
 
 
 def test_quality_gate_subgrid_zero_cells():
-    """Verify quality gate detects zero-cell intersection between grid lines."""
+    """Verify quality gate detects zero-cell intersection and reports point-mode fallback availability."""
     payload = {
         "dataset_id": "nasa_power",
         "variable_id": "T2M",
@@ -103,10 +103,14 @@ def test_quality_gate_subgrid_zero_cells():
     resp = client.post("/api/v1/analysis/quality-gate", json=payload)
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "UNSUPPORTED_FOR_THIS_METHOD"
-    assert data["can_execute"] is False
+    # P2-004: Point-mode fallback makes sub-grid queries executable with limitations
+    assert data["status"] == "SUPPORTED_WITH_LIMITATIONS"
+    assert data["can_execute"] is True
     assert data["grid_intersection_cells"] == 0
     assert any("does not intersect any grid cell" in lim.lower() for lim in data["limitations"])
+    # Should mention point-mode in recommendations
+    all_text = " ".join(data.get("limitations", []) + data.get("actionable_recommendations", []))
+    assert "point" in all_text.lower()
 
 
 def test_evaluate_trend_robustness_synthetic_ground_truth():

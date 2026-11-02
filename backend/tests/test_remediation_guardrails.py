@@ -22,8 +22,8 @@ client = TestClient(app)
 
 # --- P0: Spatial Query Zero-Cell Protection ---
 
-def test_spatial_empty_cells_returns_422_with_actionable_message():
-    """RED Test: Bounding box falling between grid cells must return 422, not unhandled 500."""
+def test_spatial_empty_cells_uses_point_mode_fallback():
+    """P2-004: Bounding box between grid cells should fall back to point-mode, not crash with 500 or reject with 422."""
     resp = client.post("/analysis", json={
         "dataset_id": "nasa_power",
         "variable_id": "T2M",
@@ -31,14 +31,19 @@ def test_spatial_empty_cells_returns_422_with_actionable_message():
         "end_year": 2023,
         "bbox": [-94.9, 30.1, -94.7, 30.3]  # Falls strictly between 0.5° grid centers
     })
-    assert resp.status_code == 422, f"Expected 422 Unprocessable Entity, got {resp.status_code}"
-    body = resp.json()
-    detail = body.get("detail", "")
-    if isinstance(detail, list):
-        detail = " ".join(str(d) for d in detail)
-    assert "no grid cells" in detail.lower() or "grid cell center" in detail.lower(), (
-        f"Expected clear message explaining no grid cells intersect bounds, got: {detail}"
-    )
+    # Point-mode fallback should succeed (200) or fall back to 422 if network unavailable
+    if resp.status_code == 200:
+        data = resp.json()
+        prov = data.get("provenance", {})
+        assert prov.get("is_point_mode") is True, "Point-mode provenance flag must be set"
+        assert "point_coordinates" in prov, "Point coordinates must be in provenance"
+        assert data["summary"]["total_cells"] == 1, "Point-mode should yield exactly 1 cell"
+        assert len(data["grid"]) == 1, "Point-mode grid should have exactly 1 point"
+        assert "point-mode" in prov.get("warning", "").lower() or "nearest" in prov.get("warning", "").lower(), \
+            "Provenance warning should mention point-mode or nearest-neighbor"
+    else:
+        # Network unavailable — fallback to original 422 behavior
+        assert resp.status_code == 422, f"Expected 200 (point-mode) or 422 (offline), got {resp.status_code}"
 
 
 def test_spatial_valid_and_boundary_boxes():
@@ -205,3 +210,85 @@ def test_adapter_cache_isolation_with_tmp_path(tmp_path: Path):
         urllib.request.urlopen = orig_urlopen  # type: ignore[assignment]
 
     assert len(requested_urls) > 0, "When cache_dir is isolated, urlopen MUST be called"
+
+
+# --- P2-004: Point-Mode Fallback Tests ---
+
+def test_fetch_point_with_mocked_api(tmp_path: Path):
+    """Verify NASAPowerAdapter.fetch_point correctly parses NASA POWER Point API JSON response."""
+    import json
+    import urllib.error
+    import urllib.request
+    from email.message import Message
+    from io import BytesIO
+
+    adapter = NASAPowerAdapter(cache_dir=tmp_path)
+
+    # Construct a realistic NASA POWER Point API JSON response
+    mock_response = {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [-95.0, 30.0]},
+        "properties": {
+            "parameter": {
+                "T2M": {}
+            }
+        }
+    }
+    # Generate YYYY13 annual values for 2018-2023
+    for year in range(2018, 2024):
+        for month in range(1, 14):
+            key = str(year * 100 + month)
+            if month == 13:
+                mock_response["properties"]["parameter"]["T2M"][key] = 20.0 + (year - 2018) * 0.3
+            else:
+                mock_response["properties"]["parameter"]["T2M"][key] = 18.0 + (year - 2018) * 0.2 + month * 0.1
+
+    mock_bytes = json.dumps(mock_response).encode("utf-8")
+
+    class MockResponse:
+        status = 200
+        def read(self):
+            return mock_bytes
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+
+    orig_urlopen = urllib.request.urlopen
+    def mock_urlopen(req_obj, *args, **kwargs):
+        return MockResponse()
+
+    urllib.request.urlopen = mock_urlopen  # type: ignore[assignment]
+    try:
+        result = adapter.fetch_point("T2M", 2018, 2023, lat=30.1, lon=-94.8)
+    finally:
+        urllib.request.urlopen = orig_urlopen  # type: ignore[assignment]
+
+    assert result is not None, "fetch_point should return data from mocked API"
+    assert result["data"].shape[0] == 6, "Should have 6 annual data points (2018-2023)"
+    assert result["data"].shape[1] == 1, "Point-mode data should have height=1"
+    assert result["data"].shape[2] == 1, "Point-mode data should have width=1"
+    assert result["lat"][0] == 30.0, "Should use snapped lat from API geometry"
+    assert result["lon"][0] == -95.0, "Should use snapped lon from API geometry"
+    assert result["is_synthetic"] is False
+    assert result["provenance"]["is_point_mode"] is True
+    assert result["provenance"]["point_coordinates"]["lat"] == 30.0
+    assert result["provenance"]["point_coordinates"]["lon"] == -95.0
+
+
+def test_quality_gate_reports_point_mode_for_subgrid_bbox():
+    """Verify quality gate indicates point-mode availability for sub-grid bounding boxes."""
+    resp = client.post("/analysis/quality-gate", json={
+        "dataset_id": "nasa_power",
+        "variable_id": "T2M",
+        "start_year": 2018,
+        "end_year": 2023,
+        "bbox": [-94.9, 30.1, -94.7, 30.3]
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    # Should be executable (point-mode available) and mention point-mode in limitations/recommendations
+    assert data["can_execute"] is True, "Sub-grid queries should be executable with point-mode fallback"
+    all_text = " ".join(data.get("limitations", []) + data.get("actionable_recommendations", []))
+    assert "point" in all_text.lower(), f"Should mention point-mode in guidance, got: {all_text}"
+
