@@ -292,13 +292,13 @@ def assess_analysis_quality_gate(request: Request, req: QualityGateRequest) -> Q
         grid_cells = len(lats_in_range) * len(lons_in_range)
 
         if grid_cells == 0:
-            can_execute = False
             limitations.append(
                 f"Requested bounding box {req.bbox} does not intersect any grid cell centers at native dataset resolution "
-                f"({adapter.NATIVE_RESOLUTION}). Slicing will yield an empty array."
+                f"({adapter.NATIVE_RESOLUTION}). Point-mode fallback will automatically retrieve nearest-neighbor data."
             )
             recommendations.append(
-                "Expand bounding box span to at least 0.5° in latitude and longitude, centered on an authentic grid intersection."
+                "Analysis will proceed in single-cell point mode using the nearest grid cell. "
+                "For spatial analysis (Moran's I, LISA clusters), expand the bounding box to at least 0.5° in each direction."
             )
         elif grid_cells > 2500:
             limitations.append(
@@ -379,10 +379,39 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
     lons = raw_slice["lon"]
 
     if data_3d.size == 0 or len(lats) == 0 or len(lons) == 0 or (data_3d.ndim == 3 and (data_3d.shape[1] == 0 or data_3d.shape[2] == 0)):
-        raise HTTPException(
-            status_code=422,
-            detail="No grid cells intersect the requested bounding box at native resolution (0.5°). Please expand your bounding box or select coordinates that encompass at least one grid cell center."
-        )
+        # P2-004: Attempt point-mode fallback using bbox centroid
+        point_result = None
+        if req.bbox and len(req.bbox) == 4 and hasattr(adapter, "fetch_point"):
+            centroid_lon = (req.bbox[0] + req.bbox[2]) / 2.0
+            centroid_lat = (req.bbox[1] + req.bbox[3]) / 2.0
+            logger.info(
+                "Zero grid cells intersected for bbox %s. Attempting point-mode fallback at (%.4f, %.4f).",
+                req.bbox, centroid_lat, centroid_lon
+            )
+            point_result = adapter.fetch_point(
+                variable=req.variable_id,
+                start_year=req.start_year,
+                end_year=req.end_year,
+                lat=centroid_lat,
+                lon=centroid_lon
+            )
+        if point_result is not None:
+            raw_slice = point_result
+            data_3d = raw_slice["data"]
+            years = raw_slice["time"]
+            lats = raw_slice["lat"]
+            lons = raw_slice["lon"]
+            logger.info("Point-mode fallback succeeded: shape=%s, years=%d", data_3d.shape, len(years))
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "No grid cells intersect the requested bounding box at native resolution (0.5°) "
+                    "and point-mode fallback was unavailable. Please expand your bounding box or "
+                    "select coordinates that encompass at least one grid cell center."
+                )
+            )
+
     time_coords = (years - req.start_year) / 10.0  # Decades
 
     # Long-term mean climatology from 3D observation cube
