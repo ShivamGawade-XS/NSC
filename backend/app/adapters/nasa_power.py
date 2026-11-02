@@ -427,7 +427,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             return None
 
         try:
-            req = urllib.request.Request(
+            req = urllib.request.Request(  # noqa: S310
                 url,
                 headers={"User-Agent": "EarthSift-NASASpaceApps/2.0 (Scientific Research Instrument)"}
             )

@@ -12,5 +12,9 @@
     "backend": "python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8000 --reload",
     "test:backend": "python -m pytest backend/tests -q",
     "test:security": "python scripts/test_red_team_audit.py"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1"
   }
 }
