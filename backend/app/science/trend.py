@@ -444,8 +444,8 @@ def compute_spatial_trends(
     var_s_2d = (n_samples * (n_samples - 1) * (2 * n_samples + 5) - tie_term_2d) / 18.0
     var_s_2d = np.maximum(var_s_2d, 0.0)
 
-    # Apply vectorized Hamed & Rao (1998) serial autocorrelation correction
-    var_s_2d = hamed_rao_variance_correction(data_3d, var_s_2d, slope=slopes)
+    # Apply vectorized Hamed & Rao (1998) serial autocorrelation correction (using annual slope matching t_3d annual index)
+    var_s_2d = hamed_rao_variance_correction(data_3d, var_s_2d, slope=slopes / decadal_scale)
 
     # Compute standardized test statistic Z and two-tailed p-values
     z_2d = np.zeros((h_len, w_len), dtype=float)

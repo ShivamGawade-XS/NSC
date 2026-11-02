@@ -163,7 +163,7 @@ export default function SignalsList() {
                     {sig.p_value !== undefined ? (sig.p_value < 0.001 ? 'p < 0.001' : `p = ${sig.p_value.toFixed(3)}`) : 'FDR Sig'}
                   </div>
                   <div className="text-[9px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">
-                    q ≤ 0.05
+                    {sig.q_value !== undefined ? (sig.q_value < 0.001 ? 'q < 0.001' : `q = ${sig.q_value.toFixed(3)}`) : 'FDR Sig'}
                   </div>
                 </div>
               </motion.button>

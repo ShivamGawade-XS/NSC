@@ -219,8 +219,6 @@ def test_fetch_point_with_mocked_api(tmp_path: Path):
     import json
     import urllib.error
     import urllib.request
-    from email.message import Message
-    from io import BytesIO
 
     adapter = NASAPowerAdapter(cache_dir=tmp_path)
 

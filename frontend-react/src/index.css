@@ -411,3 +411,9 @@ body {
   }
 }
 
+/* Accessibility: WCAG 2.2 AA compliance for third-party Leaflet attribution links */
+.leaflet-control-attribution a {
+  text-decoration: underline !important;
+  font-weight: 500;
+}
+
