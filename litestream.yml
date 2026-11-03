@@ -1,0 +1,17 @@
+# EarthSift — Litestream Continuous SQLite Replication (Optional / Disaster Recovery)
+# Disabled by default. To enable:
+# 1. Set AWS credentials: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# 2. Configure bucket name and endpoint below
+# 3. Run: litestream replicate -config litestream.yml
+
+dbs:
+  - path: /app/cache/earthdata_cache.db
+    replicas:
+      # S3 / Cloudflare R2 / MinIO Replica
+      - type: s3
+        bucket: ${LITESTREAM_S3_BUCKET:-earthsift-disaster-recovery}
+        path: db-wal-stream
+        region: ${AWS_DEFAULT_REGION:-us-east-1}
+        # endpoint: https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com
+        retention: 72h
+        validation-interval: 12h

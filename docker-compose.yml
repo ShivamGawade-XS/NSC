@@ -26,7 +26,8 @@ services:
       # - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     tmpfs:
       - /tmp:size=128M,mode=1777,noexec,nosuid,nodev
-      - /app/cache:size=256M,mode=0700,uid=10001,gid=10001,noexec,nosuid,nodev
+    volumes:
+      - earthsift-cache:/app/cache
     deploy:
       resources:
         limits:
@@ -39,3 +40,7 @@ services:
       retries: 3
       start_period: 5s
     restart: unless-stopped
+
+volumes:
+  earthsift-cache:
+    name: earthsift-cache

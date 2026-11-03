@@ -35,11 +35,28 @@ _TLS = threading.local()
 _DB_LOCK = threading.Lock()
 
 
+def get_db_path() -> Path:
+    """Return the active database path configured via environment or module attribute."""
+    env_val = os.getenv("EARTHSIFT_DB_PATH")
+    if env_val:
+        return Path(env_val)
+    return Path(DB_PATH)
+
+
+def close_db_connection() -> None:
+    """Close and clear the thread-local database connection if open."""
+    if hasattr(_TLS, "conn") and _TLS.conn is not None:
+        with contextlib.suppress(Exception):
+            _TLS.conn.close()
+        _TLS.conn = None
+
+
 def get_db_connection() -> sqlite3.Connection:
     """Return a thread-local SQLite connection with WAL journal mode."""
     if not hasattr(_TLS, "conn") or _TLS.conn is None:
-        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(DB_PATH), timeout=30.0, check_same_thread=False)
+        target_path = get_db_path()
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(target_path), timeout=30.0, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         # Enable Write-Ahead Logging for high-concurrency read performance
         conn.execute("PRAGMA journal_mode=WAL;")
@@ -173,6 +190,32 @@ def _deserialize_cache_payload(raw_bytes: bytes) -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(text, object_hook=_object_hook))
 
 
+def normalize_cache_params(
+    dataset_id: str,
+    variable_id: str,
+    start_year: int,
+    end_year: int,
+    bbox: list[float] | None,
+    alpha: float,
+    use_fdr: bool = True
+) -> tuple[str, str, int, int, tuple[float, float, float, float], float, int]:
+    """
+    Quantize floating-point parameters (alpha to 3 decimal places, bbox to 3 decimal places)
+    to prevent cache-bust attacks and ensure identical geographical/statistical queries
+    hit the composite B-Tree index.
+    """
+    raw_bbox = bbox or [-180.0, -90.0, 180.0, 90.0]
+    q_bbox = (
+        round(float(raw_bbox[0]), 3),
+        round(float(raw_bbox[1]), 3),
+        round(float(raw_bbox[2]), 3),
+        round(float(raw_bbox[3]), 3)
+    )
+    q_alpha = round(float(alpha), 3)
+    fdr_flag = 1 if use_fdr else 0
+    return (dataset_id, variable_id, int(start_year), int(end_year), q_bbox, q_alpha, fdr_flag)
+
+
 def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
     """
     Save analysis to persistent SQLite database with compressed payload
@@ -191,7 +234,8 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
         bbox = getattr(req, "bbox", None) or [-90.0, -180.0, 90.0, 180.0]
         alpha = float(getattr(req, "alpha", 0.05))
         use_fdr = getattr(req, "use_fdr", getattr(req, "apply_fdr", True))
-        fdr_controlled = 1 if use_fdr else 0
+        norm = normalize_cache_params(dataset_id, variable_id, start_year, end_year, bbox, alpha, use_fdr)
+        dataset_id, variable_id, start_year, end_year, q_bbox, q_alpha, fdr_controlled = norm
 
         # Compress payload using zlib for minimal disk footprint and cryptographically sign
         json_bytes = _serialize_cache_payload(payload)
@@ -243,8 +287,8 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
                 );
             """, (
                 analysis_id, dataset_id, variable_id, start_year, end_year,
-                float(bbox[1]), float(bbox[3]), float(bbox[0]), float(bbox[2]),
-                alpha, fdr_controlled, now, now,
+                float(q_bbox[1]), float(q_bbox[3]), float(q_bbox[0]), float(q_bbox[2]),
+                q_alpha, fdr_controlled, now, now,
                 signed_bytes
             ))
             conn.commit()
@@ -268,16 +312,25 @@ def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
     Cryptographically verifies HMAC signature before deserialization.
     """
     try:
+        from app.core.telemetry import CACHE_HITS_TOTAL, CACHE_MISSES_TOTAL
+    except Exception:
+        CACHE_HITS_TOTAL, CACHE_MISSES_TOTAL = None, None
+
+    try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT payload_compressed FROM analysis_metadata_index WHERE analysis_id = ?;", (analysis_id,))
         row = cur.fetchone()
         if not row or not row[0]:
+            if CACHE_MISSES_TOTAL:
+                CACHE_MISSES_TOTAL.labels(tier="sqlite").inc()
             return None
 
         data_bytes = row[0]
         if len(data_bytes) <= 32:
             logger.error("Security alert: cache payload too small (<=32 bytes) for analysis_id=%s", analysis_id)
+            if CACHE_MISSES_TOTAL:
+                CACHE_MISSES_TOTAL.labels(tier="sqlite").inc()
             return None
 
         hmac_key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
@@ -287,6 +340,8 @@ def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
 
         if not hmac.compare_digest(sig, expected_sig):
             logger.error("HMAC-SHA256 verification failed for analysis_id=%s", analysis_id)
+            if CACHE_MISSES_TOTAL:
+                CACHE_MISSES_TOTAL.labels(tier="sqlite").inc()
             return None
 
         decompressed = zlib.decompress(raw_payload)
@@ -299,6 +354,8 @@ def load_from_db_cache(analysis_id: str) -> dict[str, Any] | None:
                 WHERE analysis_id = ?;
             """, (time.time(), analysis_id))
 
+        if CACHE_HITS_TOTAL:
+            CACHE_HITS_TOTAL.labels(tier="sqlite").inc()
         return payload
     except Exception as exc:
         logger.error("Error loading cache for analysis_id=%s: %s", analysis_id, exc)
@@ -319,6 +376,8 @@ def find_cached_analysis_id(
     has already been computed and persisted.
     """
     try:
+        norm = normalize_cache_params(dataset_id, variable_id, start_year, end_year, bbox, alpha, use_fdr)
+        dataset_id, variable_id, start_year, end_year, q_bbox, q_alpha, fdr_controlled = norm
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
@@ -337,8 +396,8 @@ def find_cached_analysis_id(
             LIMIT 1;
         """, (
             dataset_id, variable_id, start_year, end_year,
-            float(bbox[1]), float(bbox[3]), float(bbox[0]), float(bbox[2]),
-            float(alpha), 1 if use_fdr else 0
+            float(q_bbox[1]), float(q_bbox[3]), float(q_bbox[0]), float(q_bbox[2]),
+            float(q_alpha), fdr_controlled
         ))
         row = cur.fetchone()
         return row[0] if row else None
