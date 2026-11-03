@@ -6,7 +6,7 @@ Typed Pydantic schemas enforcing strict API contracts and evidence integrity.
 import math
 from typing import Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 def _sanitize_float(v: Any, default: float) -> Any:
@@ -360,6 +360,28 @@ class ExplainRequest(BaseModel):
     direction: str = Field(min_length=1, max_length=32)
     sample_count: int = Field(ge=1, le=1000)
     source: str = Field(min_length=1, max_length=256)
+
+    @field_validator("variable_name", "location", "time_span", "slope_units", "direction", "source")
+    @classmethod
+    def validate_injection_free(cls, v: str) -> str:
+        if not v:
+            return v
+        # Reject newlines and control characters
+        if any(c in v for c in ("\r", "\n", "\0")):
+            raise ValueError("Newlines and control characters are not permitted.")
+        # Reject HTML tags, script injection, or prompt override patterns
+        lowered = v.lower()
+        forbidden_substrings = (
+            "<script", "</script", "javascript:", "onerror=", "onload=",
+            "ignore previous instructions", "ignore all instructions",
+            "system prompt", "bypass rules", "jailbreak", "dan mode"
+        )
+        for sub in forbidden_substrings:
+            if sub in lowered:
+                raise ValueError(f"Suspicious prompt injection token detected: '{sub}'")
+        if any(c in v for c in ("<", ">", "`", "{", "}")):
+            raise ValueError("Angle brackets, backticks, and braces are not permitted in evidence fields.")
+        return v.strip()
 
 
 class ExplainResponse(BaseModel):

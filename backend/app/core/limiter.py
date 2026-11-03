@@ -5,8 +5,10 @@ Provides enterprise rate limiting across compute-heavy and export endpoints.
 """
 
 import contextlib
+import logging
 import os
 import sys
+from typing import Any
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -66,11 +68,58 @@ def check_is_test_env(env: str | None = None, _is_pytest: bool | None = None) ->
     return in_pytest or env_test_flags
 
 
+logger = logging.getLogger("earthsift.limiter")
+
+
+def get_limiter_storage_uri() -> str:
+    """Return configured Redis storage URI or fallback to in-memory storage."""
+    redis_url = os.getenv("REDIS_URL", "").strip()
+    return redis_url if redis_url else "memory://"
+
+
+def validate_multi_worker_configuration() -> dict[str, Any]:
+    """
+    Validate that multi-worker or multi-process deployments use a centralized
+    rate limit backend (Redis) to prevent quota multiplication bypass.
+    """
+    workers = max(
+        int(os.getenv("WEB_CONCURRENCY", "1")),
+        int(os.getenv("WORKERS", "1")),
+        int(os.getenv("UVICORN_WORKERS", "1")),
+    )
+    redis_url = os.getenv("REDIS_URL", "").strip()
+    has_distributed_storage = bool(redis_url and redis_url.startswith(("redis://", "rediss://")))
+
+    is_multi_worker = workers > 1
+    enforce_strict = os.getenv("ENFORCE_DISTRIBUTED_LIMITER", "").lower() in ("true", "1")
+
+    if is_multi_worker and not has_distributed_storage:
+        msg = (
+            f"MULTI-WORKER WARNING: {workers} worker processes configured without REDIS_URL. "
+            "Rate limiting quotas will be enforced independently per-process rather than centrally."
+        )
+        logger.warning(msg)
+        if enforce_strict:
+            raise RuntimeError(f"{msg} Set ENFORCE_DISTRIBUTED_LIMITER=false or provide valid REDIS_URL.")
+
+    return {
+        "workers": workers,
+        "is_multi_worker": is_multi_worker,
+        "storage_backend": "redis" if has_distributed_storage else "memory",
+        "distributed_shared": has_distributed_storage,
+        "redis_configured": bool(redis_url),
+    }
+
+
 is_test_env = check_is_test_env()
+storage_uri = get_limiter_storage_uri()
+# Run multi-worker validation check on module import
+_worker_safety_info = validate_multi_worker_configuration()
 
 limiter = Limiter(
     key_func=get_client_ip,
     default_limits=["120/minute"],
+    storage_uri=storage_uri,
     headers_enabled=True,
     enabled=not is_test_env,
 )
