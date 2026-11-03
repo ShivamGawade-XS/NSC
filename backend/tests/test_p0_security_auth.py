@@ -2,12 +2,9 @@
 Tests for P0-01: Two-tier authentication, telemetry protection, proxy IP spoofing resistance,
 cache-key quantization, and LLM budget capping.
 """
-import os
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.core.config import settings
 
 client = TestClient(app)
 
@@ -96,8 +93,9 @@ def test_batch_endpoints_require_api_key():
 
 def test_proxy_ip_spoofing_defense(monkeypatch):
     """Untrusted clients sending X-Forwarded-For must have their header ignored."""
-    from app.core.limiter import get_client_ip
     from starlette.requests import Request
+
+    from app.core.limiter import get_client_ip
 
     scope_untrusted = {
         "type": "http",

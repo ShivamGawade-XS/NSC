@@ -9,9 +9,7 @@ Unit & Integration Tests for F-009:
 
 import json
 import logging
-from unittest.mock import MagicMock
 
-import pytest
 from starlette.testclient import TestClient
 
 from app.core.logging_security import (
@@ -20,8 +18,6 @@ from app.core.logging_security import (
     TRACE_ID_CTX,
     JSONLogFormatter,
     SensitiveDataScrubber,
-    get_current_correlation_id,
-    get_current_trace_id,
 )
 from app.main import app
 

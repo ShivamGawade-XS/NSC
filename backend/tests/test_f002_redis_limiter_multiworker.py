@@ -5,8 +5,6 @@ and enforcement against quota multiplication in multi-process deployments.
 """
 import pytest
 from limits.storage import storage_from_string
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 from app.core.limiter import (
     get_limiter_storage_uri,

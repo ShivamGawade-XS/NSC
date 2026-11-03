@@ -11,7 +11,6 @@ from app.main import app
 from app.schemas.analysis import ExplainRequest
 from app.science.explainer import (
     _ground_evidence,
-    deterministic_fallback_explanation,
 )
 
 client = TestClient(app)

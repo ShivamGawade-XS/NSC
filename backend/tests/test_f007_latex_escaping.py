@@ -4,7 +4,6 @@ Verifies that dynamic metadata injected into LaTeX templates is properly escaped
 against LaTeX macro execution / pdflatex syntax corruption, while preserving intentional math mode expressions.
 Also verifies server never executes pdflatex directly.
 """
-import pytest
 from app.science.export import (
     generate_nasa_latex_memorandum,
     latex_escape,
@@ -80,6 +79,7 @@ def test_generate_nasa_latex_memorandum_escapes_hostile_metadata():
 def test_no_server_side_pdflatex_execution():
     """Verify server codebase exports LaTeX as source text and does not invoke pdflatex binaries."""
     import inspect
+
     from app.api.endpoints import export_analysis_latex
 
     source = inspect.getsource(export_analysis_latex)

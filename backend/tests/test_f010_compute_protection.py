@@ -3,7 +3,6 @@ Tests for F-010 (Part 1): Compute Protection via Concurrency Semaphore & Memory 
 Asserts that spatial requests exceeding 25,000 cells are rejected with 422,
 and concurrent compute saturation triggers an immediate 503 with Retry-After header.
 """
-import pytest
 from fastapi.testclient import TestClient
 
 from app.api.endpoints import COMPUTE_SEMAPHORE

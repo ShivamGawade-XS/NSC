@@ -7,7 +7,6 @@ Asserts that:
 3. Edge cases (varying aspect ratios, small grids, single rows) execute correctly.
 """
 import numpy as np
-import pytest
 
 from app.science.trend import compute_spatial_trends
 

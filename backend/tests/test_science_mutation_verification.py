@@ -9,11 +9,9 @@ Simulates targeted AST / algorithmic mutations on:
 Ensures 100% kill rate on surviving scientific mutants.
 """
 import numpy as np
-import pytest
 
 from app.science.trend import (
     benjamini_hochberg_fdr,
-    compute_spatial_trends,
     hamed_rao_variance_correction,
     mann_kendall_test,
     sens_slope,

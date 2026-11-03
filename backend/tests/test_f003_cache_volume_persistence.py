@@ -3,14 +3,12 @@ Tests for F-003: Persistent Docker Cache Volume replacing ephemeral tmpfs.
 Asserts compose configuration integrity, non-root user execution,
 and persistent SQLite cache survival across simulated process/container restarts.
 """
-import os
 from pathlib import Path
-import pytest
+
 import yaml
 
 from app.core.db_cache import (
     close_db_connection,
-    get_db_connection,
     init_db,
     load_from_db_cache,
     save_to_db_cache,
@@ -22,7 +20,7 @@ def test_docker_compose_cache_volume_replaces_tmpfs():
     compose_path = Path(__file__).resolve().parent.parent.parent / "docker-compose.yml"
     assert compose_path.exists(), "docker-compose.yml must exist"
 
-    with open(compose_path, "r", encoding="utf-8") as f:
+    with open(compose_path, encoding="utf-8") as f:
         compose_cfg = yaml.safe_load(f)
 
     service = compose_cfg.get("services", {}).get("earthsift", {})

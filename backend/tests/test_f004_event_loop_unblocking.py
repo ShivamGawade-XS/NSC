@@ -5,6 +5,7 @@ are defined as synchronous `def` functions rather than `async def`, guaranteeing
 executes them in the worker threadpool and never blocks the asyncio event loop.
 """
 import inspect
+
 from fastapi.testclient import TestClient
 
 from app.api.endpoints import get_analysis, health_check

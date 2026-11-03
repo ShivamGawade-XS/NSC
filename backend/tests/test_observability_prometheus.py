@@ -7,17 +7,12 @@ Unit & Integration Tests for Prometheus Observability:
 - Cardinality safety normalization
 """
 
-import os
 from unittest.mock import patch
 
-import pytest
 from starlette.testclient import TestClient
 
 from app.core.telemetry import (
-    HTTP_REQUESTS_TOTAL,
-    get_prometheus_metrics_payload,
     normalize_metric_endpoint,
-    record_http_request,
 )
 from app.main import app
 
