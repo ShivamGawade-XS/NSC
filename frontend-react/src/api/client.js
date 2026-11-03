@@ -97,8 +97,18 @@ export async function apiFetch(path, options = {}) {
     });
 
     if (!res.ok) {
+      const retryAfter = res.headers.get('Retry-After');
       const err = await res.json().catch(() => null);
-      throw new Error(err?.detail || `API error: ${res.status} ${res.statusText}`);
+      let message = err?.detail || `API error: ${res.status} ${res.statusText}`;
+      if (res.status === 503 && retryAfter) {
+        message = `Server compute capacity saturated. Retry requested in ${retryAfter}s.`;
+      } else if (res.status === 429 && retryAfter) {
+        message = `Rate quota reached. Please wait ${retryAfter}s.`;
+      }
+      const customErr = new Error(message);
+      customErr.status = res.status;
+      customErr.retryAfter = retryAfter ? parseInt(retryAfter, 10) : null;
+      throw customErr;
     }
     return res;
   } catch (err) {

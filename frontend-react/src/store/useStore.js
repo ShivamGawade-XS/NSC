@@ -14,6 +14,7 @@ const useStore = create((set, get) => ({
   candidateSignals: [],
   isLoading: false,
   error: null,
+  backendOffline: false,
 
   // Form state
   dataset: 'nasa_power',
@@ -78,6 +79,7 @@ const useStore = create((set, get) => ({
   setCurtainSplit: (val) => set({ curtainSplit: val }),
   toggleCurtainMode: () => set((s) => ({ showCurtainMode: !s.showCurtainMode })),
   setQualityGateResult: (result) => set({ qualityGateResult: result }),
+  setBackendOffline: (offline) => set({ backendOffline: offline }),
 
   closeAllModals: () => set({
     nlqModalOpen: false,

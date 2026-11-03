@@ -79,3 +79,6 @@ dossier_test.md
 *.kilo
 .playwright-mcp/
 /*.png
+
+test-results/
+playwright-report/
