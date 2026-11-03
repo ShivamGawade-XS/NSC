@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --prefix=/install -r requirements.txt
+    pip install --no-cache-dir --require-hashes --prefix=/install -r requirements.txt
 
 # ==========================================
 # STAGE 3: Hardened Minimal Runtime Image

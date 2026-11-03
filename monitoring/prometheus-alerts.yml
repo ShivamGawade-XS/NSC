@@ -1,0 +1,56 @@
+groups:
+  - name: earthsift_slo_alerts
+    rules:
+      - alert: EarthSiftServiceDown
+        expr: up{job="earthsift-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: earthsift
+        annotations:
+          summary: "EarthSift API instance is unreachable"
+          description: "EarthSift API target {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: EarthSiftHigh5xxErrorRate
+        expr: >
+          sum(rate(earthsift_http_requests_total{status_code=~"5.."}[5m]))
+          /
+          sum(rate(earthsift_http_requests_total[5m])) > 0.01
+        for: 3m
+        labels:
+          severity: critical
+          slo: availability_99_9
+        annotations:
+          summary: "EarthSift 5xx error rate exceeds 1% (Breaches 99.9% SLO)"
+          description: "High error rate detected: {{ $value | humanizePercentage }} of requests returned 5xx over last 5 minutes."
+
+      - alert: EarthSiftLatencyP95Degraded
+        expr: >
+          histogram_quantile(0.95, sum(rate(earthsift_http_request_duration_seconds_bucket[5m])) by (le)) > 0.500
+        for: 5m
+        labels:
+          severity: warning
+          slo: latency_p95_500ms
+        annotations:
+          summary: "EarthSift p95 latency exceeds 500ms SLO target"
+          description: "95th percentile request latency is {{ $value | humanizeDuration }} over the past 5 minutes."
+
+      - alert: EarthSiftMemorySaturationRisk
+        expr: earthsift_process_memory_rss_bytes > 1610612736  # 1.5 GB (75% of 2GB Docker container limit)
+        for: 2m
+        labels:
+          severity: warning
+          category: capacity
+        annotations:
+          summary: "EarthSift process RSS memory exceeds 1.5GB"
+          description: "Container is approaching 2GB limit (current: {{ $value | humanize1024 }}B). Risk of kernel OOM killer termination."
+
+      - alert: EarthSiftRateLimitSpike
+        expr: sum(rate(earthsift_http_requests_total{status_code="429"}[5m])) > 10
+        for: 2m
+        labels:
+          severity: info
+          category: security
+        annotations:
+          summary: "High volume of rate-limited requests (HTTP 429)"
+          description: "More than 10 requests/second are being rate-limited. Potential DoS attempt or crawling bot."
