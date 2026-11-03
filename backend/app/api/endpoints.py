@@ -7,6 +7,7 @@ time series, discovery signals, contrasts, provenance, and AI explanations.
 import hashlib
 import logging
 import math
+import os
 import re
 import threading
 import types
@@ -21,8 +22,9 @@ from scipy import stats
 
 from app.adapters.merra2 import MERRA2Adapter
 from app.adapters.nasa_power import NASAPowerAdapter
+from app.core.auth import AuthTier, get_auth_tier, llm_budget_tracker
 from app.core.config import Settings
-from app.core.db_cache import get_cache_db_stats, load_from_db_cache, save_to_db_cache
+from app.core.db_cache import load_from_db_cache, save_to_db_cache
 from app.core.limiter import limiter
 from app.schemas.analysis import (
     AnalysisRequest,
@@ -64,7 +66,7 @@ from app.science.climate_velocity import compute_climate_velocity
 from app.science.compound import compute_compound_hazard
 from app.science.contrasts import find_contrasting_regions
 from app.science.discovery import discover_candidate_signals
-from app.science.explainer import explain_evidence_with_ai_async
+from app.science.explainer import deterministic_fallback_explanation, explain_evidence_with_ai_async
 from app.science.export import (
     export_to_geojson,
     export_to_netcdf,
@@ -96,6 +98,9 @@ ADAPTERS = {
 # Thread-safe in-memory LRU analysis cache
 CACHE_LOCK = threading.Lock()
 ANALYSIS_CACHE: OrderedDict[str, dict[str, Any]] = OrderedDict()
+
+# Concurrency semaphore protecting compute resources against saturation
+COMPUTE_SEMAPHORE = threading.Semaphore(int(os.getenv("MAX_CONCURRENT_COMPUTATIONS", "6")))
 
 
 def get_cached_analysis(analysis_id: str) -> dict[str, Any] | None:
@@ -133,18 +138,13 @@ def set_cached_analysis(analysis_id: str, value: dict[str, Any], max_size: int |
 @router.get("/health")
 @limiter.limit("60/minute")
 async def health_check(request: Request) -> dict[str, Any]:
-    """API health, database cache status, and capabilities."""
+    """Lightweight public API health and engine status probe."""
     return {
         "status": "healthy",
         "service": "EarthSift Scientific API",
         "version": "1.0.0",
         "engine": "Mann-Kendall + Theil-Sen + Benjamini-Hochberg FDR",
         "adapters": list(ADAPTERS.keys()),
-        "cache": {
-            "l1_memory_cached_analyses": len(ANALYSIS_CACHE),
-            "l1_max_size": Settings.CACHE_MAX_SIZE,
-            "l2_database": get_cache_db_stats()
-        }
     }
 
 
@@ -300,6 +300,13 @@ def assess_analysis_quality_gate(request: Request, req: QualityGateRequest) -> Q
                 "Analysis will proceed in single-cell point mode using the nearest grid cell. "
                 "For spatial analysis (Moran's I, LISA clusters), expand the bounding box to at least 0.5° in each direction."
             )
+        if grid_cells > 25000:
+            can_execute = False
+            limitations.append(
+                f"Selected region spans {grid_cells} grid cells, exceeding the compute memory ceiling (max 25,000 cells). "
+                "Spatial array broadcasting would risk exceeding container memory limits."
+            )
+            recommendations.append("Narrow your bounding box to under 25,000 grid cells before analyzing.")
         elif grid_cells > 2500:
             limitations.append(
                 f"Selected region spans {grid_cells} grid cells. Calculations may take several seconds under high load."
@@ -412,14 +419,32 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
                 )
             )
 
-    time_coords = (years - req.start_year) / 10.0  # Decades
+    if data_3d.ndim == 3 and (data_3d.shape[1] * data_3d.shape[2]) > 25000:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Spatial domain spans {data_3d.shape[1] * data_3d.shape[2]} cells, exceeding the compute memory ceiling of 25,000 cells."
+        )
 
-    # Long-term mean climatology from 3D observation cube
-    mean_climatology = np.nanmean(data_3d, axis=0)
-    raw_slice["mean_climatology"] = mean_climatology
+    # Acquire compute concurrency semaphore to prevent CPU/memory saturation
+    acquired = COMPUTE_SEMAPHORE.acquire(blocking=True, timeout=2.0)
+    if not acquired:
+        raise HTTPException(
+            status_code=503,
+            detail="Server computation capacity reached. Too many concurrent spatial analyses in progress. Please retry shortly.",
+            headers={"Retry-After": "5"}
+        )
 
-    # Run vectorized scientific analysis
-    trend_results = compute_spatial_trends(data_3d, time_coords=time_coords, alpha=req.alpha)
+    try:
+        time_coords = (years - req.start_year) / 10.0  # Decades
+
+        # Long-term mean climatology from 3D observation cube
+        mean_climatology = np.nanmean(data_3d, axis=0)
+        raw_slice["mean_climatology"] = mean_climatology
+
+        # Run vectorized scientific analysis
+        trend_results = compute_spatial_trends(data_3d, time_coords=time_coords, alpha=req.alpha)
+    finally:
+        COMPUTE_SEMAPHORE.release()
 
     slopes = trend_results["slopes"]
     p_vals = trend_results["p_values"]
@@ -930,8 +955,8 @@ def run_custom_analysis(request: Request, req: CustomAnalysisRequest) -> Analysi
 
 
 @router.get("/analysis/{analysis_id}", response_model=AnalysisResponse, response_class=Response)
-async def get_analysis(analysis_id: str) -> Response:
-    """Retrieve full cached analysis results by ID."""
+def get_analysis(analysis_id: str) -> Response:
+    """Retrieve full cached analysis results by ID (runs in threadpool to prevent event loop blocking)."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
@@ -1047,7 +1072,7 @@ def _compute_cell_detail(
             return cached_entry
 
     series = data_3d[:, lat_idx, lon_idx]
-    
+
     # Calculate Sen's slope and intercept
     sen = sens_slope(series, time_steps=time_coords)
     slope = sen["slope"]
@@ -1209,7 +1234,22 @@ def get_analysis_provenance(request: Request, analysis_id: str) -> ProvenanceRes
 @router.post("/explain", response_model=ExplainResponse)
 @limiter.limit("20/minute")
 async def explain_evidence(request: Request, req: ExplainRequest) -> ExplainResponse:
-    """Downstream scientific explainer: translates verified evidence into clear scientific prose via Gemini/LLM or deterministic fallback."""
+    """
+    Downstream scientific explainer:
+    - Anonymous tier: returns verified deterministic scientific template (zero external LLM token cost).
+    - Keyed tier: queries external LLM (Gemini/OpenAI) with anti-hallucination guardrails,
+      enforcing global daily LLM budget limit before falling back to deterministic template.
+    """
+    tier = get_auth_tier(request)
+    if tier == AuthTier.ANONYMOUS:
+        logger.info("Anonymous request to /explain: returning verified deterministic template.")
+        return deterministic_fallback_explanation(req)
+
+    # Keyed tier: check global daily LLM call limit
+    if not llm_budget_tracker.check_and_increment():
+        logger.warning("Daily LLM call budget reached; returning deterministic template.")
+        return deterministic_fallback_explanation(req)
+
     return await explain_evidence_with_ai_async(req)
 
 
@@ -1830,13 +1870,20 @@ def run_trend_robustness_lab(
 @limiter.limit("20/minute")
 def compare_distinct_regions(
     request: Request,
-    req: RegionalComparisonRequest
+    req: RegionalComparisonRequest,
 ) -> RegionalComparisonResponse:
     """
     Feature C: Side-by-Side Regional Trend Detective.
     Compares two geographic regions (Region A vs Region B) over a common time interval
     and executes a formal two-sample slope divergence hypothesis test.
+    Anonymous tier is capped at 25-year windows; larger spans require Keyed tier.
     """
+    tier = get_auth_tier(request)
+    if tier == AuthTier.ANONYMOUS and (req.end_year - req.start_year > 25):
+        raise HTTPException(
+            status_code=403,
+            detail="Anonymous regional comparisons are capped at 25-year windows. Provide an API key for larger spans."
+        )
     adapter = ADAPTERS.get(req.dataset_id)
     if not adapter:
         raise HTTPException(status_code=404, detail=f"Dataset '{req.dataset_id}' not found.")
@@ -1955,13 +2002,21 @@ def compare_distinct_regions(
 @limiter.limit("15/minute")
 def run_autonomous_trend_discovery(
     request: Request,
-    req: DiscoveryScanRequest
+    req: DiscoveryScanRequest,
 ) -> DiscoveryScanResponse:
     """
     Feature B: Earth System Trend Discovery.
     Exploratory multi-variable trend discovery across eligible environmental parameters
     in a spatial domain, with transparent multi-criteria ranking and FDR multiplicity control.
+    Anonymous tier is capped at 2 variables and 20 years; full scans require Keyed tier.
     """
+    tier = get_auth_tier(request)
+    num_vars = len(req.variable_ids) if req.variable_ids is not None else 999
+    if tier == AuthTier.ANONYMOUS and (num_vars > 2 or (req.end_year - req.start_year > 20)):
+        raise HTTPException(
+            status_code=403,
+            detail="Anonymous autonomous discovery is capped at 2 variables and 20 years. Provide an API key for full scans."
+        )
     adapter = ADAPTERS.get(req.dataset_id)
     if not adapter:
         raise HTTPException(status_code=404, detail=f"Dataset '{req.dataset_id}' not found.")

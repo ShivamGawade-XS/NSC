@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import psutil
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -16,9 +16,14 @@ from slowapi.middleware import SlowAPIMiddleware
 from starlette.types import Message, Receive, Scope, Send
 
 from app.api.endpoints import router as api_router
+from app.core.auth import require_metrics_access
 from app.core.config import settings
 from app.core.limiter import limiter
-from app.core.logging_security import install_security_logging
+from app.core.logging_security import (
+    TracingAndStructuredLoggingMiddleware,
+    install_security_logging,
+)
+from app.core.telemetry import get_prometheus_metrics_payload
 
 logger = logging.getLogger("earthsift.main")
 install_security_logging()
@@ -242,6 +247,7 @@ class SecurityHardeningMiddleware:
         await send({"type": "http.response.body", "body": body, "more_body": False})
 
 
+app.add_middleware(TracingAndStructuredLoggingMiddleware)
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(SecurityHardeningMiddleware)
 
@@ -270,6 +276,8 @@ app.add_middleware(
         "X-RateLimit-Limit",
         "X-RateLimit-Remaining",
         "X-RateLimit-Reset",
+        "X-Correlation-ID",
+        "traceparent",
     ],
 )
 
@@ -282,7 +290,8 @@ app.include_router(api_router, prefix="")
 @app.get("/api/v1/metrics")
 @limiter.limit("120/minute")
 def get_metrics(request: Request):
-    """System telemetry and performance metrics."""
+    """System telemetry and performance metrics (Restricted to Keyed Tier or Internal Listener)."""
+    require_metrics_access(request)
     uptime = time.time() - START_TIME
     try:
         process = psutil.Process(os.getpid())
@@ -304,6 +313,16 @@ def get_metrics(request: Request):
     }
 
 
+@app.get("/metrics/prometheus")
+@app.get("/api/v1/metrics/prometheus")
+@limiter.limit("120/minute")
+def get_prometheus_metrics(request: Request):
+    """Prometheus exposition metrics endpoint (Restricted to Keyed Tier or Internal Listener)."""
+    require_metrics_access(request)
+    payload, content_type = get_prometheus_metrics_payload()
+    return Response(content=payload, media_type=content_type)
+
+
 @app.get("/ready")
 @app.get("/api/v1/ready")
 @limiter.limit("120/minute")
@@ -317,7 +336,8 @@ def readiness_check(request: Request):
 @app.get("/api/v1/auth/status")
 @limiter.limit("120/minute")
 def earthdata_auth_status(request: Request):
-    """Report NASA Earthdata Login authentication state."""
+    """Report NASA Earthdata Login authentication state (Restricted to Keyed Tier or Internal Listener)."""
+    require_metrics_access(request)
     return settings.get_earthdata_auth_status()
 
 
