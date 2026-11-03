@@ -76,7 +76,7 @@ class Settings:
             return {"authenticated": True, "auth_type": "bearer_token", "message": "NASA Earthdata Bearer Token active."}
         if username and password:
             return {"authenticated": True, "auth_type": "user_pass", "message": f"NASA Earthdata credentials configured for user '{username}'."}
-        
+
         # Check if local netrc already exists
         netrc_dir = Path(os.getenv("NETRC_DIR", str(Path.home())))
         netrc_file = netrc_dir / (".netrc" if ("NETRC_DIR" in os.environ or not sys.platform.startswith("win")) else "_netrc")
