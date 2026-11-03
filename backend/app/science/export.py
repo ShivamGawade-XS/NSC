@@ -349,10 +349,25 @@ def _is_math(segment: str) -> bool:
     return False
 
 
+_LATEX_ESCAPE_MAP = {
+    "&": r"\&",
+    "%": r"\%",
+    "#": r"\#",
+    "_": r"\_",
+    "{": r"\{",
+    "}": r"\}",
+    "~": r"\textasciitilde{}",
+    "^": r"\textasciicircum{}",
+    "\\": r"\textbackslash{}",
+    "$": r"\$",
+}
+_LATEX_ESCAPE_REGEX = re.compile(r'[&%#_{}~^\\$]')
+
+
 def _escape_latex(text: str) -> str:
     """
     Escape LaTeX special characters in dynamic strings so pdflatex / Overleaf compile cleanly.
-    Escapes: %, _, &, #, $, {, }, ~, ^ while preserving intentional math mode expressions.
+    Escapes: %, _, &, #, $, {, }, ~, ^, \\ while preserving intentional math mode expressions ($...$).
     """
     if text is None:
         return ""
@@ -360,27 +375,17 @@ def _escape_latex(text: str) -> str:
     parts = MATH_REGEX.split(s)
     escaped_parts = []
 
-    chars = [
-        ("&", r"\&"),
-        ("%", r"\%"),
-        ("#", r"\#"),
-        ("_", r"\_"),
-        ("{", r"\{"),
-        ("}", r"\}"),
-        ("~", r"\textasciitilde{}"),
-        ("^", r"\textasciicircum{}"),
-    ]
-
     for part in parts:
         if _is_math(part):
             escaped_parts.append(part)
         else:
-            p = part.replace("$", r"\$")
-            for char, replacement in chars:
-                p = p.replace(char, replacement)
-            escaped_parts.append(p)
+            escaped_parts.append(_LATEX_ESCAPE_REGEX.sub(lambda m: _LATEX_ESCAPE_MAP[m.group(0)], part))
 
     return "".join(escaped_parts)
+
+
+# Public alias for audit compliance
+latex_escape = _escape_latex
 
 
 def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]:
