@@ -78,26 +78,26 @@ def find_contrasting_regions(
     latitudes = np.asarray(latitudes)
     longitudes = np.asarray(longitudes)
     _h, _w = slopes.shape
-    
+
     pos_mask = (slopes > 0) & is_significant
     neg_mask = (slopes < 0) & is_significant
-    
+
     # 8-connectivity structuring element
     struct_8 = np.ones((3, 3), dtype=int)
-    
+
     # Label connected spatial clusters
     pos_res = cast(Any, ndimage.label(pos_mask, structure=struct_8))
     pos_labeled, num_pos = pos_res[0], int(pos_res[1])
     neg_res = cast(Any, ndimage.label(neg_mask, structure=struct_8))
     neg_labeled, num_neg = neg_res[0], int(neg_res[1])
-    
+
     def extract_clusters(labeled_grid: np.ndarray, num_features: int, label_type: str) -> list[dict[str, Any]]:
         clusters = []
         for feat_id in range(1, num_features + 1):
             indices = np.argwhere(labeled_grid == feat_id)
             if len(indices) < min_cluster_size:
                 continue
-            
+
             clusters.append(
                 _build_cluster_dict(
                     indices=indices,
@@ -114,12 +114,12 @@ def find_contrasting_regions(
 
     pos_clusters = extract_clusters(pos_labeled, num_pos, "increasing")
     neg_clusters = extract_clusters(neg_labeled, num_neg, "decreasing")
-    
+
     # Fallback to entire masks if clusters were fragmented below min_cluster_size
     if not pos_clusters and np.sum(pos_mask) >= min_cluster_size:
         indices = np.argwhere(pos_mask)
         pos_clusters = [_build_cluster_dict(indices, slopes, latitudes, longitudes, "increasing_all", "increasing")]
-        
+
     if not neg_clusters and np.sum(neg_mask) >= min_cluster_size:
         indices = np.argwhere(neg_mask)
         neg_clusters = [_build_cluster_dict(indices, slopes, latitudes, longitudes, "decreasing_all", "decreasing")]
@@ -157,7 +157,7 @@ def find_contrasting_regions(
 
     if not pos_clusters or not neg_clusters:
         return []
-    
+
     # Form cross-product pairs and rank by divergence delta
     contrast_pairs = []
     pair_count = 0
@@ -170,7 +170,7 @@ def find_contrasting_regions(
             delta = abs(pos_slope - neg_slope)
             pair_count += 1
             is_refugium_pair = neg.get("type") == "refugium" or pos.get("type") == "buffered"
-            
+
             title = (
                 f"Accelerated Trend vs Buffered Refugium #{pair_count} (Delta: {delta:.3f})"
                 if is_refugium_pair
@@ -194,7 +194,7 @@ def find_contrasting_regions(
                 "region_decreasing": neg,
                 "scientific_caveat": caveat
             })
-            
+
     # Sort pairs by divergence magnitude descending and limit to top_k
     contrast_pairs.sort(key=lambda p: p["magnitude_delta"], reverse=True)
     return contrast_pairs[:top_k]

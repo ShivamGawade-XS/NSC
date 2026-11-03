@@ -161,7 +161,7 @@ def mann_kendall_test(
     # Pairwise differences: sgn(y[j] - y[i]) for j > i
     diff = data[None, :] - data[:, None]
     sgn = np.sign(diff)
-    
+
     # Strictly upper triangular indices (j > i)
     iu = np.triu_indices(n, k=1)
     s = int(np.sum(sgn[iu]))
@@ -189,7 +189,7 @@ def mann_kendall_test(
             z = (s + 1) / std_s
         else:
             z = 0.0
-        
+
         # Two-tailed p-value
         p_val = float(2.0 * (1.0 - stats.norm.cdf(abs(z))))
 
@@ -262,7 +262,7 @@ def sens_slope(
     # Pairwise slopes (y[j] - y[i]) / (t[j] - t[i]) for j > i
     dt = t[None, :] - t[:, None]
     dy = data[None, :] - data[:, None]
-    
+
     iu = np.triu_indices(n, k=1)
     valid_pairs = (dt[iu] != 0) & np.isfinite(dt[iu]) & np.isfinite(dy[iu])
     raw_slopes = dy[iu][valid_pairs] / dt[iu][valid_pairs]
@@ -341,7 +341,7 @@ def benjamini_hochberg_fdr(
     # Sort ascending
     sort_order = np.argsort(valid_p)
     sorted_p = valid_p[sort_order]
-    
+
     # Cumulative minimum for monotonicity: q = p * (m / rank)
     ranks = np.arange(1, m + 1, dtype=float)
     adj_factors = m / ranks
@@ -361,23 +361,119 @@ def benjamini_hochberg_fdr(
     return q_vals.reshape(orig_shape), sig_flags.reshape(orig_shape)
 
 
+def _compute_spatial_chunk_core(
+    sub_data: np.ndarray,
+    t_coords: np.ndarray,
+    idx_i: np.ndarray,
+    idx_j: np.ndarray,
+    dt: np.ndarray,
+    alpha: float,
+    decadal_scale: float,
+    z_crit: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Compute per-cell trend statistics for a 3D slice [time, sub_lat, lon].
+    All calculations operate strictly per spatial cell (independent across cells).
+    """
+    t_len, chunk_h, chunk_w = sub_data.shape
+    dy = sub_data[idx_j] - sub_data[idx_i]  # shape: (P, chunk_h, chunk_w)
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        pairwise_slopes = (dy / dt) * decadal_scale
+        slopes = np.nanmedian(pairwise_slopes, axis=0)
+
+    n_samples = np.sum(~np.isnan(sub_data), axis=0)
+    slopes[n_samples < 2] = 0.0
+
+    s_2d = np.nansum(np.sign(dy), axis=0)
+
+    sorted_d = np.sort(sub_data, axis=0)
+    equal = (sorted_d[1:] == sorted_d[:-1]) & ~np.isnan(sorted_d[1:])
+
+    if np.any(equal):
+        run_len = np.ones((t_len, chunk_h, chunk_w), dtype=int)
+        for t in range(t_len - 1):
+            run_len[t + 1] = np.where(equal[t], run_len[t] + 1, 1)
+        is_end = np.zeros((t_len, chunk_h, chunk_w), dtype=bool)
+        is_end[:-1] = ~equal
+        is_end[-1] = True
+        valid_grp = (run_len > 1) & is_end
+        tg = np.where(valid_grp, run_len, 0)
+        tie_term_2d = np.sum(tg * (tg - 1) * (2 * tg + 5), axis=0)
+    else:
+        tie_term_2d = np.zeros((chunk_h, chunk_w), dtype=float)
+
+    var_s_2d = (n_samples * (n_samples - 1) * (2 * n_samples + 5) - tie_term_2d) / 18.0
+    var_s_2d = np.maximum(var_s_2d, 0.0)
+
+    var_s_2d = hamed_rao_variance_correction(sub_data, var_s_2d, slope=slopes / decadal_scale)
+
+    z_2d = np.zeros((chunk_h, chunk_w), dtype=float)
+    pos = (s_2d > 0) & (var_s_2d > 0)
+    neg = (s_2d < 0) & (var_s_2d > 0)
+    std_s = np.sqrt(np.where(var_s_2d > 0, var_s_2d, 1.0))
+    z_2d[pos] = (s_2d[pos] - 1.0) / std_s[pos]
+    z_2d[neg] = (s_2d[neg] + 1.0) / std_s[neg]
+
+    p_values = 2.0 * stats.norm.sf(np.abs(z_2d))
+    p_values[n_samples < 5] = 1.0
+    p_values[var_s_2d <= 0] = 1.0
+    p_values = np.clip(p_values, 0.0, 1.0)
+
+    valid_pairs = ~np.isnan(pairwise_slopes)
+    N_pairs = np.sum(valid_pairs, axis=0)
+    c_alpha = z_crit * np.sqrt(var_s_2d)
+
+    rank_lower = np.clip(np.floor((N_pairs - c_alpha) / 2.0).astype(int), 0, np.maximum(N_pairs - 1, 0))
+    rank_upper = np.clip(np.ceil((N_pairs + c_alpha) / 2.0).astype(int), 0, np.maximum(N_pairs - 1, 0))
+
+    sorted_slopes = np.sort(pairwise_slopes, axis=0)
+    ci_lower = np.take_along_axis(sorted_slopes, rank_lower[None, :, :], axis=0)[0]
+    ci_upper = np.take_along_axis(sorted_slopes, rank_upper[None, :, :], axis=0)[0]
+
+    ci_lower[N_pairs <= 2] = slopes[N_pairs <= 2]
+    ci_upper[N_pairs <= 2] = slopes[N_pairs <= 2]
+    ci_lower[n_samples < 2] = 0.0
+    ci_upper[n_samples < 2] = 0.0
+    ci_lower[var_s_2d <= 0] = slopes[var_s_2d <= 0]
+    ci_upper[var_s_2d <= 0] = slopes[var_s_2d <= 0]
+
+    time_3d = t_coords[:, None, None]
+    residuals = sub_data - slopes[None, :, :] * time_3d
+    with np.errstate(all="ignore"):
+        intercepts = np.nanmedian(residuals, axis=0)
+    intercepts[n_samples < 2] = 0.0
+
+    tau_2d = np.zeros((chunk_h, chunk_w), dtype=float)
+    with np.errstate(all="ignore"):
+        tau_2d = np.where(N_pairs > 0, s_2d / np.maximum(N_pairs, 1.0), 0.0)
+    tau_2d[n_samples < 5] = 0.0
+    tau_2d = np.clip(tau_2d, -1.0, 1.0)
+
+    return slopes, intercepts, ci_lower, ci_upper, p_values, tau_2d, n_samples
+
+
 def compute_spatial_trends(
     data_3d: np.ndarray,
     time_coords: np.ndarray | None = None,
     alpha: float = 0.05,
     decadal_scale: float = 1.0,
+    chunk_size_cells: int = 2500,
 ) -> dict[str, Any]:
     """
     Compute spatial trends across a 3D grid [time, lat, lon].
     Utilizes vectorized upper-triangular broadcasting across the temporal axis
     for high-performance calculation of Theil-Sen slope, Mann-Kendall S,
     tie-adjusted base variance, and Gilbert (1987) 95% confidence intervals.
+    Automatically applies spatial chunking / memory tiling (F-010 Part 2) when
+    total cells exceed `chunk_size_cells` to guarantee peak memory < budget.
     
     Parameters:
         data_3d: 3D array of shape (T, H, W).
         time_coords: Optional 1D array of time steps of length T.
         alpha: Significance threshold (default: 0.05).
         decadal_scale: Optional scaling factor for slope rate (default: 1.0).
+        chunk_size_cells: Maximum spatial cells per vectorized batch (default: 2500).
         
     Returns:
         Dict with 2D spatial maps:
@@ -408,95 +504,43 @@ def compute_spatial_trends(
     else:
         t_coords = np.asarray(time_coords, dtype=float)
 
-    # 1. Vectorized upper-triangular pairwise broadcasting across the time axis T
+    total_cells = h_len * w_len
     idx_i, idx_j = np.triu_indices(t_len, k=1)
-    dy = data_3d[idx_j] - data_3d[idx_i]  # shape: (P, H, W) where P = T * (T - 1) // 2
     dt = (t_coords[idx_j] - t_coords[idx_i])[:, None, None]
-
-    with np.errstate(divide="ignore", invalid="ignore"):
-        pairwise_slopes = (dy / dt) * decadal_scale
-        slopes = np.nanmedian(pairwise_slopes, axis=0)
-
-    # Count valid temporal observations per cell
-    n_samples = np.sum(~np.isnan(data_3d), axis=0)
-    slopes[n_samples < 2] = 0.0
-
-    # 2. Mann-Kendall S statistic across valid non-NaN pairs
-    s_2d = np.nansum(np.sign(dy), axis=0)
-
-    # 3. Tie-adjusted base variance Var(S) per cell
-    sorted_d = np.sort(data_3d, axis=0)
-    equal = (sorted_d[1:] == sorted_d[:-1]) & ~np.isnan(sorted_d[1:])
-
-    if np.any(equal):
-        run_len = np.ones((t_len, h_len, w_len), dtype=int)
-        for t in range(t_len - 1):
-            run_len[t + 1] = np.where(equal[t], run_len[t] + 1, 1)
-        is_end = np.zeros((t_len, h_len, w_len), dtype=bool)
-        is_end[:-1] = ~equal
-        is_end[-1] = True
-        valid_grp = (run_len > 1) & is_end
-        tg = np.where(valid_grp, run_len, 0)
-        tie_term_2d = np.sum(tg * (tg - 1) * (2 * tg + 5), axis=0)
-    else:
-        tie_term_2d = np.zeros((h_len, w_len), dtype=float)
-
-    var_s_2d = (n_samples * (n_samples - 1) * (2 * n_samples + 5) - tie_term_2d) / 18.0
-    var_s_2d = np.maximum(var_s_2d, 0.0)
-
-    # Apply vectorized Hamed & Rao (1998) serial autocorrelation correction (using annual slope matching t_3d annual index)
-    var_s_2d = hamed_rao_variance_correction(data_3d, var_s_2d, slope=slopes / decadal_scale)
-
-    # Compute standardized test statistic Z and two-tailed p-values
-    z_2d = np.zeros((h_len, w_len), dtype=float)
-    pos = (s_2d > 0) & (var_s_2d > 0)
-    neg = (s_2d < 0) & (var_s_2d > 0)
-    std_s = np.sqrt(np.where(var_s_2d > 0, var_s_2d, 1.0))
-    z_2d[pos] = (s_2d[pos] - 1.0) / std_s[pos]
-    z_2d[neg] = (s_2d[neg] + 1.0) / std_s[neg]
-
-    p_values = 2.0 * stats.norm.sf(np.abs(z_2d))
-    p_values[n_samples < 5] = 1.0
-    p_values[var_s_2d <= 0] = 1.0
-    p_values = np.clip(p_values, 0.0, 1.0)
-
-    # 4. Vectorize Gilbert (1987) 95% confidence intervals
-    valid_pairs = ~np.isnan(pairwise_slopes)
-    N_pairs = np.sum(valid_pairs, axis=0)
     z_crit = float(stats.norm.ppf(1.0 - alpha / 2.0))
-    c_alpha = z_crit * np.sqrt(var_s_2d)
 
-    rank_lower = np.clip(np.floor((N_pairs - c_alpha) / 2.0).astype(int), 0, np.maximum(N_pairs - 1, 0))
-    rank_upper = np.clip(np.ceil((N_pairs + c_alpha) / 2.0).astype(int), 0, np.maximum(N_pairs - 1, 0))
+    if total_cells <= chunk_size_cells:
+        slopes, intercepts, ci_lower, ci_upper, p_values, tau_2d, n_samples = _compute_spatial_chunk_core(
+            data_3d, t_coords, idx_i, idx_j, dt, alpha, decadal_scale, z_crit
+        )
+    else:
+        # Spatial Grid Chunking & Memory Tiling (F-010 Part 2)
+        chunk_h = max(1, chunk_size_cells // max(1, w_len))
+        slopes = np.zeros((h_len, w_len), dtype=float)
+        intercepts = np.zeros((h_len, w_len), dtype=float)
+        ci_lower = np.zeros((h_len, w_len), dtype=float)
+        ci_upper = np.zeros((h_len, w_len), dtype=float)
+        p_values = np.ones((h_len, w_len), dtype=float)
+        tau_2d = np.zeros((h_len, w_len), dtype=float)
+        n_samples = np.zeros((h_len, w_len), dtype=int)
 
-    sorted_slopes = np.sort(pairwise_slopes, axis=0)
-    ci_lower = np.take_along_axis(sorted_slopes, rank_lower[None, :, :], axis=0)[0]
-    ci_upper = np.take_along_axis(sorted_slopes, rank_upper[None, :, :], axis=0)[0]
-
-    ci_lower[N_pairs <= 2] = slopes[N_pairs <= 2]
-    ci_upper[N_pairs <= 2] = slopes[N_pairs <= 2]
-    ci_lower[n_samples < 2] = 0.0
-    ci_upper[n_samples < 2] = 0.0
-    ci_lower[var_s_2d <= 0] = slopes[var_s_2d <= 0]
-    ci_upper[var_s_2d <= 0] = slopes[var_s_2d <= 0]
-
-    # Compute robust Theil-Sen intercept per cell
-    time_3d = t_coords[:, None, None]
-    residuals = data_3d - slopes[None, :, :] * time_3d
-    with np.errstate(all="ignore"):
-        intercepts = np.nanmedian(residuals, axis=0)
-    intercepts[n_samples < 2] = 0.0
+        for r_start in range(0, h_len, chunk_h):
+            r_end = min(r_start + chunk_h, h_len)
+            sub_data = data_3d[:, r_start:r_end, :]
+            c_slopes, c_intercepts, c_cil, c_ciu, c_pvals, c_tau, c_nsamp = _compute_spatial_chunk_core(
+                sub_data, t_coords, idx_i, idx_j, dt, alpha, decadal_scale, z_crit
+            )
+            slopes[r_start:r_end, :] = c_slopes
+            intercepts[r_start:r_end, :] = c_intercepts
+            ci_lower[r_start:r_end, :] = c_cil
+            ci_upper[r_start:r_end, :] = c_ciu
+            p_values[r_start:r_end, :] = c_pvals
+            tau_2d[r_start:r_end, :] = c_tau
+            n_samples[r_start:r_end, :] = c_nsamp
 
     # Benjamini-Hochberg adjustment across the entire 2D spatial field
     q_values, is_sig_fdr = benjamini_hochberg_fdr(p_values, alpha=alpha)
     is_sig_raw = p_values < alpha
-
-    # 5. Kendall's Tau: S / N_pairs
-    tau_2d = np.zeros((h_len, w_len), dtype=float)
-    with np.errstate(all="ignore"):
-        tau_2d = np.where(N_pairs > 0, s_2d / np.maximum(N_pairs, 1.0), 0.0)
-    tau_2d[n_samples < 5] = 0.0
-    tau_2d = np.clip(tau_2d, -1.0, 1.0)
 
     # Spatial Autocorrelation: Global Moran's I & Anselin Local Moran's I (LISA)
     try:

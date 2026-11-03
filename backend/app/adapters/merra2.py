@@ -328,7 +328,30 @@ class MERRA2Adapter(BaseDatasetAdapter):
                 except Exception as e:
                     logger.warning("Failed reading candidate NetCDF %s (%s); trying next.", nc_file, e)
 
-        # DEMO / FIXTURE MODE
+            # In prefer_live mode (or production), fail immediately with 503 instead of silent synthetic generation
+            logger.error(
+                "MERRA-2 authentic NetCDF granule missing for variable '%s' (%d-%d) in %s. "
+                "Synthetic fallback is permanently disabled to uphold Zero-Synthetic standards.",
+                variable, start_year, end_year, bbox
+            )
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"NASA MERRA-2 atmospheric reanalysis data for variable '{variable}' "
+                    f"({start_year}-{end_year}) is unavailable on this server. "
+                    "Synthetic data generation has been permanently eliminated to uphold the EarthSift Zero-Synthetic Standard."
+                )
+            )
+
+        if os.getenv("ENVIRONMENT") == "production":
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=503,
+                detail="Synthetic data generation is strictly prohibited in production mode."
+            )
+
+        # DEMO / OFFLINE UNIT TEST FIXTURE MODE (Only accessible when prefer_live=False outside production)
         # Generates deterministic, physically grounded atmospheric field
         lats = np.arange(min_lat, max_lat + 1.0, 2.0, dtype=float)
         lons = np.arange(min_lon, max_lon + 1.0, 2.0, dtype=float)
@@ -422,7 +445,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
         subset_data["lon"] = lons[lon_idx]
         # Slice data: (time, lat, lon)
         subset_data["data"] = raw_data["data"][:, lat_idx[0]:lat_idx[-1]+1, lon_idx[0]:lon_idx[-1]+1]
-        
+
         # Update provenance grid_shape
         prov = subset_data["provenance"].copy()
         prov["grid_shape"] = [len(subset_data["lat"]), len(subset_data["lon"])]
