@@ -52,9 +52,39 @@ export default function Header() {
   }, []);
 
   const isDashboard = location.pathname === '/dashboard';
+  const backendOffline = useStore((s) => s.backendOffline);
+  const setBackendOffline = useStore((s) => s.setBackendOffline);
+
+  useEffect(() => {
+    let active = true;
+    const checkHealth = async () => {
+      try {
+        const res = await fetch('/ready', { cache: 'no-store' });
+        if (active) setBackendOffline(!res.ok);
+      } catch {
+        if (active) setBackendOffline(true);
+      }
+    };
+    checkHealth();
+    const id = setInterval(checkHealth, 25000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [setBackendOffline]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-bg-deep)]/90 backdrop-blur-md border-b border-[var(--color-border-subtle)] transition-colors">
+      {backendOffline && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-amber-500/90 text-amber-950 px-4 py-1 text-center font-mono text-xs font-bold flex items-center justify-center gap-2 shadow-inner"
+        >
+          <span className="w-2 h-2 rounded-full bg-amber-900 animate-pulse" />
+          <span>Scientific Engine API Offline — Operating in cached / browser standalone mode. Real-time compute suspended.</span>
+        </div>
+      )}
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
         {/* Left: Brand & Primary Navigation */}
         <div className="flex items-center gap-6 sm:gap-8">
