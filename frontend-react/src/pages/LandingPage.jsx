@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import StickyMobileCTA from '../components/StickyMobileCTA';
 import useStore from '../store/useStore';
 import { playTactileClick } from '../utils/audio';
 import { trackPageView } from '../utils/analytics';
+import { usePageMetadata } from '../utils/usePageMetadata';
 
 const SPEC_METRICS = [
   { label: 'Observation Record', val: '1981–Present', desc: '44+ years of continuous NASA POWER & MERRA-2 reanalysis' },
@@ -126,8 +128,13 @@ const CASE_STUDIES = [
 export default function LandingPage() {
   const navigate = useNavigate();
 
+  usePageMetadata({
+    title: 'EarthSift — Earth System Trend Detective | NASA Space Apps 2026',
+    description: 'Autonomous spatial trend discovery instrument detecting non-parametric Mann-Kendall climate trends and Anselin LISA spatial autocorrelation across 44 years of continuous NASA Earth observations.',
+    canonicalPath: '/',
+  });
+
   useEffect(() => {
-    document.title = 'EarthSift — Earth System Trend Detective';
     trackPageView('Overview Landing Page');
     window.scrollTo(0, 0);
   }, []);
@@ -144,7 +151,7 @@ export default function LandingPage() {
 
       <main className="pt-14">
         {/* Editorial Hero Section */}
-        <section className="relative py-20 sm:py-28 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border-subtle)]">
+        <section className="relative py-12 sm:py-24 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border-subtle)]">
           <div className="max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -152,7 +159,14 @@ export default function LandingPage() {
               transition={{ duration: 0.4 }}
             >
               {/* Dignified Institutional Attribution Header */}
-              <div className="flex items-center gap-2 text-xs font-mono tracking-wider text-[var(--color-text-muted)] uppercase mb-6 font-medium">
+              <div className="flex items-center gap-2.5 text-xs font-mono tracking-wider text-[var(--color-text-muted)] uppercase mb-6 font-medium">
+                <img
+                  src="/favicon.svg"
+                  alt="EarthSift NASA Space Apps 2026 challenge emblem"
+                  className="w-5 h-5 rounded object-contain shrink-0"
+                  width="20"
+                  height="20"
+                />
                 <span>NASA Space Apps Challenge 2026</span>
                 <span className="text-[var(--color-border-strong)]">/</span>
                 <span>Earth Observation Systems</span>
@@ -381,6 +395,7 @@ export default function LandingPage() {
         </section>
       </main>
 
+      <StickyMobileCTA mode="landing" />
       <Footer />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import useStore from '../store/useStore';
 import { DATASET_VARIABLES, DETECTIVE_PRESETS } from '../utils/helpers';
 import { playTactileClick } from '../utils/audio';
@@ -14,6 +14,11 @@ export default function AnalysisPanel() {
   const [validationError, setValidationError] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
   const [gateResult, setGateResult] = useState(null);
+
+  const handleGateResult = useCallback((res) => {
+    setGateResult(res);
+    setQualityGateResult(res);
+  }, [setQualityGateResult]);
 
   const variables = DATASET_VARIABLES[dataset] || DATASET_VARIABLES.nasa_power;
   const yearCount = Math.max(0, endYear - startYear + 1);
@@ -290,10 +295,7 @@ export default function AnalysisPanel() {
           parseFloat(bbox.minLon), parseFloat(bbox.minLat),
           parseFloat(bbox.maxLon), parseFloat(bbox.maxLat)
         ] : null}
-        onGateResult={(res) => {
-          setGateResult(res);
-          setQualityGateResult(res);
-        }}
+        onGateResult={handleGateResult}
       />
 
       <div className="w-full h-px bg-[var(--color-border-subtle)]" />

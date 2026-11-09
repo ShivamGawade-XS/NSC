@@ -1,11 +1,12 @@
 # EarthSift — NASA Earth System Trend Detective
-# Robots.txt Specification
+# Production Robots.txt Specification
 
 User-agent: *
 Allow: /
 Allow: /dashboard
 Allow: /privacy
 Allow: /terms
+Allow: /thank-you
 Allow: /llms.txt
 Disallow: /api/
 Disallow: /metrics
@@ -29,4 +30,3 @@ Allow: /llms.txt
 
 # Sitemaps
 Sitemap: https://earthsift.org/sitemap.xml
-

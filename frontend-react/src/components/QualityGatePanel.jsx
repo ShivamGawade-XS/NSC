@@ -3,7 +3,7 @@
  * Evaluates analysis parameters before execution:
  * sensor continuity, temporal sample count, spatial grid intersection.
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { assessQualityGate } from '../api/client';
 
 const STATUS_CONFIG = {
@@ -41,27 +41,43 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
   const [gate, setGate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const onGateResultRef = useRef(onGateResult);
+  useEffect(() => {
+    onGateResultRef.current = onGateResult;
+  });
+  const lastKeyRef = useRef('');
 
-  const runGate = useCallback(async () => {
-    if (!dataset || !variable || !startYear || !endYear) return;
-    setLoading(true);
-    try {
-      const payload = { dataset_id: dataset, variable_id: variable, start_year: startYear, end_year: endYear };
-      if (bbox) payload.bbox = bbox;
-      const result = await assessQualityGate(payload);
-      setGate(result);
-      onGateResult?.(result);
-    } catch {
-      setGate(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [dataset, variable, startYear, endYear, bbox, onGateResult]);
+  const bboxStr = Array.isArray(bbox) ? bbox.join(',') : (bbox ? JSON.stringify(bbox) : '');
 
   useEffect(() => {
-    const timer = setTimeout(runGate, 400);
-    return () => clearTimeout(timer);
-  }, [runGate]);
+    if (!dataset || !variable || !startYear || !endYear) return;
+    const currentKey = `${dataset}|${variable}|${startYear}|${endYear}|${bboxStr}`;
+    if (currentKey === lastKeyRef.current) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const payload = { dataset_id: dataset, variable_id: variable, start_year: startYear, end_year: endYear };
+        if (bbox) payload.bbox = bbox;
+        const result = await assessQualityGate(payload);
+        if (!cancelled) {
+          lastKeyRef.current = currentKey;
+          setGate(result);
+          onGateResultRef.current?.(result);
+        }
+      } catch {
+        if (!cancelled) setGate(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [dataset, variable, startYear, endYear, bboxStr, bbox]);
 
   if (loading) {
     return (

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 import { playTactileClick } from '../utils/audio';
 import { safeStorage } from '../utils/safeStorage';
+import ContactModal from './ContactModal';
 
 export default function Header() {
   const location = useLocation();
@@ -10,6 +11,7 @@ export default function Header() {
   const analysisData = useStore((s) => s.analysisData);
   const [utc, setUtc] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;
     const savedTheme = safeStorage.getItem('earthsift_theme');
@@ -59,7 +61,7 @@ export default function Header() {
     let active = true;
     const checkHealth = async () => {
       try {
-        const res = await fetch('/ready', { cache: 'no-store' });
+        const res = await fetch('/api/v1/ready', { cache: 'no-store' });
         if (active) setBackendOffline(!res.ok);
       } catch {
         if (active) setBackendOffline(true);
@@ -93,9 +95,13 @@ export default function Header() {
             className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0066ff] rounded py-1 px-1"
             aria-label="EarthSift Home"
           >
-            <div className="w-7 h-7 rounded bg-[var(--color-accent-blue)] flex items-center justify-center text-white font-mono font-bold text-xs shadow-sm">
-              ES
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="EarthSift Earth System Trend Detective brand mark"
+              className="w-7 h-7 rounded object-contain shadow-xs shrink-0"
+              width="28"
+              height="28"
+            />
             <div className="flex flex-col">
               <span className="font-['Space_Grotesk'] font-bold text-sm tracking-tight text-[var(--color-text-main)] group-hover:text-[var(--color-accent-blue)] transition-colors">
                 EarthSift
@@ -128,6 +134,16 @@ export default function Header() {
             >
               Analysis Workspace
             </Link>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                setContactOpen(true);
+              }}
+              className="px-3 py-1.5 rounded text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+            >
+              Contact
+            </button>
             <a
               href="https://github.com/ShivamGawade-XS/NSC"
               target="_blank"
@@ -320,6 +336,17 @@ export default function Header() {
             >
               Analysis Workspace
             </Link>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                setContactOpen(true);
+                setMobileMenuOpen(false);
+              }}
+              className="px-3 py-2 rounded text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] text-left"
+            >
+              Contact Team
+            </button>
             <a
               href="https://github.com/ShivamGawade-XS/NSC"
               target="_blank"
@@ -379,6 +406,7 @@ export default function Header() {
           </div>
         </div>
       )}
+      <ContactModal isOpen={contactOpen} onClose={() => setContactOpen(false)} />
     </header>
   );
 }

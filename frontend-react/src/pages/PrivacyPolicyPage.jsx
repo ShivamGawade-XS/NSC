@@ -2,10 +2,16 @@ import { useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { trackPageView } from '../utils/analytics';
+import { usePageMetadata } from '../utils/usePageMetadata';
 
 export default function PrivacyPolicyPage() {
+  usePageMetadata({
+    title: 'Privacy Policy & Governance — EarthSift Open Science',
+    description: 'Privacy policy and governance protocol for EarthSift: zero tracking, complete data minimization, and strict open-science compliance for NASA Space Apps 2026.',
+    canonicalPath: '/privacy',
+  });
+
   useEffect(() => {
-    document.title = 'Privacy Policy — EarthSift';
     trackPageView('Privacy Policy');
     window.scrollTo(0, 0);
   }, []);
@@ -98,6 +104,21 @@ export default function PrivacyPolicyPage() {
                 https://github.com/ShivamGawade-XS/NSC
               </a>
             </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-['Space_Grotesk'] text-lg font-bold text-[var(--color-text-main)]">
+              7. Contact Information & Data Protection
+            </h2>
+            <p>
+              If you have inquiries regarding privacy governance, scientific citations, or data processing, please contact the maintainer directly:
+            </p>
+            <div className="bg-[var(--color-bg-elevated)] p-4 rounded border border-[var(--color-border-subtle)] font-mono text-xs space-y-1.5">
+              <div><strong>Project Maintainer:</strong> Shivam Gawade</div>
+              <div><strong>Lead Engineering Contact:</strong> <a href="mailto:shivamgawade.dev@gmail.com" className="text-[var(--color-accent-blue)] hover:underline">shivamgawade.dev@gmail.com</a></div>
+              <div><strong>Institutional Inquiries:</strong> <a href="mailto:contact@earthsift.org" className="text-[var(--color-accent-blue)] hover:underline">contact@earthsift.org</a></div>
+              <div><strong>Challenge Team:</strong> NASA Space Apps Challenge 2026 Global Participant</div>
+            </div>
           </section>
         </article>
       </main>

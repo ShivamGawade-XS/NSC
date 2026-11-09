@@ -2,10 +2,16 @@ import { useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { trackPageView } from '../utils/analytics';
+import { usePageMetadata } from '../utils/usePageMetadata';
 
 export default function TermsPage() {
+  usePageMetadata({
+    title: 'Terms of Service & Scientific Attribution — EarthSift',
+    description: 'Terms of service, open-science licensing (MIT), statistical disclaimers, and NASA Earthdata citation requirements for EarthSift.',
+    canonicalPath: '/terms',
+  });
+
   useEffect(() => {
-    document.title = 'Terms of Service — EarthSift';
     trackPageView('Terms of Service');
     window.scrollTo(0, 0);
   }, []);
@@ -85,6 +91,21 @@ export default function TermsPage() {
                 https://github.com/ShivamGawade-XS/NSC
               </a>
             </p>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-['Space_Grotesk'] text-lg font-bold text-[var(--color-text-main)]">
+              5. Official Research & Institutional Contact
+            </h2>
+            <p>
+              For collaboration inquiries, challenge judging clarifications, or scientific review:
+            </p>
+            <div className="bg-[var(--color-bg-elevated)] p-4 rounded border border-[var(--color-border-subtle)] font-mono text-xs space-y-1.5">
+              <div><strong>Lead Researcher:</strong> Shivam Gawade</div>
+              <div><strong>Email:</strong> <a href="mailto:shivamgawade.dev@gmail.com" className="text-[var(--color-accent-blue)] hover:underline">shivamgawade.dev@gmail.com</a> / <a href="mailto:contact@earthsift.org" className="text-[var(--color-accent-blue)] hover:underline">contact@earthsift.org</a></div>
+              <div><strong>Repository Issues:</strong> <a href="https://github.com/ShivamGawade-XS/NSC/issues" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-blue)] hover:underline">github.com/ShivamGawade-XS/NSC/issues</a></div>
+              <div><strong>Event:</strong> NASA Space Apps Challenge 2026 (Global Event)</div>
+            </div>
           </section>
         </article>
       </main>

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import StickyMobileCTA from '../components/StickyMobileCTA';
 import TrendMap from '../components/TrendMap';
 import TimeSeriesChart from '../components/TimeSeriesChart';
 import AnalysisPanel from '../components/AnalysisPanel';
@@ -21,6 +22,7 @@ import useStore from '../store/useStore';
 import { trackPageView } from '../utils/analytics';
 import { playTactileClick } from '../utils/audio';
 import { stopSonification } from '../utils/sonification';
+import { usePageMetadata } from '../utils/usePageMetadata';
 
 export default function DashboardPage() {
   const isLoading = useStore((s) => s.isLoading);
@@ -35,8 +37,13 @@ export default function DashboardPage() {
   const discoveryModalOpen = useStore((s) => s.discoveryModalOpen);
   const hasInitialized = useRef(false);
 
+  usePageMetadata({
+    title: 'Analysis Workspace — EarthSift Scientific Workbench',
+    description: 'Interactive spatiotemporal climate trend detective workspace. Real-time Mann-Kendall statistics, Sen slope, Anselin LISA clustering, and CF-1.8 NetCDF downloads.',
+    canonicalPath: '/dashboard',
+  });
+
   useEffect(() => {
-    document.title = 'Analysis Workspace — EarthSift';
     trackPageView('Analysis Workspace');
     window.scrollTo(0, 0);
 
@@ -457,7 +464,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Center Column: GIS Map & Analytical Chart */}
-            <div className="space-y-4 min-w-0">
+            <div id="map-section" className="space-y-4 min-w-0">
               <div className="h-[52vh] min-h-[420px]">
                 <TrendMap />
               </div>
@@ -479,13 +486,14 @@ export default function DashboardPage() {
             </div>
 
             {/* Right Column: Evidence & Verification */}
-            <div className="space-y-4">
+            <div id="evidence-section" className="space-y-4">
               <EvidencePanel />
             </div>
           </div>
         </main>
       </div>
 
+      <StickyMobileCTA mode="dashboard" />
       <Footer />
     </div>
   );

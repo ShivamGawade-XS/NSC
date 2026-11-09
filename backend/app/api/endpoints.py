@@ -26,6 +26,7 @@ from app.core.auth import AuthTier, get_auth_tier, llm_budget_tracker
 from app.core.config import Settings
 from app.core.db_cache import load_from_db_cache, normalize_cache_params, save_to_db_cache
 from app.core.limiter import limiter
+from app.core.mailer import send_contact_inquiry
 from app.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -37,6 +38,8 @@ from app.schemas.analysis import (
     CompareLocationsResponse,
     CompoundHazardRequest,
     CompoundHazardResponse,
+    ContactInquiryRequest,
+    ContactInquiryResponse,
     ContrastsResponse,
     CustomAnalysisRequest,
     DataQualityProfileResponse,
@@ -58,6 +61,8 @@ from app.schemas.analysis import (
     RobustnessResponse,
     SignalsResponse,
     SpatialGridPoint,
+    TelemetryEvent,
+    TelemetryResponse,
     VariableInfo,
     VelocityVector,
 )

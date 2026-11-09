@@ -690,3 +690,25 @@ class ReproducibilityManifestResponse(BaseModel):
     bibtex_citations: list[str]
 
 
+class ContactInquiryRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    email: str = Field(..., min_length=5, max_length=254)
+    topic: str = Field(..., min_length=1, max_length=80)
+    message: str = Field(..., min_length=10, max_length=4000)
+
+
+class ContactInquiryResponse(BaseModel):
+    success: bool
+    message: str
+
+
+class TelemetryEvent(BaseModel):
+    event: str = Field(..., max_length=80)
+    page: str = Field(default="", max_length=200)
+    properties: dict[str, Any] = Field(default_factory=dict)
+
+
+class TelemetryResponse(BaseModel):
+    recorded: bool
+
+
