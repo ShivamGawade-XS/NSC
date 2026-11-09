@@ -443,9 +443,7 @@ def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]
         slope_annual = slope_decadal / 10.0
         base_val = 22.0 if var == "T2M" else 2.5
         time_steps = np.arange(t_len, dtype=float)
-        rng = np.random.RandomState(42)
-        noise = rng.normal(0.0, 0.35 if var == "T2M" else 0.2, size=t_len)
-        time_series = [round(float(v), 3) for v in (base_val + slope_annual * time_steps + noise)]
+        time_series = [round(float(base_val + slope_annual * t), 3) for t in time_steps]
 
     sample_data_py = pprint.pformat(top_cells, indent=2)
     top_lat = float(top_cells[0].get("lat", 0.0))
