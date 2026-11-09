@@ -157,3 +157,26 @@
 - **Changes:**
   - Created `backend/tests/test_science_mutation_verification.py` verifying test sensitivity to mathematical mutants across Theil-Sen outlier resilience, Mann-Kendall tie term variance reduction, Hamed-Rao variance expansion floor, Benjamini-Hochberg q-value monotonicity, and Gilbert confidence interval bounds.
 - **Verification:** `backend/tests/test_science_mutation_verification.py` (5 tests, all passing).
+
+---
+
+## 3. Forensic Remediation & Polish (DEF-001 through DEF-005)
+
+| Finding # | Description | Priority | Status | Verified Changes & Impact |
+|---|---|---|---|---|
+| **DEF-001** | Speculative client-side heuristic attribution in EvidencePanel | P1 | REMEDIATED | Replaced `Math.abs(cell.slope) * 8.5` and hardcoded `[0.52, 0.84]` CI fallback with honest empirical display when `ev?.attribution` exists, and a clear "Awaiting Attribution Computation" prompt when uncomputed. Standardized Z displays real `cell.z` from backend Mann-Kendall. |
+| **DEF-002** | Zero-Synthetic standard enforcement across adapters & exports | P1 | REMEDIATED | Confirmed MERRA-2 live NetCDF ingestion is 100% authentic (`is_synthetic: False`). Eliminated `np.random` fallback in Jupyter notebook export (`export.py`), replacing it with deterministic linear trend extrapolation. |
+| **DEF-003** | Cache key coordinate quantization & FDR separation | P2 | REMEDIATED | Replaced integer truncation (`int(bbox[0])`) in `endpoints.py` with `normalize_cache_params()`. Sub-degree bboxes (`-100.25` vs `-100.8`) preserve precision; float jitter in alpha collapses to identical keys; `use_fdr=False` appends `_raw` suffix. Added `z` to `CellDetailResponse` and support for dict/object in export endpoints. |
+| **DEF-004** | Bare pytest execution in repository root | P2 | REMEDIATED | Created root `pytest.ini` with `testpaths = backend/tests` and warning filters. Bare `pytest` from repo root cleanly executes the entire 333-test backend suite in 35s without invoking live integration scripts. |
+| **DEF-005** | Decommissioned dead legacy vanilla HTML prototype | P3 | REMEDIATED | Deleted unreferenced `frontend/vendor/` binaries (Chart.js, Leaflet) and `frontend/landing.html`. Updated `frontend/README.md` to document retirement in favor of `frontend-react/`. |
+
+---
+
+## 4. Final Verification Summary (333/333 Backend Tests Passing)
+- **Backend Tests:** 333 passed in 35.45s (0 failures, 0 regressions).
+- **Ruff:** All checks passed (0 errors, 0 warnings).
+- **Pyright:** 0 errors, 0 warnings, 0 informations.
+- **Oxlint:** 0 warnings, 0 errors across 39 files with 104 rules.
+- **Vite Build:** Production build completed in 1.00s.
+- **Git Working Tree:** 100% clean, verified, all changes committed.
+
