@@ -305,7 +305,9 @@ export default function EvidencePanel() {
             <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
               <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Standardized Z</span>
               <span className="font-semibold text-emerald-500 tabular-nums">
-                {cell.p_value < 0.001 ? '|Z| > 3.29' : `Z ≈ ${(cell.slope > 0 ? '+' : '-') + (Math.abs(cell.tau || 0.5) * 3.5).toFixed(2)}`}
+                {cell.z !== undefined && cell.z !== null
+                  ? `${cell.z > 0 ? '+' : ''}${cell.z.toFixed(2)}`
+                  : (cell.p_value < 0.001 ? '|Z| > 3.29' : (cell.p_value < 0.05 ? '|Z| > 1.96' : '|Z| ≤ 1.96'))}
               </span>
               <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">p = {formatPVal(cell.p_value)}</span>
             </div>
@@ -345,32 +347,41 @@ export default function EvidencePanel() {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
-          <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-            <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Risk Ratio (RR)</span>
-            <span className="text-sm font-bold text-[#38bdf8] tabular-nums">
-              {ev?.attribution?.risk_ratio
-                ? `${ev.attribution.risk_ratio}×`
-                : `${Math.min(25, Math.max(1.2, 1.0 + Math.abs(cell.slope || 0.15) * 8.5)).toFixed(1)}×`}
-            </span>
-            <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">Likelihood Multiplier</span>
-          </div>
-          <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-            <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Attributable Risk (FAR)</span>
-            <span className="text-sm font-bold text-emerald-400 tabular-nums">
-              {ev?.attribution?.fraction_of_attributable_risk !== undefined
-                ? `${(ev.attribution.fraction_of_attributable_risk * 100).toFixed(1)}%`
-                : `${Math.min(92, Math.max(20, Math.round(Math.abs(cell.slope || 0.15) * 140)))}%`}
-            </span>
-            <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">
-              90% CI: [{ev?.attribution?.far_ci_lower !== undefined ? ev.attribution.far_ci_lower : '0.52'}, {ev?.attribution?.far_ci_upper !== undefined ? ev.attribution.far_ci_upper : '0.84'}]
-            </span>
-          </div>
-        </div>
+        {ev?.attribution ? (
+          <>
+            <div className="grid grid-cols-2 gap-2 text-xs mb-2.5">
+              <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Risk Ratio (RR)</span>
+                <span className="text-sm font-bold text-[#38bdf8] tabular-nums">
+                  {ev.attribution.risk_ratio !== undefined ? `${ev.attribution.risk_ratio}×` : '—'}
+                </span>
+                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">Likelihood Multiplier</span>
+              </div>
+              <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Attributable Risk (FAR)</span>
+                <span className="text-sm font-bold text-emerald-400 tabular-nums">
+                  {ev.attribution.fraction_of_attributable_risk !== undefined
+                    ? `${(ev.attribution.fraction_of_attributable_risk * 100).toFixed(1)}%`
+                    : '—'}
+                </span>
+                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">
+                  90% CI: [{ev.attribution.far_ci_lower !== undefined ? ev.attribution.far_ci_lower : '—'}, {ev.attribution.far_ci_upper !== undefined ? ev.attribution.far_ci_upper : '—'}]
+                </span>
+              </div>
+            </div>
 
-        <p className="text-[10px] text-[var(--color-text-secondary)] leading-relaxed">
-          {ev?.attribution?.summary || `Anthropogenic multi-decadal forcing has increased the likelihood of extreme seasonal anomalies at this coordinate by ~${Math.min(25, Math.max(1.2, 1.0 + Math.abs(cell.slope || 0.15) * 8.5)).toFixed(1)}× relative to the pre-industrial counterfactual baseline.`}
-        </p>
+            <p className="text-[10px] text-[var(--color-text-secondary)] leading-relaxed">
+              {ev.attribution.summary || 'Empirical counterfactual attribution analysis completed for this grid coordinate.'}
+            </p>
+          </>
+        ) : (
+          <div className="p-2.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] text-[10px] text-[var(--color-text-secondary)] leading-relaxed">
+            <span className="text-[var(--color-text-muted)] block mb-1 font-semibold uppercase tracking-wider text-[9px]">
+              Awaiting Attribution Computation
+            </span>
+            Formal Stott (2004) / Otto (2020) extreme event attribution requires fitting GEV or Gaussian counterfactual distributions. Execute the attribution endpoint or select a hazard cell to compute empirical Fraction of Attributable Risk (FAR).
+          </div>
+        )}
       </motion.div>
 
       {/* Evidence Details */}
