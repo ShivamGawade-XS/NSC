@@ -24,7 +24,7 @@ from app.adapters.merra2 import MERRA2Adapter
 from app.adapters.nasa_power import NASAPowerAdapter
 from app.core.auth import AuthTier, get_auth_tier, llm_budget_tracker
 from app.core.config import Settings
-from app.core.db_cache import load_from_db_cache, save_to_db_cache
+from app.core.db_cache import load_from_db_cache, normalize_cache_params, save_to_db_cache
 from app.core.limiter import limiter
 from app.schemas.analysis import (
     AnalysisRequest,
@@ -349,6 +349,26 @@ def assess_analysis_quality_gate(request: Request, req: QualityGateRequest) -> Q
     )
 
 
+def _generate_analysis_id(req: AnalysisRequest) -> str:
+    """Generate deterministic, quantized cache identifier preventing sub-degree and alpha collisions."""
+    norm = normalize_cache_params(
+        req.dataset_id, req.variable_id, req.start_year, req.end_year, req.bbox, req.alpha, req.use_fdr
+    )
+    _, _, _, _, q_bbox, q_alpha, _ = norm
+
+    def _coord_slug(c: float) -> str:
+        r = round(float(c), 3)
+        return str(int(r)) if r.is_integer() else str(r)
+
+    if req.bbox and len(req.bbox) == 4:
+        bbox_slug = f"b{_coord_slug(q_bbox[0])}_{_coord_slug(q_bbox[1])}_{_coord_slug(q_bbox[2])}_{_coord_slug(q_bbox[3])}"
+    else:
+        bbox_slug = "bdef"
+    alpha_slug = f"a{int(round(q_alpha * 1000))}"
+    fdr_slug = "" if req.use_fdr else "_raw"
+    return f"ana_{req.dataset_id}_{req.variable_id}_{req.start_year}_{req.end_year}_{bbox_slug}_{alpha_slug}{fdr_slug}"
+
+
 @router.post("/analysis", response_model=AnalysisResponse)
 @limiter.limit("10/minute")
 def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | Response:
@@ -356,6 +376,12 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
     adapter = ADAPTERS.get(req.dataset_id)
     if not adapter:
         raise HTTPException(status_code=404, detail=f"Dataset '{req.dataset_id}' not found.")
+
+    analysis_id = _generate_analysis_id(req)
+    if not req.prefer_live:
+        cached = get_cached_analysis(analysis_id)
+        if cached and "response_json" in cached and isinstance(cached["response_json"], str):
+            return Response(content=cached["response_json"], media_type="application/json")
 
     if req.variable_id in ("ALLSKY_SFC_SW_DWN",) and req.start_year < 2001 and req.end_year >= 2001:
         raise HTTPException(
@@ -549,13 +575,8 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
     if "temporal_aggregation" not in raw_slice["provenance"]:
         raw_slice["provenance"]["temporal_aggregation"] = "annual_mean"
 
-    # Robust cache key incorporating bounding box and significance threshold
-    if req.bbox and len(req.bbox) == 4:
-        bbox_slug = f"b{int(req.bbox[0])}_{int(req.bbox[1])}_{int(req.bbox[2])}_{int(req.bbox[3])}"
-    else:
-        bbox_slug = "bdef"
-    alpha_slug = f"a{int(req.alpha * 1000)}"
-    analysis_id = f"ana_{req.dataset_id}_{req.variable_id}_{req.start_year}_{req.end_year}_{bbox_slug}_{alpha_slug}"
+    # Deterministic quantized cache key
+    analysis_id = _generate_analysis_id(req)
 
     resp_obj = AnalysisResponse(
         analysis_id=analysis_id,
@@ -1148,6 +1169,7 @@ def _compute_cell_detail(
         p_value=round(mk["p_value"], 5),
         q_value=round(q_val, 5),
         tau=round(mk["tau"], 4),
+        z=round(float(mk["z"]), 3) if mk.get("z") is not None and math.isfinite(float(mk["z"])) else None,
         significant=mk["significant"],
         direction=mk["direction"],
         lisa_cluster=lisa_lbl,
@@ -1277,7 +1299,7 @@ def export_analysis_netcdf(request: Request, analysis_id: str):
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
 
     raw = cached["raw_slice"]
-    grid = cached["grid"]
+    grid = [g if isinstance(g, SpatialGridPoint) else SpatialGridPoint(**g) for g in cached.get("grid", [])]
     req = cached["req"]
 
     analysis_record = {
@@ -1324,7 +1346,7 @@ def export_analysis_geojson(request: Request, analysis_id: str):
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
 
     raw = cached["raw_slice"]
-    grid = cached["grid"]
+    grid = [g if isinstance(g, SpatialGridPoint) else SpatialGridPoint(**g) for g in cached.get("grid", [])]
     req = cached["req"]
 
     analysis_record = {
@@ -1405,7 +1427,7 @@ def export_analysis_notebook(request: Request, analysis_id: str):
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
 
     raw = cached["raw_slice"]
-    grid = cached["grid"]
+    grid = [g if isinstance(g, SpatialGridPoint) else SpatialGridPoint(**g) for g in cached.get("grid", [])]
     req = cached["req"]
 
     raw_years = raw.get("years", raw.get("time", []))
@@ -1727,7 +1749,7 @@ def export_analysis_latex(request: Request, analysis_id: str):
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
 
     raw = cached["raw_slice"]
-    grid = cached["grid"]
+    grid = [g if isinstance(g, SpatialGridPoint) else SpatialGridPoint(**g) for g in cached.get("grid", [])]
     req = cached["req"]
 
     analysis_record = {

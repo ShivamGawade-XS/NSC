@@ -219,6 +219,7 @@ class CellDetailResponse(BaseModel):
     p_value: float
     q_value: float
     tau: float
+    z: float | None = None
     significant: bool
     direction: str
     lisa_cluster: str | None = "NS"

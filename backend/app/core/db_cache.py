@@ -22,7 +22,7 @@ import numpy as np
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.schemas.analysis import AnalysisRequest, AnalysisSummary, CustomAnalysisRequest
+from app.schemas.analysis import AnalysisRequest, AnalysisSummary, CustomAnalysisRequest, SpatialGridPoint
 
 logger = logging.getLogger("earthsift.db_cache")
 
@@ -174,6 +174,8 @@ def _deserialize_cache_payload(raw_bytes: bytes) -> dict[str, Any]:
             return CustomAnalysisRequest(**d["__pydantic_CustomAnalysisRequest__"])
         if "__pydantic_AnalysisSummary__" in d:
             return AnalysisSummary(**d["__pydantic_AnalysisSummary__"])
+        if "__pydantic_SpatialGridPoint__" in d:
+            return SpatialGridPoint(**d["__pydantic_SpatialGridPoint__"])
         if "__ndarray__" in d:
             arr = np.array(d["__ndarray__"], dtype=d.get("dtype"))
             shape = d.get("shape")
@@ -231,7 +233,7 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
         variable_id = getattr(req, "variable_id", getattr(req, "variable_name", "unknown"))
         start_year = int(getattr(req, "start_year", 2000))
         end_year = int(getattr(req, "end_year", 2023))
-        bbox = getattr(req, "bbox", None) or [-90.0, -180.0, 90.0, 180.0]
+        bbox = getattr(req, "bbox", None) or [-180.0, -90.0, 180.0, 90.0]
         alpha = float(getattr(req, "alpha", 0.05))
         use_fdr = getattr(req, "use_fdr", getattr(req, "apply_fdr", True))
         norm = normalize_cache_params(dataset_id, variable_id, start_year, end_year, bbox, alpha, use_fdr)
