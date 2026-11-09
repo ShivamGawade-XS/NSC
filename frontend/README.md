@@ -1,6 +1,6 @@
-# Legacy Vanilla Frontend (Deprecated Prototype)
+# Legacy Vanilla Frontend (Decommissioned Prototype)
 
-This directory contains the legacy vanilla HTML/JS prototype (`index.html`, `landing.html`, `style.css`, `app.js`).
+This directory previously housed the legacy vanilla HTML/JS prototype (`index.html`, `landing.html`, `style.css`, `app.js`, `vendor/`). Unused bundle artifacts have been decommissioned to maintain zero dead binary code in the repository.
 
 ### Active Production SPA
 The active modern presentation layer is located in [`/frontend-react`](../frontend-react):
