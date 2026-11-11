@@ -4,13 +4,19 @@
   "description": "Evidence-first scientific workbench discovering statistically defensible trends in NASA Earth-system data.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#08090b",
-  "theme_color": "#08090b",
+  "background_color": "#0A0F1E",
+  "theme_color": "#0A0F1E",
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
       "purpose": "any"
     },
     {
