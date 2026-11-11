@@ -16,7 +16,13 @@ export default function Footer() {
             <img
               src="/tellura_primary_lockup_transparent.png"
               alt="Tellura — Planetary Intelligence"
-              className="h-7 sm:h-8 w-auto object-contain brightness-0 dark:brightness-100 transition-all"
+              className="h-7 sm:h-8 w-auto object-contain hidden dark:block"
+              height="32"
+            />
+            <img
+              src="/tellura_primary_lockup_light.png"
+              alt="Tellura — Planetary Intelligence"
+              className="h-7 sm:h-8 w-auto object-contain block dark:hidden"
               height="32"
             />
           </Link>

@@ -98,7 +98,13 @@ export default function Header() {
             <img
               src="/tellura_primary_lockup_transparent.png"
               alt="Tellura — Planetary Intelligence"
-              className="h-8 sm:h-9 w-auto object-contain shrink-0 brightness-0 dark:brightness-100 transition-all"
+              className="h-8 sm:h-9 w-auto object-contain shrink-0 hidden dark:block"
+              height="36"
+            />
+            <img
+              src="/tellura_primary_lockup_light.png"
+              alt="Tellura — Planetary Intelligence"
+              className="h-8 sm:h-9 w-auto object-contain shrink-0 block dark:hidden"
               height="36"
             />
           </Link>

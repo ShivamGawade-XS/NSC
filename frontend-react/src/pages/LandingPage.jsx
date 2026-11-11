@@ -163,7 +163,14 @@ export default function LandingPage() {
                 <img
                   src="/tellura_icon.png"
                   alt="Tellura NASA Space Apps 2026 challenge emblem"
-                  className="w-5 h-5 rounded object-contain shrink-0"
+                  className="w-5 h-5 rounded object-contain shrink-0 hidden dark:block"
+                  width="20"
+                  height="20"
+                />
+                <img
+                  src="/tellura_icon_light.png"
+                  alt="Tellura NASA Space Apps 2026 challenge emblem"
+                  className="w-5 h-5 rounded object-contain shrink-0 block dark:hidden"
                   width="20"
                   height="20"
                 />
