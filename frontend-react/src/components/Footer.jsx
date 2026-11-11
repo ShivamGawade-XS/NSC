@@ -95,8 +95,8 @@ export default function Footer() {
         <div className="flex flex-wrap items-center gap-3">
           <span>Engineered by Shivam Gawade</span>
           <span>•</span>
-          <a href="mailto:shivamgawade.dev@gmail.com" className="hover:text-[var(--color-accent-blue)] transition-colors">
-            shivamgawade.dev@gmail.com
+          <a href="mailto:nsc26cs@gmail.com" className="hover:text-[var(--color-accent-blue)] transition-colors">
+            nsc26cs@gmail.com
           </a>
         </div>
       </div>

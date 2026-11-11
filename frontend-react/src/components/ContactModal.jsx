@@ -90,7 +90,7 @@ export default function ContactModal({ isOpen, onClose }) {
         navigate('/thank-you');
       })
       .catch(() => {
-        setErrors({ message: 'Network error — please email shivamgawade.dev@gmail.com directly.' });
+        setErrors({ message: 'Network error — please email nsc26cs@gmail.com directly.' });
         setSubmitting(false);
       });
   };
@@ -135,8 +135,8 @@ export default function ContactModal({ isOpen, onClose }) {
           </div>
           <div className="text-[var(--color-text-secondary)]">
             <strong className="text-[var(--color-text-main)]">Direct Email:</strong>{' '}
-            <a href="mailto:shivamgawade.dev@gmail.com" className="text-[var(--color-accent-blue)] hover:underline">
-              shivamgawade.dev@gmail.com
+            <a href="mailto:nsc26cs@gmail.com" className="text-[var(--color-accent-blue)] hover:underline">
+              nsc26cs@gmail.com
             </a>
           </div>
           <div className="text-[var(--color-text-secondary)]">
