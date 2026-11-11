@@ -18,8 +18,8 @@ const DISCOVERY_REGIONS = [
 
 export default function DiscoveryModal({ onClose }) {
   const currentDataset = useStore((s) => s.dataset) || 'nasa_power';
-  const currentStart = useStore((s) => s.startYear) || 2000;
   const currentEnd = useStore((s) => s.endYear) || 2023;
+  const currentStart = useStore((s) => s.startYear) || Math.max(1980, currentEnd - 20);
   const storeBbox = useStore((s) => s.bbox);
 
   const defaultBboxStr = (storeBbox?.minLon !== '' && storeBbox?.maxLat !== '')
@@ -27,7 +27,7 @@ export default function DiscoveryModal({ onClose }) {
     : '-170, 60, -60, 75';
 
   const [dataset, setDataset] = useState(currentDataset);
-  const [startYear, setStartYear] = useState(currentStart);
+  const [startYear, setStartYear] = useState(Math.max(currentStart, currentEnd - 20));
   const [endYear, setEndYear] = useState(currentEnd);
   const [bboxStr, setBboxStr] = useState(defaultBboxStr);
 
@@ -49,6 +49,13 @@ export default function DiscoveryModal({ onClose }) {
       return;
     }
 
+    const sYear = parseInt(startYear, 10);
+    const eYear = parseInt(endYear, 10);
+    if (eYear - sYear > 20) {
+      setError('Autonomous exploratory scan is capped at 20 continuous observation years. Please adjust temporal window.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -56,8 +63,9 @@ export default function DiscoveryModal({ onClose }) {
       const payload = {
         dataset_id: dataset,
         bbox: parsed,
-        start_year: parseInt(startYear, 10),
-        end_year: parseInt(endYear, 10),
+        start_year: sYear,
+        end_year: eYear,
+        variable_ids: dataset === 'merra2_reanalysis' ? ['T2M', 'PRECTOT'] : ['T2M', 'PRECTOTCORR'],
         alpha: 0.05,
       };
       const data = await discoverTrends(payload);

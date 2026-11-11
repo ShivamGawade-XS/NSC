@@ -45,7 +45,7 @@ const changepointPlugin = {
       ? (typeof cpPVal === 'number' ? Number(cpPVal.toFixed(4)) : cpPVal)
       : '';
     const labelText = `Regime Shift: ${cpYear} (p=${pStr})`;
-    ctx.font = 'bold 9px "JetBrains Mono", monospace';
+    ctx.font = 'bold 9px "IBM Plex Mono", monospace';
     const textWidth = ctx.measureText(labelText).width;
 
     const pillWidth = textWidth + 14;
@@ -231,39 +231,39 @@ export default function TimeSeriesChart() {
             labels: {
               filter: (item) => item.text !== 'ci_lower_hidden',
               color: tickColor,
-              font: { size: 10, family: 'Inter' },
+              font: { size: 10, family: 'IBM Plex Sans, sans-serif' },
               boxWidth: 10,
               padding: 10,
             },
           },
           tooltip: {
-            backgroundColor: isDark ? 'rgba(14, 16, 20, 0.96)' : 'rgba(255, 255, 255, 0.96)',
-            titleColor: isDark ? '#f3f2ee' : '#0f172a',
-            bodyColor: isDark ? '#9fa3af' : '#475569',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
+            backgroundColor: isDark ? 'rgba(15, 17, 21, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+            titleColor: isDark ? '#eceef2' : '#0f172a',
+            bodyColor: isDark ? '#9399a6' : '#3f4654',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(15, 23, 42, 0.12)',
             borderWidth: 1,
             padding: 10,
-            cornerRadius: 4,
-            titleFont: { family: 'Space Grotesk', size: 11, weight: 'bold' },
-            bodyFont: { family: 'JetBrains Mono', size: 10 },
+            cornerRadius: 6,
+            titleFont: { family: 'Space Grotesk, IBM Plex Sans, sans-serif', size: 11, weight: 'bold' },
+            bodyFont: { family: 'IBM Plex Mono, monospace', size: 10 },
             filter: (item) => item.dataset.label !== 'ci_lower_hidden',
           },
         },
         scales: {
           x: {
             grid: { color: gridColor },
-            ticks: { color: tickColor, font: { size: 9, family: 'JetBrains Mono' } },
+            ticks: { color: tickColor, font: { size: 9, family: 'IBM Plex Mono, monospace' } },
           },
           y: {
             position: 'left',
             grid: { color: gridColor },
-            ticks: { color: tickColor, font: { size: 9, family: 'JetBrains Mono' } },
+            ticks: { color: tickColor, font: { size: 9, family: 'IBM Plex Mono, monospace' } },
           },
           y1: {
             position: 'right',
             display: false,
             grid: { drawOnChartArea: false },
-            ticks: { color: '#06b6d4', font: { size: 9, family: 'JetBrains Mono' } },
+            ticks: { color: '#06b6d4', font: { size: 9, family: 'IBM Plex Mono, monospace' } },
           },
         },
       },
@@ -304,13 +304,13 @@ export default function TimeSeriesChart() {
         display: true,
         text: 'Temperature (°C)',
         color: '#ef4444',
-        font: { size: 10, family: 'Inter' },
+        font: { size: 10, family: 'IBM Plex Sans, sans-serif' },
       };
       chart.options.scales.y1.title = {
         display: true,
         text: 'Precipitation (mm/day)',
         color: '#06b6d4',
-        font: { size: 10, family: 'Inter' },
+        font: { size: 10, family: 'IBM Plex Sans, sans-serif' },
       };
 
       // Disable single-variable changepoint line in bivariate compound mode
@@ -496,7 +496,7 @@ export default function TimeSeriesChart() {
           display: true,
           text: `Anomaly [Δ ${cell.display_units || ''}]`,
           color: '#9fa3af',
-          font: { size: 10, family: 'Inter' },
+          font: { size: 10, family: 'IBM Plex Sans, sans-serif' },
         };
       }
     } else {
@@ -565,7 +565,7 @@ export default function TimeSeriesChart() {
           display: true,
           text: cell.display_units || '',
           color: '#9fa3af',
-          font: { size: 10, family: 'Inter' },
+          font: { size: 10, family: 'IBM Plex Sans, sans-serif' },
         };
       }
     }

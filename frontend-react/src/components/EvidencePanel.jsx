@@ -102,7 +102,7 @@ export default function EvidencePanel() {
           <h3 className="eyebrow-label mb-2">
             Evidence Record
           </h3>
-          <p className="text-xs text-zinc-500 font-mono">
+          <p className="text-xs text-[var(--color-text-muted)] font-mono">
             Select any observation cell on the map or pick from the signal rankings to inspect its evidence record.
           </p>
         </div>
@@ -400,7 +400,7 @@ export default function EvidencePanel() {
         <h3 className="eyebrow-label mb-3">
           Scientific Evidence Record
         </h3>
-        <div className="space-y-2 text-xs text-zinc-300">
+        <div className="space-y-2 text-xs text-[var(--color-text-secondary)]">
           {cell.isCompound ? (
             <>
               <Row label="Classification" value={cell.direction?.replace(/_/g, ' ').toUpperCase() || 'Compound Hazard'} />

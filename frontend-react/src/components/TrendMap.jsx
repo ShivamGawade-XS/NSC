@@ -793,12 +793,12 @@ function inferGridStep(grid) {
           }}
           className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
             showGlobe3D
-              ? 'bg-cyan-500 text-slate-950 font-bold shadow-md'
-              : 'bg-[var(--color-bg-elevated)] text-cyan-400 hover:text-cyan-300 border border-cyan-500/40'
+              ? 'bg-cyan-500 text-black font-bold shadow-md'
+              : 'bg-[var(--color-bg-elevated)] text-cyan-500 dark:text-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-300 border border-cyan-500/40'
           }`}
           title="Toggle 3D Planetary Orthographic Globe View"
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-slate-950' : 'bg-cyan-400 animate-pulse'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-black' : 'bg-cyan-400 animate-pulse'}`} />
           <span>{showGlobe3D ? '2D GIS Map' : '3D Globe'}</span>
         </button>
       </div>

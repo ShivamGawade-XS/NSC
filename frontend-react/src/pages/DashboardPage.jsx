@@ -327,7 +327,7 @@ export default function DashboardPage() {
               border: '1px solid var(--color-border-subtle)',
               borderRadius: '4px',
               fontSize: '12px',
-              fontFamily: 'Inter, sans-serif',
+              fontFamily: 'IBM Plex Sans, sans-serif',
             },
           }}
         />

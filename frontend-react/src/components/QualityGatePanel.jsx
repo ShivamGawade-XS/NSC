@@ -187,11 +187,11 @@ const styles = {
     display: 'inline-block',
     animation: 'spin 1s linear infinite',
     fontSize: 14,
-    color: '#9ca3af',
+    color: 'var(--color-text-muted)',
   },
   loadingText: {
     fontSize: 11,
-    color: '#9ca3af',
+    color: 'var(--color-text-muted)',
   },
   headerRow: {
     display: 'flex',
