@@ -703,6 +703,8 @@ class ContactInquiryRequest(BaseModel):
 class ContactInquiryResponse(BaseModel):
     success: bool
     message: str
+    delivery_channel: str = "local_inbox"
+    receipt_id: str | None = None
 
 
 class TelemetryEvent(BaseModel):

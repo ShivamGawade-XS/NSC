@@ -2371,13 +2371,18 @@ async def submit_contact(request: Request, req: ContactInquiryRequest) -> Contac
     Dispatches via SMTP when configured; falls back to local JSON inbox.
     """
     try:
-        send_contact_inquiry(
+        result = send_contact_inquiry(
             name=req.name,
             email=req.email,
             topic=req.topic,
             message=req.message,
         )
-        return ContactInquiryResponse(success=True, message="Thank you — we'll be in touch soon.")
+        return ContactInquiryResponse(
+            success=result["success"],
+            message=result["message"],
+            delivery_channel=result["channel"],
+            receipt_id=result["receipt_id"],
+        )
     except Exception as exc:  # noqa: BLE001
         logger.error("Contact submission error: %s", exc)
         raise HTTPException(status_code=500, detail="Failed to submit contact inquiry.") from exc
