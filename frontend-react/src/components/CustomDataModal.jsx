@@ -261,22 +261,22 @@ export default function CustomDataModal() {
               onClick={loadSamplePacificHeatwave}
               className="px-2 py-1 rounded bg-[var(--color-bg-elevated)] text-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/20 border border-[var(--color-accent-blue)]/30 font-semibold transition-colors"
             >
-              🌊 Pacific Marine Heatwave (.geojson)
+              Pacific Marine Heatwave (.geojson)
             </button>
             <button
               type="button"
               onClick={loadSampleAmazonDeforestation}
               className="px-2 py-1 rounded bg-[var(--color-bg-elevated)] text-[#ef4444] hover:bg-[#ef4444]/20 border border-[#ef4444]/30 font-semibold transition-colors"
             >
-              🌳 Amazon Drought Deficit (.geojson)
+              Amazon Drought Deficit (.geojson)
             </button>
           </div>
         </div>
 
         {/* Error Notification */}
         {errorMsg && (
-          <div className="mt-3 p-2.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
-            ⚠️ {errorMsg}
+          <div className="mt-3 p-2.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono">
+            {errorMsg}
           </div>
         )}
 
@@ -291,7 +291,12 @@ export default function CustomDataModal() {
         {preview && (
           <div className="mt-4 p-3 rounded bg-[var(--color-bg-surface)] border border-emerald-500/40 text-xs space-y-2">
             <div className="flex items-center justify-between font-bold text-emerald-400">
-              <span>✅ Dataset Verified &amp; Normalized</span>
+              <span className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                <span>Dataset Verified &amp; Normalized</span>
+              </span>
               <span className="text-[10px] font-mono bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/40">
                 {preview.summary?.total_cells || preview.grid?.length || 0} Grid Points
               </span>

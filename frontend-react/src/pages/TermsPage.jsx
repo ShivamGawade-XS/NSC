@@ -22,10 +22,7 @@ export default function TermsPage() {
 
       <main className="pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto flex-1 w-full">
         <header className="mb-10 pb-6 border-b border-[var(--color-border-subtle)]">
-          <span className="eyebrow-label block mb-2 text-[var(--color-accent-blue)]">
-            LEGAL & ATTRIBUTION
-          </span>
-          <h1 className="font-['Space_Grotesk'] text-3xl sm:text-4xl font-bold tracking-tight mb-3">
+          <h1 className="font-['Space_Grotesk'] text-3xl sm:text-4xl font-bold tracking-tight mb-3 text-[var(--color-text-main)]">
             Terms of Service & Scientific Attribution
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] font-mono">

@@ -96,7 +96,7 @@ export default function DiscoveryModal({ onClose }) {
         {/* Header */}
         <div style={styles.header}>
           <div>
-            <div style={styles.title}>🔭 Autonomous Earth System Trend Discovery</div>
+            <div style={styles.title}>Autonomous Earth System Trend Discovery</div>
             <div style={styles.subtitle}>Multi-variable exploratory scan across physical domains under Benjamini-Hochberg FDR control</div>
           </div>
           <button onClick={onClose} style={styles.closeBtn} aria-label="Close modal">✕</button>
@@ -114,7 +114,7 @@ export default function DiscoveryModal({ onClose }) {
                   onClick={() => setBboxStr(r.bbox.join(', '))}
                   style={styles.presetBtn}
                 >
-                  🌐 {r.name}
+                  {r.name}
                 </button>
               ))}
             </div>
@@ -247,7 +247,7 @@ export default function DiscoveryModal({ onClose }) {
                           onClick={() => handleSelectCandidate(c)}
                           style={styles.inspectBtn}
                         >
-                          🗺️ Load Variable & Inspect Coordinate in Workspace →
+                          Load Variable & Inspect Coordinate in Workspace →
                         </button>
                       </div>
                     </div>
@@ -271,53 +271,55 @@ export default function DiscoveryModal({ onClose }) {
 const styles = {
   overlay: {
     position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.78)',
-    backdropFilter: 'blur(8px)',
+    background: 'rgba(0,0,0,0.75)',
+    backdropFilter: 'blur(6px)',
     zIndex: 9000,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 16,
   },
   modal: {
-    background: 'linear-gradient(180deg, #111827 0%, #0f172a 100%)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 16,
+    background: 'var(--color-bg-surface)',
+    border: '1px solid var(--color-border-strong)',
+    borderRadius: 12,
     width: '100%', maxWidth: 840,
     maxHeight: '90vh', overflow: 'auto',
     display: 'flex', flexDirection: 'column',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.75)',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    color: 'var(--color-text-main)',
   },
   header: {
     display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
     padding: '20px 24px 16px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    borderBottom: '1px solid var(--color-border-subtle)',
+    background: 'var(--color-bg-elevated)',
   },
-  title: { fontSize: 19, fontWeight: 700, color: '#f9fafb', letterSpacing: '-0.02em' },
-  subtitle: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  title: { fontSize: 18, fontWeight: 700, color: 'var(--color-text-main)', letterSpacing: '-0.02em', fontFamily: 'Space Grotesk, sans-serif' },
+  subtitle: { fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 },
   closeBtn: {
-    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#9ca3af', borderRadius: 8, width: 32, height: 32,
-    cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)',
+    color: 'var(--color-text-muted)', borderRadius: 6, width: 28, height: 28,
+    cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
   body: { padding: '20px 24px 28px', display: 'flex', flexDirection: 'column', gap: 16 },
   presetSection: { display: 'flex', flexDirection: 'column', gap: 6 },
-  sectionLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', fontWeight: 700 },
+  sectionLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 700, fontFamily: 'monospace' },
   presetRow: { display: 'flex', flexWrap: 'wrap', gap: 6 },
   presetBtn: {
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#d1d5db', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer',
-    transition: 'all 0.15s ease',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
+    color: 'var(--color-text-secondary)', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer',
+    transition: 'all 0.15s ease', fontFamily: 'monospace',
   },
   form: { display: 'flex', flexDirection: 'column', gap: 12 },
   grid3: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 },
-  label: { fontSize: 11, color: '#9ca3af', display: 'block', marginBottom: 4, fontWeight: 500 },
+  label: { fontSize: 11, color: 'var(--color-text-muted)', display: 'block', marginBottom: 4, fontWeight: 500 },
   input: {
-    width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 6, padding: '7px 10px', color: '#f3f4f6', fontSize: 12,
+    width: '100%', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
+    borderRadius: 6, padding: '7px 10px', color: 'var(--color-text-main)', fontSize: 12,
     outline: 'none', boxSizing: 'border-box',
   },
   submitBtn: {
-    background: 'linear-gradient(135deg, #0066ff 0%, #004ecc 100%)',
+    background: 'var(--color-accent-blue)',
     border: 'none', color: '#fff', padding: '10px 16px', borderRadius: 6,
     fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', cursor: 'pointer',
     transition: 'all 0.2s ease', marginTop: 4,
@@ -329,50 +331,50 @@ const styles = {
   resultsContainer: { display: 'flex', flexDirection: 'column', gap: 12, marginTop: 4 },
   summaryBar: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
     borderRadius: 8, padding: '10px 14px', flexWrap: 'wrap', gap: 8,
   },
-  summaryTitle: { fontSize: 12, fontWeight: 700, color: '#f3f4f6' },
-  summarySub: { fontSize: 12, color: '#9ca3af', fontFamily: 'monospace' },
+  summaryTitle: { fontSize: 12, fontWeight: 700, color: 'var(--color-text-main)', fontFamily: 'Space Grotesk, sans-serif' },
+  summarySub: { fontSize: 12, color: 'var(--color-text-muted)', fontFamily: 'monospace' },
   fdrBadge: {
-    background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)',
+    background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)',
     borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 700, fontFamily: 'monospace',
   },
   candidateList: { display: 'flex', flexDirection: 'column', gap: 10 },
   candidateCard: {
-    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
     borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', gap: 10,
     transition: 'border-color 0.2s',
   },
   candHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   candTitleGroup: { display: 'flex', alignItems: 'center', gap: 8 },
   candRank: {
-    background: 'rgba(96,165,250,0.15)', color: '#60a5fa', fontWeight: 800,
+    background: 'rgba(59,130,246,0.1)', color: '#3b82f6', fontWeight: 800,
     fontSize: 11, padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace',
   },
-  candVarName: { fontSize: 13, fontWeight: 700, color: '#f9fafb' },
-  candDomain: { fontSize: 11, color: '#6b7280' },
+  candVarName: { fontSize: 13, fontWeight: 700, color: 'var(--color-text-main)', fontFamily: 'Space Grotesk, sans-serif' },
+  candDomain: { fontSize: 11, color: 'var(--color-text-muted)' },
   badgeLabel: {
-    background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
-    color: '#f59e0b', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, letterSpacing: '0.04em',
+    background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+    color: '#f59e0b', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, letterSpacing: '0.04em', fontFamily: 'monospace',
   },
   candStatsRow: {
     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 8,
-    background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: 6,
+    background: 'var(--color-bg-surface)', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--color-border-subtle)',
   },
   candStat: { display: 'flex', flexDirection: 'column', gap: 2 },
-  candStatLabel: { fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', fontWeight: 700 },
-  candStatVal: { fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: '#d1d5db' },
-  candRationale: { fontSize: 11.5, color: '#9ca3af', lineHeight: 1.5, margin: 0 },
+  candStatLabel: { fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 700, fontFamily: 'monospace' },
+  candStatVal: { fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-text-main)' },
+  candRationale: { fontSize: 11.5, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 },
   candFooter: { display: 'flex', justifyContent: 'flex-end' },
   inspectBtn: {
-    background: 'rgba(0,102,255,0.12)', border: '1px solid rgba(0,102,255,0.35)',
-    color: '#60a5fa', borderRadius: 6, padding: '6px 12px', fontSize: 11, fontWeight: 600,
+    background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)',
+    color: 'var(--color-accent-blue)', borderRadius: 6, padding: '6px 12px', fontSize: 11, fontWeight: 600,
     cursor: 'pointer', transition: 'all 0.15s ease',
   },
   emptyNotice: {
-    padding: '16px', textAlign: 'center', color: '#9ca3af', fontSize: 12,
-    background: 'rgba(255,255,255,0.02)', borderRadius: 8,
+    padding: '16px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 12,
+    background: 'var(--color-bg-elevated)', borderRadius: 8, border: '1px solid var(--color-border-subtle)',
   },
-  disclaimerText: { fontSize: 10, color: '#6b7280', fontStyle: 'italic', margin: '4px 0 0', lineHeight: 1.4 },
+  disclaimerText: { fontSize: 10, color: 'var(--color-text-muted)', fontStyle: 'italic', margin: '4px 0 0', lineHeight: 1.4 },
 };

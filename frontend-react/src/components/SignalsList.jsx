@@ -32,9 +32,12 @@ export default function SignalsList() {
             playTactileClick(700);
             useStore.getState().setDiscoveryModalOpen(true);
           }}
-          className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center w-full hover:border-[#0066ff]/40"
+          className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center w-full hover:border-[#0066ff]/40 flex items-center gap-1.5"
         >
-          <span>🔭 Autonomous Discovery Scan</span>
+          <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+          <span>Autonomous Discovery Scan</span>
         </button>
       </div>
     );

@@ -236,9 +236,6 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-4 border-b border-[var(--color-border-subtle)]">
               <div>
-                <span className="text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] block mb-1">
-                  Exemplar Investigations
-                </span>
                 <h2 className="font-['Space_Grotesk'] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
                   Regional Climate Transect Dossiers
                 </h2>
@@ -297,9 +294,6 @@ export default function LandingPage() {
         <section id="formulations" className="py-20 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-deep)]">
           <div className="max-w-6xl mx-auto">
             <div className="max-w-3xl mb-12">
-              <span className="text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] block mb-1">
-                Peer-Reviewed Foundations
-              </span>
               <h2 className="font-['Space_Grotesk'] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-main)] mb-3">
                 Deterministic Mathematical Engine
               </h2>
@@ -338,9 +332,6 @@ export default function LandingPage() {
         <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-deep)]">
           <div className="max-w-5xl mx-auto">
             <div className="max-w-2xl mb-12">
-              <span className="text-xs font-mono uppercase tracking-wider text-[var(--color-text-muted)] block mb-1">
-                System Architecture
-              </span>
               <h2 className="font-['Space_Grotesk'] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-main)] mb-3">
                 End-to-End Scientific Data Pipeline
               </h2>

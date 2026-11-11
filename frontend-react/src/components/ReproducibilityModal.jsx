@@ -65,7 +65,7 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
         {/* Header */}
         <div style={styles.header}>
           <div>
-            <div style={styles.title}>📋 Reproducible Analysis Dossier</div>
+            <div style={styles.title}>Reproducible Analysis Dossier</div>
             <div style={styles.subtitle}>Full cryptographic manifest & executable Python replication recipe</div>
           </div>
           <button onClick={onClose} style={styles.closeBtn} aria-label="Close modal">✕</button>
@@ -95,9 +95,9 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
               {/* Tab Navigation */}
               <div style={styles.tabBar}>
                 {[
-                  { id: 'script', label: '🐍 Python Replication Code' },
-                  { id: 'parameters', label: '⚙️ Parameters & Environment' },
-                  { id: 'bibtex', label: '📚 BibTeX Citations' },
+                  { id: 'script', label: 'Python Replication Code' },
+                  { id: 'parameters', label: 'Parameters & Environment' },
+                  { id: 'bibtex', label: 'BibTeX Citations' },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -118,9 +118,9 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
                   <div style={styles.scriptActions}>
                     <span style={styles.scriptHint}>Standalone runnable script using Scipy, NumPy & Requests</span>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={handleCopyCode} style={styles.actionBtn}>📋 Copy Code</button>
-                      <button onClick={handleDownloadCode} style={{ ...styles.actionBtn, background: '#0066ff', color: '#fff' }}>
-                        ⬇ Download .py
+                      <button onClick={handleCopyCode} style={styles.actionBtn}>Copy Code</button>
+                      <button onClick={handleDownloadCode} style={{ ...styles.actionBtn, background: 'var(--color-accent-blue)', color: '#fff', border: 'none' }}>
+                        Download .py
                       </button>
                     </div>
                   </div>
@@ -185,7 +185,7 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
                 <div style={styles.tabContent}>
                   <div style={styles.scriptActions}>
                     <span style={styles.scriptHint}>Citations for algorithms (Mann-Kendall, Theil-Sen, Benjamini-Hochberg) and datasets</span>
-                    <button onClick={handleCopyBibtex} style={styles.actionBtn}>📋 Copy All BibTeX</button>
+                    <button onClick={handleCopyBibtex} style={styles.actionBtn}>Copy All BibTeX</button>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {data.bibtex_citations?.map((c, i) => (
@@ -207,102 +207,104 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
 const styles = {
   overlay: {
     position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.78)',
-    backdropFilter: 'blur(8px)',
+    background: 'rgba(0,0,0,0.75)',
+    backdropFilter: 'blur(6px)',
     zIndex: 9000,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 16,
   },
   modal: {
-    background: 'linear-gradient(180deg, #111827 0%, #0f172a 100%)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 16,
+    background: 'var(--color-bg-surface)',
+    border: '1px solid var(--color-border-strong)',
+    borderRadius: 12,
     width: '100%', maxWidth: 760,
     maxHeight: '90vh', overflow: 'auto',
     display: 'flex', flexDirection: 'column',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.75)',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    color: 'var(--color-text-main)',
   },
   header: {
     display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
     padding: '20px 24px 16px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    borderBottom: '1px solid var(--color-border-subtle)',
+    background: 'var(--color-bg-elevated)',
   },
-  title: { fontSize: 19, fontWeight: 700, color: '#f9fafb', letterSpacing: '-0.02em' },
-  subtitle: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  title: { fontSize: 18, fontWeight: 700, color: 'var(--color-text-main)', letterSpacing: '-0.02em', fontFamily: 'Space Grotesk, sans-serif' },
+  subtitle: { fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 },
   closeBtn: {
-    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#9ca3af', borderRadius: 8, width: 32, height: 32,
-    cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)',
+    color: 'var(--color-text-muted)', borderRadius: 6, width: 28, height: 28,
+    cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
   body: { padding: '20px 24px 28px', display: 'flex', flexDirection: 'column', gap: 16 },
   centered: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', gap: 12, padding: 60, color: '#6b7280',
+    justifyContent: 'center', gap: 12, padding: 60, color: 'var(--color-text-muted)',
   },
   spinner: { fontSize: 32, animation: 'spin 1s linear infinite' },
-  loadingText: { fontSize: 13, color: '#6b7280' },
+  loadingText: { fontSize: 13, color: 'var(--color-text-muted)' },
   errorBox: {
     padding: '12px 16px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
     borderRadius: 8, color: '#fca5a5', fontSize: 13,
   },
   fingerprintBar: {
-    background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.09)',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
     borderRadius: 8, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6,
   },
   fpHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  fpLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', fontWeight: 700 },
-  timestampText: { fontSize: 10.5, color: '#9ca3af', fontFamily: 'monospace' },
+  fpLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 700, fontFamily: 'monospace' },
+  timestampText: { fontSize: 10.5, color: 'var(--color-text-muted)', fontFamily: 'monospace' },
   fpCode: {
     fontFamily: 'monospace', fontSize: 11.5, color: '#10b981', wordBreak: 'break-all',
     background: 'rgba(16,185,129,0.06)', padding: '6px 8px', borderRadius: 4,
   },
   tabBar: {
-    display: 'flex', gap: 4, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: 2,
+    display: 'flex', gap: 4, borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: 2,
   },
   tabBtn: {
     padding: '8px 14px', fontSize: 11.5, fontWeight: 600,
     background: 'transparent', border: 'none', borderBottom: '2px solid transparent',
-    color: '#6b7280', cursor: 'pointer', transition: 'all 0.15s',
+    color: 'var(--color-text-muted)', cursor: 'pointer', transition: 'all 0.15s',
   },
   tabBtnActive: {
-    color: '#60a5fa', borderBottomColor: '#60a5fa', background: 'rgba(96,165,250,0.06)',
+    color: 'var(--color-accent-blue)', borderBottomColor: 'var(--color-accent-blue)', background: 'var(--color-bg-elevated)',
   },
   tabContent: { display: 'flex', flexDirection: 'column', gap: 12 },
   scriptActions: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  scriptHint: { fontSize: 11, color: '#9ca3af' },
+  scriptHint: { fontSize: 11, color: 'var(--color-text-muted)' },
   actionBtn: {
-    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#d1d5db', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
+    color: 'var(--color-text-main)', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer',
     fontWeight: 600,
   },
   codeBlock: {
-    background: '#090d16', border: '1px solid rgba(255,255,255,0.08)',
+    background: 'var(--color-bg-deep)', border: '1px solid var(--color-border-subtle)',
     borderRadius: 8, padding: 14, overflowX: 'auto', maxHeight: 380,
-    fontSize: 11, color: '#e5e7eb', fontFamily: 'monospace', lineHeight: 1.5,
+    fontSize: 11, color: 'var(--color-text-secondary)', fontFamily: 'monospace', lineHeight: 1.5,
   },
   metaGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 },
   metaCard: {
-    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
     borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 4,
   },
-  metaLabel: { fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', fontWeight: 700 },
-  metaVal: { fontSize: 11.5, fontWeight: 600, color: '#e5e7eb', fontFamily: 'monospace' },
+  metaLabel: { fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 700, fontFamily: 'monospace' },
+  metaVal: { fontSize: 11.5, fontWeight: 600, color: 'var(--color-text-main)', fontFamily: 'monospace' },
   card: {
-    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
     borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 8,
   },
-  cardTitle: { fontSize: 11.5, fontWeight: 700, color: '#f3f4f6' },
+  cardTitle: { fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-main)', fontFamily: 'Space Grotesk, sans-serif' },
   paramList: { display: 'flex', flexDirection: 'column', gap: 6 },
   paramRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    fontSize: 11, padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)',
+    fontSize: 11, padding: '4px 0', borderBottom: '1px solid var(--color-border-subtle)',
   },
-  paramKey: { color: '#9ca3af', fontFamily: 'monospace' },
-  paramVal: { color: '#f3f4f6', fontFamily: 'monospace', fontWeight: 600 },
+  paramKey: { color: 'var(--color-text-muted)', fontFamily: 'monospace' },
+  paramVal: { color: 'var(--color-text-main)', fontFamily: 'monospace', fontWeight: 600 },
   bibtexBlock: {
-    background: '#090d16', border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 6, padding: 12, overflowX: 'auto', fontSize: 10.5, color: '#93c5fd',
+    background: 'var(--color-bg-deep)', border: '1px solid var(--color-border-subtle)',
+    borderRadius: 6, padding: 12, overflowX: 'auto', fontSize: 10.5, color: 'var(--color-accent-blue)',
     fontFamily: 'monospace', lineHeight: 1.4, margin: 0,
   },
 };

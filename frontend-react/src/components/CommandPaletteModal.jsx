@@ -54,7 +54,7 @@ export default function CommandPaletteModal() {
       const isGroq = res.parsing_method === 'groq' || res.interpreted_intent?.includes('[Groq-parsed]');
       const isGrok = res.parsing_method === 'grok' || res.interpreted_intent?.includes('[Grok-parsed]');
       const isGemini = res.parsing_method === 'gemini' || res.interpreted_intent?.includes('[Gemini-parsed]');
-      const methodLabel = isGroq ? '⚡ Groq AI Extraction' : (isGrok ? '🚀 Grok AI Extraction' : (isGemini ? '✨ Gemini AI Extraction' : '⚡ Exact Keyword Match'));
+      const methodLabel = isGroq ? 'Groq AI Extraction' : (isGrok ? 'Grok AI Extraction' : (isGemini ? 'Gemini AI Extraction' : 'Exact Keyword Match'));
       const cleanIntent = (res.interpreted_intent || '').replace(/^\[(Gemini|Groq|Grok)-parsed\]\s*/, '');
       toast.success(`${methodLabel}: ${cleanIntent}`, { id: toastId, duration: 4000 });
       playTelemetryChime();

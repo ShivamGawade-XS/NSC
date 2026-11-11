@@ -175,3 +175,4 @@ Surfaces rely on tonal layering and hairline borders rather than heavy blur or s
 - **Don't** use decorative gradient text that compromises readability.
 - **Don't** hardcode raw gray on colored surfaces; derive tints from the surface or foreground hue.
 - **Don't** truncate p-values or confidence levels to arbitrary whole numbers.
+

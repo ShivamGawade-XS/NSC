@@ -40,9 +40,8 @@ export default function ThankYouPage() {
             </svg>
           </div>
 
-          <span className="eyebrow-label text-emerald-400 block mb-2">INQUIRY RECEIVED • SCIENTIFIC RECORD</span>
           <h1 className="font-['Space_Grotesk'] text-3xl font-bold text-[var(--color-text-main)] mb-3">
-            Thank You for Connecting
+            Inquiry Received
           </h1>
           <p className="text-xs text-[var(--color-text-secondary)] mb-6 leading-relaxed max-w-md mx-auto">
             Your inquiry, peer feedback, or researcher submission has been acknowledged. In accordance with NASA Open Science principles, all methodology, analytical algorithms, and reproducible pipelines remain transparent and publicly available.

@@ -552,7 +552,7 @@ export default function EvidencePanel() {
 
       {/* Tellura 2.0 Scientific Intelligence Actions */}
       <div className="interface-card p-3 space-y-2">
-        <div className="eyebrow-label text-zinc-400 mb-1">
+        <div className="eyebrow-label text-[var(--color-text-muted)] mb-1">
           Scientific Intelligence & Robustness
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -562,10 +562,13 @@ export default function EvidencePanel() {
               playTactileClick(700);
               useStore.getState().setRobustnessModalOpen(true);
             }}
-            className="interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-[#10b981]/40 hover:text-[#10b981]"
+            className="interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-[#10b981]/40 hover:text-[#10b981] flex items-center gap-1.5"
             title="Evaluate trend sensitivity across window trims, estimators, and autocorrelation"
           >
-            <span>🔬 Robustness Lab</span>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.942a2.25 2.25 0 01-2.316 0L12 13.914l-3.914 2.328a2.25 2.25 0 01-2.316 0L4.2 15.3M19.8 15.3A2.25 2.25 0 0121 17.25v2.25A2.25 2.25 0 0118.75 21.75H5.25A2.25 2.25 0 013 19.5v-2.25a2.25 2.25 0 011.2-1.95" />
+            </svg>
+            <span>Robustness Lab</span>
           </button>
           <button
             type="button"
@@ -573,10 +576,13 @@ export default function EvidencePanel() {
               playTactileClick(700);
               useStore.getState().setQualityProfileModalOpen(true);
             }}
-            className="interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-[#60a5fa]/40 hover:text-[#60a5fa]"
+            className="interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-[#60a5fa]/40 hover:text-[#60a5fa] flex items-center gap-1.5"
             title="Inspect temporal completeness, sensor transitions, and physical outliers"
           >
-            <span>📊 Data Quality</span>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            <span>Data Quality</span>
           </button>
         </div>
       </div>

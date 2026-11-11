@@ -19,7 +19,6 @@ export default function NotFoundPage() {
           <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mx-auto mb-4 border border-red-500/30 font-mono font-bold text-sm">
             404
           </div>
-          <span className="eyebrow-label text-[var(--color-accent-blue)] block mb-2">SPATIAL INDEX • OUT OF BOUNDS</span>
           <h1 className="font-['Space_Grotesk'] text-3xl font-bold text-[var(--color-text-main)] mb-3">
             Trajectory Not Found
           </h1>

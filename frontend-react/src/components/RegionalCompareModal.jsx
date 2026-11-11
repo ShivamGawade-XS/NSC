@@ -122,7 +122,7 @@ export default function RegionalCompareModal({ onClose }) {
         {/* Header */}
         <div style={styles.header}>
           <div>
-            <div style={styles.title}>🌍 Regional Trend Detective</div>
+            <div style={styles.title}>Regional Trend Detective</div>
             <div style={styles.subtitle}>Side-by-side comparative trend analysis with Welch’s two-sample divergence test</div>
           </div>
           <button onClick={onClose} style={styles.closeBtn} aria-label="Close modal">✕</button>
@@ -140,7 +140,7 @@ export default function RegionalCompareModal({ onClose }) {
                   onClick={() => handleApplyPreset(p)}
                   style={styles.presetBtn}
                 >
-                  ⚡ {p.name}
+                  {p.name}
                 </button>
               ))}
             </div>
@@ -201,8 +201,8 @@ export default function RegionalCompareModal({ onClose }) {
             {/* Region A & B side-by-side config */}
             <div style={styles.grid2}>
               <div style={styles.regionConfigBox}>
-                <div style={{ ...styles.regionHeader, color: '#60a5fa' }}>
-                  <span>📍 Region A</span>
+                <div style={{ ...styles.regionHeader, color: 'var(--color-accent-blue)' }}>
+                  <span>Region A</span>
                 </div>
                 <label style={styles.label}>Label</label>
                 <input
@@ -224,7 +224,7 @@ export default function RegionalCompareModal({ onClose }) {
 
               <div style={styles.regionConfigBox}>
                 <div style={{ ...styles.regionHeader, color: '#f59e0b' }}>
-                  <span>📍 Region B</span>
+                  <span>Region B</span>
                 </div>
                 <label style={styles.label}>Label</label>
                 <input
@@ -365,7 +365,7 @@ export default function RegionalCompareModal({ onClose }) {
               {/* Spatial compatibility notes */}
               {result.spatial_compatibility_notes?.length > 0 && (
                 <div style={styles.notesBox}>
-                  <div style={styles.notesTitle}>ℹ️ Spatial Compatibility Audit</div>
+                  <div style={styles.notesTitle}>Spatial Compatibility Audit</div>
                   <ul style={styles.notesList}>
                     {result.spatial_compatibility_notes.map((note, i) => (
                       <li key={i}>{note}</li>
@@ -384,58 +384,60 @@ export default function RegionalCompareModal({ onClose }) {
 const styles = {
   overlay: {
     position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.78)',
-    backdropFilter: 'blur(8px)',
+    background: 'rgba(0,0,0,0.75)',
+    backdropFilter: 'blur(6px)',
     zIndex: 9000,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 16,
   },
   modal: {
-    background: 'linear-gradient(180deg, #111827 0%, #0f172a 100%)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 16,
+    background: 'var(--color-bg-surface)',
+    border: '1px solid var(--color-border-strong)',
+    borderRadius: 12,
     width: '100%', maxWidth: 780,
     maxHeight: '90vh', overflow: 'auto',
     display: 'flex', flexDirection: 'column',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.75)',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    color: 'var(--color-text-main)',
   },
   header: {
     display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
     padding: '20px 24px 16px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    borderBottom: '1px solid var(--color-border-subtle)',
+    background: 'var(--color-bg-elevated)',
   },
-  title: { fontSize: 19, fontWeight: 700, color: '#f9fafb', letterSpacing: '-0.02em' },
-  subtitle: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  title: { fontSize: 18, fontWeight: 700, color: 'var(--color-text-main)', letterSpacing: '-0.02em', fontFamily: 'Space Grotesk, sans-serif' },
+  subtitle: { fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 },
   closeBtn: {
-    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#9ca3af', borderRadius: 8, width: 32, height: 32,
-    cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)',
+    color: 'var(--color-text-muted)', borderRadius: 6, width: 28, height: 28,
+    cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
   body: { padding: '20px 24px 28px', display: 'flex', flexDirection: 'column', gap: 16 },
   presetSection: { display: 'flex', flexDirection: 'column', gap: 6 },
-  sectionLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', fontWeight: 700 },
+  sectionLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 700, fontFamily: 'monospace' },
   presetRow: { display: 'flex', flexWrap: 'wrap', gap: 6 },
   presetBtn: {
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#d1d5db', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer',
-    transition: 'all 0.15s ease',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
+    color: 'var(--color-text-secondary)', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer',
+    transition: 'all 0.15s ease', fontFamily: 'monospace',
   },
   form: { display: 'flex', flexDirection: 'column', gap: 12 },
   grid2: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 },
-  label: { fontSize: 11, color: '#9ca3af', display: 'block', marginBottom: 4, fontWeight: 500 },
+  label: { fontSize: 11, color: 'var(--color-text-muted)', display: 'block', marginBottom: 4, fontWeight: 500 },
   input: {
-    width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 6, padding: '7px 10px', color: '#f3f4f6', fontSize: 12,
+    width: '100%', background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
+    borderRadius: 6, padding: '7px 10px', color: 'var(--color-text-main)', fontSize: 12,
     outline: 'none', boxSizing: 'border-box',
   },
   regionConfigBox: {
-    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
-    borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
+    borderRadius: 6, padding: 12, display: 'flex', flexDirection: 'column',
   },
-  regionHeader: { fontSize: 12, fontWeight: 700, marginBottom: 8, letterSpacing: '0.04em' },
+  regionHeader: { fontSize: 12, fontWeight: 700, marginBottom: 8, letterSpacing: '0.04em', fontFamily: 'monospace' },
   submitBtn: {
-    background: 'linear-gradient(135deg, #0066ff 0%, #004ecc 100%)',
+    background: 'var(--color-accent-blue)',
     border: 'none', color: '#fff', padding: '10px 16px', borderRadius: 6,
     fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', cursor: 'pointer',
     transition: 'all 0.2s ease', marginTop: 4,
@@ -446,37 +448,37 @@ const styles = {
   },
   resultContainer: { display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 },
   divergenceBanner: {
-    borderRadius: 10, padding: 14, border: '1px solid', display: 'flex', flexDirection: 'column', gap: 6,
+    borderRadius: 8, padding: 14, border: '1px solid', display: 'flex', flexDirection: 'column', gap: 6,
   },
   divergenceHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  divergenceBadge: { fontSize: 11, fontWeight: 800, letterSpacing: '0.06em' },
-  zStatText: { fontSize: 11, color: '#d1d5db', fontFamily: 'monospace' },
-  divergenceNarrative: { fontSize: 12, color: '#e5e7eb', lineHeight: 1.6, margin: 0 },
+  divergenceBadge: { fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'monospace' },
+  zStatText: { fontSize: 11, color: 'var(--color-text-secondary)', fontFamily: 'monospace' },
+  divergenceNarrative: { fontSize: 12, color: 'var(--color-text-main)', lineHeight: 1.6, margin: 0 },
   card: {
-    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', gap: 10,
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
+    borderRadius: 6, padding: 14, display: 'flex', flexDirection: 'column', gap: 10,
   },
   cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontSize: 13, fontWeight: 700 },
+  cardTitle: { fontSize: 13, fontWeight: 700, color: 'var(--color-text-main)', fontFamily: 'Space Grotesk, sans-serif' },
   badge: {
-    background: 'rgba(255,255,255,0.06)', borderRadius: 4, padding: '2px 6px',
-    fontSize: 10, color: '#9ca3af', fontFamily: 'monospace',
+    background: 'var(--color-bg-surface)', borderRadius: 4, padding: '2px 6px',
+    fontSize: 10, color: 'var(--color-text-muted)', fontFamily: 'monospace', border: '1px solid var(--color-border-subtle)',
   },
   statList: { display: 'flex', flexDirection: 'column', gap: 8 },
   statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 },
-  statLabel: { color: '#9ca3af' },
-  statVal: { color: '#f3f4f6', fontFamily: 'monospace', fontWeight: 600 },
+  statLabel: { color: 'var(--color-text-muted)' },
+  statVal: { color: 'var(--color-text-main)', fontFamily: 'monospace', fontWeight: 600 },
   deltaBox: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)',
+    background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)',
     borderRadius: 6, padding: '10px 14px',
   },
-  deltaLabel: { fontSize: 12, color: '#9ca3af', fontWeight: 600 },
+  deltaLabel: { fontSize: 12, color: 'var(--color-text-secondary)', fontWeight: 600 },
   deltaVal: { fontSize: 13, fontFamily: 'monospace', fontWeight: 700 },
   notesBox: {
     background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.25)',
     borderRadius: 6, padding: 12,
   },
-  notesTitle: { fontSize: 11, fontWeight: 700, color: '#60a5fa', marginBottom: 4 },
-  notesList: { margin: 0, paddingLeft: 18, fontSize: 11, color: '#93c5fd', lineHeight: 1.5 },
+  notesTitle: { fontSize: 11, fontWeight: 700, color: '#3b82f6', marginBottom: 4 },
+  notesList: { margin: 0, paddingLeft: 18, fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.5 },
 };

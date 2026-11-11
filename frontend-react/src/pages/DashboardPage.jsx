@@ -353,7 +353,6 @@ export default function DashboardPage() {
           <section className="mb-4 pt-2">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[var(--color-border-subtle)]">
               <div>
-                <span className="eyebrow-label block mb-1">Scientific Trend Investigation</span>
                 <h1 className="font-['Space_Grotesk'] text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-main)]">
                   Spatiotemporal Trend Workspace
                 </h1>

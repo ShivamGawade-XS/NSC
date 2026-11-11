@@ -8,10 +8,10 @@ import { useState, useEffect } from 'react';
 import { getRobustnessLab } from '../api/client';
 
 const STABILITY_CONFIG = {
-  ROBUST: { color: '#10b981', bg: 'rgba(16,185,129,0.15)', label: 'ROBUST', icon: '🛡' },
-  MODERATELY_SENSITIVE: { color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'MODERATELY SENSITIVE', icon: '⚡' },
-  HIGHLY_SENSITIVE: { color: '#ef4444', bg: 'rgba(239,68,68,0.15)', label: 'HIGHLY SENSITIVE', icon: '⚠' },
-  INSUFFICIENT_DATA: { color: '#6b7280', bg: 'rgba(107,114,128,0.15)', label: 'INSUFFICIENT DATA', icon: '?' },
+  ROBUST: { color: '#10b981', bg: 'rgba(16,185,129,0.1)', label: 'ROBUST' },
+  MODERATELY_SENSITIVE: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'MODERATELY SENSITIVE' },
+  HIGHLY_SENSITIVE: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'HIGHLY SENSITIVE' },
+  INSUFFICIENT_DATA: { color: '#6b7280', bg: 'rgba(107,114,128,0.1)', label: 'INSUFFICIENT DATA' },
 };
 
 function MiniBarChart({ value, max = 100, color }) {
@@ -134,7 +134,7 @@ export default function RobustnessLabModal({ analysisId, onClose }) {
         {/* Header */}
         <div style={styles.header}>
           <div>
-            <div style={styles.title}>🔬 Trend Robustness Lab</div>
+            <div style={styles.title}>Trend Robustness Lab</div>
             <div style={styles.subtitle}>Sensitivity audit of analytical choices</div>
           </div>
           <button onClick={onClose} style={styles.closeBtn} aria-label="Close">✕</button>
@@ -155,9 +155,8 @@ export default function RobustnessLabModal({ analysisId, onClose }) {
           <>
             {/* Stability Banner */}
             <div style={{ ...styles.stabilityBanner, background: stab.bg, border: `1px solid ${stab.color}44` }}>
-              <span style={styles.stabilityIcon}>{stab.icon}</span>
               <div style={styles.stabilityContent}>
-                <div style={{ ...styles.stabilityRating, color: stab.color }}>{stab.label}</div>
+                <div style={{ ...styles.stabilityRating, color: stab.color }}>● {stab.label}</div>
                 <div style={styles.summaryText}>{data.summary_narrative}</div>
               </div>
             </div>
@@ -170,26 +169,26 @@ export default function RobustnessLabModal({ analysisId, onClose }) {
               </div>
               <div style={styles.kpiCard}>
                 <div style={styles.kpiLabel}>Sig. Retention</div>
-                <MiniBarChart value={data.significance_retention_pct} color="#60a5fa" />
+                <MiniBarChart value={data.significance_retention_pct} color="#3b82f6" />
               </div>
               <div style={styles.kpiCard}>
                 <div style={styles.kpiLabel}>Base Slope</div>
-                <span style={{ fontSize: 13, fontFamily: 'monospace', color: data.base_slope > 0 ? '#f87171' : '#60a5fa', fontWeight: 700 }}>
+                <span style={{ fontSize: 13, fontFamily: 'monospace', color: data.base_slope > 0 ? '#ef4444' : '#3b82f6', fontWeight: 700 }}>
                   {data.base_slope > 0 ? '+' : ''}{data.base_slope}
                 </span>
               </div>
               <div style={styles.kpiCard}>
                 <div style={styles.kpiLabel}>Jackknife SE</div>
-                <span style={{ fontSize: 13, fontFamily: 'monospace', color: '#d1d5db' }}>±{data.jackknife_slope_se}</span>
+                <span style={{ fontSize: 13, fontFamily: 'monospace', color: 'var(--color-text-secondary)' }}>±{data.jackknife_slope_se}</span>
               </div>
             </div>
 
             {/* Tab Bar */}
             <div style={styles.tabBar}>
               {[
-                { id: 'window', label: '📅 Window' },
-                { id: 'estimator', label: '📐 Estimators' },
-                { id: 'autocorr', label: '🔗 Autocorr.' },
+                { id: 'window', label: 'Window Sensitivity' },
+                { id: 'estimator', label: 'Slope Estimators' },
+                { id: 'autocorr', label: 'Autocorrelation' },
               ].map((t) => (
                 <button
                   key={t.id}
@@ -264,34 +263,36 @@ const styles = {
     padding: 16,
   },
   modal: {
-    background: 'linear-gradient(180deg, #111827 0%, #0f172a 100%)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 16,
+    background: 'var(--color-bg-surface)',
+    border: '1px solid var(--color-border-strong)',
+    borderRadius: 12,
     width: '100%', maxWidth: 680,
     maxHeight: '88vh', overflow: 'auto',
     display: 'flex', flexDirection: 'column', gap: 0,
-    boxShadow: '0 24px 80px rgba(0,0,0,0.7)',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    color: 'var(--color-text-main)',
   },
   header: {
     display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
     padding: '20px 24px 16px',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    borderBottom: '1px solid var(--color-border-subtle)',
+    background: 'var(--color-bg-elevated)',
   },
-  title: { fontSize: 20, fontWeight: 700, color: '#f9fafb', letterSpacing: '-0.02em' },
-  subtitle: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+  title: { fontSize: 18, fontWeight: 700, color: 'var(--color-text-main)', letterSpacing: '-0.02em', fontFamily: 'Space Grotesk, sans-serif' },
+  subtitle: { fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 },
   closeBtn: {
-    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#9ca3af', borderRadius: 8, width: 32, height: 32,
-    cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)',
+    color: 'var(--color-text-muted)', borderRadius: 6, width: 28, height: 28,
+    cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
     transition: 'all 0.15s',
     flexShrink: 0,
   },
   centered: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', gap: 12, padding: 60, color: '#6b7280',
+    justifyContent: 'center', gap: 12, padding: 60, color: 'var(--color-text-muted)',
   },
   spinnerLg: { fontSize: 32, animation: 'spin 1s linear infinite' },
-  loadingText: { fontSize: 13, color: '#6b7280' },
+  loadingText: { fontSize: 13, color: 'var(--color-text-muted)' },
   errorBox: {
     margin: '16px 24px', padding: '12px 16px',
     background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
@@ -299,52 +300,51 @@ const styles = {
   },
   stabilityBanner: {
     margin: '16px 24px',
-    borderRadius: 10,
+    borderRadius: 8,
     padding: '14px 16px',
     display: 'flex', gap: 12, alignItems: 'flex-start',
   },
-  stabilityIcon: { fontSize: 24, flexShrink: 0, lineHeight: 1 },
   stabilityContent: { display: 'flex', flexDirection: 'column', gap: 4 },
-  stabilityRating: { fontSize: 13, fontWeight: 800, letterSpacing: '0.06em' },
-  summaryText: { fontSize: 12, color: '#d1d5db', lineHeight: 1.6 },
+  stabilityRating: { fontSize: 12, fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'monospace' },
+  summaryText: { fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 },
   kpiRow: {
     display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8,
     padding: '0 24px', marginBottom: 4,
   },
   kpiCard: {
-    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 8, padding: '10px 12px',
+    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
+    borderRadius: 6, padding: '10px 12px',
     display: 'flex', flexDirection: 'column', gap: 6,
   },
-  kpiLabel: { fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7280' },
+  kpiLabel: { fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontFamily: 'monospace' },
   tabBar: {
     display: 'flex', gap: 2, padding: '8px 24px 0',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    borderBottom: '1px solid var(--color-border-subtle)',
   },
   tabBtn: {
     padding: '8px 14px', fontSize: 12, fontWeight: 600,
     background: 'transparent', border: 'none', borderBottom: '2px solid transparent',
-    color: '#6b7280', cursor: 'pointer', transition: 'all 0.15s', borderRadius: '6px 6px 0 0',
+    color: 'var(--color-text-muted)', cursor: 'pointer', transition: 'all 0.15s', borderRadius: '6px 6px 0 0',
   },
   tabBtnActive: {
-    color: '#60a5fa', borderBottomColor: '#60a5fa', background: 'rgba(96,165,250,0.06)',
+    color: 'var(--color-accent-blue)', borderBottomColor: 'var(--color-accent-blue)', background: 'var(--color-bg-elevated)',
   },
   tabContent: { padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 },
-  tabDesc: { fontSize: 11, color: '#9ca3af', lineHeight: 1.6, margin: 0 },
+  tabDesc: { fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6, margin: 0 },
   tableWrapper: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 11 },
   th: {
     padding: '6px 10px', textAlign: 'left',
-    color: '#6b7280', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
-    borderBottom: '1px solid rgba(255,255,255,0.08)',
+    color: 'var(--color-text-muted)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+    borderBottom: '1px solid var(--color-border-subtle)', fontFamily: 'monospace',
   },
-  td: { padding: '7px 10px', color: '#9ca3af', verticalAlign: 'middle' },
+  td: { padding: '7px 10px', color: 'var(--color-text-secondary)', verticalAlign: 'middle' },
   acGrid: { display: 'flex', flexDirection: 'column', gap: 8 },
   acRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '8px 12px', borderRadius: 6, background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.06)',
+    padding: '8px 12px', borderRadius: 6, background: 'var(--color-bg-elevated)',
+    border: '1px solid var(--color-border-subtle)',
   },
-  acLabel: { fontSize: 12, color: '#9ca3af' },
-  acVal: { fontSize: 12, fontWeight: 600 },
+  acLabel: { fontSize: 12, color: 'var(--color-text-secondary)' },
+  acVal: { fontSize: 12, fontWeight: 600, color: 'var(--color-text-main)' },
 };

@@ -117,9 +117,6 @@ export default function ContactModal({ isOpen, onClose }) {
         </button>
 
         <div className="mb-5">
-          <span className="eyebrow-label text-[var(--color-accent-blue)] block mb-1">
-            RESEARCH & INQUIRIES
-          </span>
           <h2 id="contact-modal-title" className="font-['Space_Grotesk'] text-xl font-bold">
             Contact Project Team
           </h2>
@@ -169,8 +166,11 @@ export default function ContactModal({ isOpen, onClose }) {
               placeholder="e.g. Dr. Jane Doe (Atmospheric Sciences)"
             />
             {errors.name && (
-              <p id="contact-name-error" className="mt-1 text-[11px] text-red-400 font-mono flex items-center gap-1">
-                <span>⚠</span> {errors.name}
+              <p id="contact-name-error" className="mt-1 text-[11px] text-red-400 font-mono flex items-center gap-1.5">
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <span>{errors.name}</span>
               </p>
             )}
           </div>
@@ -196,8 +196,11 @@ export default function ContactModal({ isOpen, onClose }) {
               placeholder="name@institution.edu"
             />
             {errors.email && (
-              <p id="contact-email-error" className="mt-1 text-[11px] text-red-400 font-mono flex items-center gap-1">
-                <span>⚠</span> {errors.email}
+              <p id="contact-email-error" className="mt-1 text-[11px] text-red-400 font-mono flex items-center gap-1.5">
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <span>{errors.email}</span>
               </p>
             )}
           </div>
@@ -241,8 +244,11 @@ export default function ContactModal({ isOpen, onClose }) {
               placeholder="Your scientific comments, feedback, or inquiry..."
             />
             {errors.message && (
-              <p id="contact-message-error" className="mt-1 text-[11px] text-red-400 font-mono flex items-center gap-1">
-                <span>⚠</span> {errors.message}
+              <p id="contact-message-error" className="mt-1 text-[11px] text-red-400 font-mono flex items-center gap-1.5">
+                <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <span>{errors.message}</span>
               </p>
             )}
           </div>

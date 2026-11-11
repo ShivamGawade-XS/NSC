@@ -343,10 +343,13 @@ export default function AnalysisPanel() {
               playTactileClick(700);
               setDiscoveryModalOpen(true);
             }}
-            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[#0066ff]/40"
+            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[#0066ff]/40 flex items-center gap-1.5"
             title="Launch autonomous multi-variable trend discovery scan"
           >
-            <span>🔭 Discovery Scan</span>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <span>Discovery Scan</span>
           </button>
           <button
             type="button"
@@ -354,10 +357,13 @@ export default function AnalysisPanel() {
               playTactileClick(700);
               setRegionalCompareModalOpen(true);
             }}
-            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[#f59e0b]/40"
+            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[#f59e0b]/40 flex items-center gap-1.5"
             title="Side-by-side regional trend detective with hypothesis test"
           >
-            <span>🌍 Compare Regions</span>
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+            </svg>
+            <span>Compare Regions</span>
           </button>
         </div>
       </div>
