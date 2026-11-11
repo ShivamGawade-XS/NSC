@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import re
+import time
 from typing import Any
 
 import httpx
@@ -113,7 +114,9 @@ def deterministic_fallback_explanation(req: ExplainRequest) -> ExplainResponse:
         statistical_assessment=assessment,
         limitations=limitations,
         physical_hypotheses=hypotheses,
-        bibtex_citations=bibtex
+        bibtex_citations=bibtex,
+        model_used="Deterministic Scientific Template",
+        inference_time_ms=0.5,
     )
 
 
@@ -132,7 +135,9 @@ def _clean_and_parse_json(raw: str) -> dict:
 def _ground_evidence(
     arg1: Any,
     arg2: Any = None,
-    req: ExplainRequest | None = None
+    req: ExplainRequest | None = None,
+    model_used: str = "Live Google Gemini 2.5 Flash",
+    inference_time_ms: float = 1.0,
 ) -> ExplainResponse:
     if isinstance(arg1, ExplainRequest):
         effective_req = arg1
@@ -202,7 +207,9 @@ def _ground_evidence(
         statistical_assessment=stat_text,
         limitations=limit_text,
         physical_hypotheses=fallback.physical_hypotheses,
-        bibtex_citations=fallback.bibtex_citations
+        bibtex_citations=fallback.bibtex_citations,
+        model_used=model_used,
+        inference_time_ms=inference_time_ms,
     )
 
 
@@ -214,6 +221,7 @@ async def explain_evidence_with_ai_async(req: ExplainRequest) -> ExplainResponse
     Uses httpx.AsyncClient with timeout=httpx.Timeout(5.0, connect=2.0).
     Falls back to deterministic template if offline, unconfigured, or on error.
     """
+    t0 = time.perf_counter()
     gemini_key = os.environ.get("GEMINI_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
 
@@ -275,7 +283,9 @@ async def explain_evidence_with_ai_async(req: ExplainRequest) -> ExplainResponse
                         if candidates:
                             text_resp = candidates[0]["content"]["parts"][0]["text"]
                             parsed = _clean_and_parse_json(text_resp)
-                            return _ground_evidence(req, parsed)
+                            latency_ms = round((time.perf_counter() - t0) * 1000, 1)
+                            model_label = "Live Google Gemini 2.5 Flash" if "2.5" in model else f"Live Google {model}"
+                            return _ground_evidence(req, parsed, model_used=model_label, inference_time_ms=latency_ms)
                     elif res.status_code in (400, 401, 403):
                         logger.warning("Gemini API rejected key/request with status %d (%s); aborting model loop.", res.status_code, res.text[:200])
                         break
@@ -306,13 +316,16 @@ async def explain_evidence_with_ai_async(req: ExplainRequest) -> ExplainResponse
                     data = res.json()
                     content = data["choices"][0]["message"]["content"]
                     parsed = _clean_and_parse_json(content)
-                    return _ground_evidence(req, parsed)
+                    latency_ms = round((time.perf_counter() - t0) * 1000, 1)
+                    return _ground_evidence(req, parsed, model_used="OpenAI GPT-4o-mini", inference_time_ms=latency_ms)
                 elif res.status_code in (401, 403):
                     logger.warning("OpenAI API rejected key with HTTP %d.", res.status_code)
             except Exception as e:
                 logger.warning("OpenAI Explainer call failed (%s); falling back to deterministic template.", e)
 
-    return deterministic_fallback_explanation(req)
+    fb = deterministic_fallback_explanation(req)
+    fb.inference_time_ms = round((time.perf_counter() - t0) * 1000, 1)
+    return fb
 
 
 def explain_evidence_with_ai(req: ExplainRequest) -> ExplainResponse:

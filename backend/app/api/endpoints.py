@@ -79,7 +79,7 @@ from app.science.export import (
     generate_nasa_latex_memorandum,
     generate_scientific_dossier,
 )
-from app.science.nlq_parser import parse_natural_language_query, parse_natural_language_query_async
+from app.science.nlq_parser import parse_natural_language_query_async
 from app.science.robustness import evaluate_trend_robustness
 from app.science.spatial import compute_global_morans_i, compute_lisa_clusters
 from app.science.trend import (
@@ -2392,20 +2392,11 @@ async def submit_contact(request: Request, req: ContactInquiryRequest) -> Contac
 async def record_telemetry(request: Request, event: TelemetryEvent) -> TelemetryResponse:
     """
     Accepts anonymised front-end analytics events.
-    Persists to SQLite cache under key 'telemetry:<event>:<page>'.
-    No PII is stored.
+    Persists to SQLite telemetry table. No PII is stored.
     """
-    import json as _json
-    from datetime import datetime, timezone
-    key = f"telemetry:{event.event}:{event.page}"
-    payload = {
-        "event": event.event,
-        "page": event.page,
-        "properties": event.properties,
-        "ts": datetime.now(timezone.utc).isoformat(),
-    }
+    from app.core.db_cache import save_telemetry_event
     try:
-        save_to_db_cache(key, _json.dumps(payload))
+        save_telemetry_event(event.event, event.page, event.properties)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Telemetry write failed: %s", exc)
     return TelemetryResponse(recorded=True)

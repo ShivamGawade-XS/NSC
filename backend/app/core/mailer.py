@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import smtplib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.message import EmailMessage
 from pathlib import Path
 
@@ -20,7 +20,7 @@ _INBOX = Path(__file__).resolve().parents[3] / "data" / "inbox"
 def _fallback_write(payload: dict) -> str:
     """Write inquiry to local JSON file when SMTP is not configured."""
     _INBOX.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
+    stamp = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M-%S")
     dest = _INBOX / f"{stamp}_{payload.get('name','unknown').replace(' ','_')[:20]}.json"
     dest.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("Mailer fallback: inquiry saved to %s", dest)
@@ -44,7 +44,7 @@ def send_contact_inquiry(
         "email": email,
         "topic": topic,
         "message": message,
-        "received_at": datetime.now(timezone.utc).isoformat(),
+        "received_at": datetime.now(UTC).isoformat(),
     }
 
     smtp_host = os.environ.get("SMTP_HOST", "")

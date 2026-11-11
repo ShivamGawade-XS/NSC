@@ -552,6 +552,22 @@ def test_sqlite_lru_size_ceiling_eviction(monkeypatch, tmp_path):
         db_cache._TLS.conn = None
 
 
+def test_telemetry_events_persistence_and_aggregates():
+    """Verify privacy-preserving telemetry persistence and real metric aggregation."""
+    from app.core.db_cache import get_telemetry_aggregates, save_telemetry_event
+
+    unique_page = f"/test-page-{int(time.time() * 1000)}"
+    save_telemetry_event("route_view", unique_page, {"referrer": "direct"})
+    save_telemetry_event("palette_query", unique_page, {"query": "Texas warming"})
+
+    stats = get_telemetry_aggregates()
+    assert stats["total_events"] >= 2
+    assert "palette_query" in stats["event_breakdown"]
+    assert any(p["page"] == unique_page for p in stats["top_pages"])
+    assert "total_trends_computed" in stats
+    assert "top_requested_variables" in stats
+
+
 
 
 

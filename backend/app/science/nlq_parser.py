@@ -179,6 +179,7 @@ def _deterministic_parse(query: str) -> tuple[NLQParseResponse, float]:
         analysis_request=analysis_req,
         confidence=confidence,
         matched_regions=matched_regions,
+        parsing_method="keyword",
     ), confidence
 
 
@@ -247,6 +248,7 @@ def _build_upgraded_response(query: str, parsed: dict[str, Any]) -> NLQParseResp
         analysis_request=analysis_req,
         confidence=0.92,
         matched_regions=matched_regions,
+        parsing_method="gemini",
     )
 
 

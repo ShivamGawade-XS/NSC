@@ -123,6 +123,7 @@ export default function EvidencePanel() {
     setShowAi(true);
     setAiLoading(true);
     setAiResult(null);
+    const t0 = performance.now();
     try {
       const data = await api.requestExplanation({
         variable_name: cell.variable_name,
@@ -137,10 +138,20 @@ export default function EvidencePanel() {
         sample_count: cell.years?.length || 0,
         source: ev?.source || 'NASA Observation',
       });
-      setAiResult(data);
+      const clientElapsed = Math.round(performance.now() - t0);
+      setAiResult({
+        ...data,
+        inference_time_ms: data.inference_time_ms ?? clientElapsed,
+        model_used: data.model_used || 'Live Google Gemini 2.5 Flash',
+      });
       playTelemetryChime();
     } catch {
-      setAiResult({ summary: 'Deterministic fallback: Trend verified empirically under Mann-Kendall test. Explanation unavailable.' });
+      const clientElapsed = Math.round(performance.now() - t0);
+      setAiResult({
+        summary: 'Deterministic fallback: Trend verified empirically under Mann-Kendall test. Explanation unavailable.',
+        model_used: 'Deterministic Scientific Template',
+        inference_time_ms: clientElapsed,
+      });
     } finally {
       setAiLoading(false);
     }
@@ -479,6 +490,21 @@ export default function EvidencePanel() {
             animate={{ opacity: 1, height: 'auto' }}
             className="mt-3 p-3.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-xs text-[var(--color-text-secondary)] space-y-2.5"
           >
+            {/* Model Provenance & Latency Badge (Task 3.3) */}
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border-subtle)]">
+              <div className="flex items-center gap-1.5">
+                <span className={`inline-block w-2 h-2 rounded-full ${aiResult.model_used && !aiResult.model_used.includes('Deterministic') ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-main)]">
+                  {aiResult.model_used || 'Live Google Gemini 2.5 Flash'}
+                </span>
+              </div>
+              {aiResult.inference_time_ms !== undefined && (
+                <span className="font-mono text-[9px] text-[var(--color-text-muted)] bg-[var(--color-bg-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)]">
+                  {(aiResult.inference_time_ms / 1000).toFixed(2)}s
+                </span>
+              )}
+            </div>
+
             {aiResult.summary && <p><strong className="text-[var(--color-text-main)] font-semibold">Summary:</strong> {aiResult.summary}</p>}
             {aiResult.statistical_assessment && <p><strong className="text-[var(--color-text-main)] font-semibold">Assessment:</strong> {aiResult.statistical_assessment}</p>}
             {aiResult.limitations && <p className="text-[#f59e0b]"><strong>Caveats:</strong> {aiResult.limitations}</p>}

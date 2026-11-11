@@ -126,6 +126,20 @@ def init_db() -> None:
         conn.execute("CREATE INDEX IF NOT EXISTS idx_scc_coords ON spatial_cell_cache(lat, lon);")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_scc_sig ON spatial_cell_cache(significant, slope);")
 
+        # Table 3: Privacy-Preserving Telemetry Events
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS telemetry_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event TEXT NOT NULL,
+                page TEXT NOT NULL,
+                properties_json TEXT,
+                created_at REAL NOT NULL
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_telem_event ON telemetry_events(event);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_telem_page ON telemetry_events(page);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_telem_created ON telemetry_events(created_at);")
+
 
 # Automatically run schema initialization on import
 init_db()
@@ -517,3 +531,54 @@ def get_cache_db_stats() -> dict[str, Any]:
         }
     except Exception as exc:
         return {"error": str(exc), "db_path": str(DB_PATH)}
+
+
+def save_telemetry_event(event: str, page: str = "", properties: dict[str, Any] | None = None) -> None:
+    """Persist an anonymized telemetry event without PII into SQLite."""
+    try:
+        conn = get_db_connection()
+        now = time.time()
+        props_str = json.dumps(properties or {}, ensure_ascii=False)
+        with _DB_LOCK:
+            with conn:
+                conn.execute(
+                    "INSERT INTO telemetry_events (event, page, properties_json, created_at) VALUES (?, ?, ?, ?);",
+                    (event, page or "", props_str, now)
+                )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to save telemetry event: %s", exc)
+
+
+def get_telemetry_aggregates() -> dict[str, Any]:
+    """Return aggregated telemetry metrics across stored events and analysis metadata."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Telemetry events aggregates
+        cur.execute("SELECT COUNT(*) FROM telemetry_events;")
+        total_events = cur.fetchone()[0]
+
+        cur.execute("SELECT event, COUNT(*) FROM telemetry_events GROUP BY event ORDER BY COUNT(*) DESC LIMIT 10;")
+        event_breakdown = {row[0]: row[1] for row in cur.fetchall()}
+
+        cur.execute("SELECT page, COUNT(*) FROM telemetry_events WHERE page != '' GROUP BY page ORDER BY COUNT(*) DESC LIMIT 5;")
+        top_pages = [{"page": row[0], "count": row[1]} for row in cur.fetchall()]
+
+        # Analysis metadata index aggregates
+        cur.execute("SELECT COUNT(*), COALESCE(SUM(access_count), 0) FROM analysis_metadata_index;")
+        distinct_analyses, total_hits = cur.fetchone()
+
+        cur.execute("SELECT variable_id, COUNT(*) FROM analysis_metadata_index GROUP BY variable_id ORDER BY COUNT(*) DESC LIMIT 5;")
+        top_variables = [{"variable_id": row[0], "count": row[1]} for row in cur.fetchall()]
+
+        return {
+            "total_events": total_events,
+            "event_breakdown": event_breakdown,
+            "top_pages": top_pages,
+            "total_trends_computed": distinct_analyses,
+            "total_trend_executions": total_hits,
+            "top_requested_variables": top_variables,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {"error": str(exc), "total_events": 0, "total_trends_computed": 0}

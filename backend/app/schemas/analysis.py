@@ -392,6 +392,8 @@ class ExplainResponse(BaseModel):
     limitations: str
     physical_hypotheses: list[dict[str, str]] | None = None
     bibtex_citations: list[str] | None = None
+    model_used: str | None = None
+    inference_time_ms: float | None = None
 
 
 class CompoundHazardRequest(BaseModel):
@@ -484,6 +486,7 @@ class NLQParseResponse(BaseModel):
     analysis_request: AnalysisRequest
     confidence: float
     matched_regions: list[str] = []
+    parsing_method: str = "keyword"
 
 
 class CompareLocationsRequest(BaseModel):

@@ -51,7 +51,9 @@ export default function CommandPaletteModal() {
     try {
       const res = await api.parseNLQ(q);
       const req = res.analysis_request;
-      toast.success(res.interpreted_intent, { id: toastId, duration: 3500 });
+      const isGemini = res.parsing_method === 'gemini' || res.interpreted_intent?.includes('[Gemini-parsed]');
+      const methodLabel = isGemini ? '✨ Gemini AI Extraction' : '⚡ Exact Keyword Match';
+      toast.success(`${methodLabel}: ${res.interpreted_intent.replace('[Gemini-parsed] ', '')}`, { id: toastId, duration: 4000 });
       playTelemetryChime();
 
       useStore.setState({
@@ -126,6 +128,18 @@ export default function CommandPaletteModal() {
               >
                 {isSearching ? 'Resolving...' : 'Execute'}
               </button>
+            </div>
+
+            {/* Parser Method Engine Indicator (Task 4.2) */}
+            <div className="flex items-center gap-2 mt-2 text-[10px] font-mono text-[var(--color-text-muted)]">
+              <span>Resolution Engine:</span>
+              <span className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-accent-blue)]">
+                Regex Keyword Matcher
+              </span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-emerald-400">
+                Google Gemini 2.5 Flash
+              </span>
             </div>
 
             {/* Suggestions */}

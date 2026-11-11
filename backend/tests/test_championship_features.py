@@ -219,6 +219,9 @@ def test_system_metrics_and_readiness():
     assert m_data["service"] == "EarthSift Scientific API"
     assert "uptime_seconds" in m_data
     assert "memory_rss_mb" in m_data
+    assert "telemetry" in m_data
+    assert "total_trends_computed" in m_data["telemetry"]
+    assert "top_requested_variables" in m_data["telemetry"]
 
     r_res = client.get("/api/v1/ready")
     assert r_res.status_code == 200
