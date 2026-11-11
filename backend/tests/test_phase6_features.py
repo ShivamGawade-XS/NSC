@@ -150,7 +150,9 @@ async def test_xai_grok_explainer_and_nlq_fallback(monkeypatch):
 
     # Ensure Gemini key is unset so it falls through to Grok
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
-    monkeypatch.setenv("XAI_API_KEY", "mock-xai-key-12345")
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("GROK_API_KEY", raising=False)
+    monkeypatch.setenv("XAI_API_KEY", "xai-mock-key-12345")
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     # 1. Mock Grok Explainer response
@@ -217,5 +219,67 @@ async def test_xai_grok_explainer_and_nlq_fallback(monkeypatch):
         assert "[Grok-parsed]" in upgraded.interpreted_intent
         assert upgraded.analysis_request.start_year == 2005
         assert upgraded.analysis_request.end_year == 2022
+
+
+@pytest.mark.asyncio
+async def test_groq_explainer_and_nlq_fallback(monkeypatch):
+    """Verify Groq Cloud fallback with gsk_ key format."""
+    from unittest.mock import AsyncMock, patch
+
+    import httpx
+
+    from app.schemas.analysis import ExplainRequest
+    from app.science.explainer import explain_evidence_with_ai_async
+    from app.science.nlq_parser import AnalysisRequest, NLQParseResponse, _gemini_upgrade_async
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("XAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_mock_groq_key_12345")
+
+    mock_resp = httpx.Response(
+        status_code=200,
+        json={
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"summary": "At Texas Thermal Basin, Surface Temperature rose at +0.250 deg C / decade.", "statistical_assessment": "Verified p = 0.0010, q = 0.0020.", "limitations": "None."}'
+                    }
+                }
+            ]
+        },
+        request=httpx.Request("POST", "https://api.groq.com/openai/v1/chat/completions"),
+    )
+
+    with patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = mock_resp
+        req = ExplainRequest(
+            variable_name="Surface Temperature",
+            location="Texas Thermal Basin",
+            time_span="2000 - 2023",
+            slope=0.25,
+            slope_units="deg C / decade",
+            p_value=0.001,
+            q_value=0.002,
+            significant=True,
+            direction="increasing",
+            sample_count=24,
+            source="NASA POWER",
+        )
+        res = await explain_evidence_with_ai_async(req)
+        assert "Live Groq" in res.model_used
+
+        fallback_nlq = NLQParseResponse(
+            raw_query="Warming in Texas",
+            interpreted_intent="keyword match",
+            analysis_request=AnalysisRequest(),
+            confidence=0.5,
+            matched_regions=[],
+            parsing_method="keyword",
+        )
+        upgraded = await _gemini_upgrade_async("Warming in Texas", fallback_nlq)
+        assert upgraded.parsing_method == "groq"
+        assert "[Groq-parsed]" in upgraded.interpreted_intent
+
 
 

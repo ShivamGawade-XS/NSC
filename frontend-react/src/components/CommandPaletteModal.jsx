@@ -51,10 +51,11 @@ export default function CommandPaletteModal() {
     try {
       const res = await api.parseNLQ(q);
       const req = res.analysis_request;
+      const isGroq = res.parsing_method === 'groq' || res.interpreted_intent?.includes('[Groq-parsed]');
       const isGrok = res.parsing_method === 'grok' || res.interpreted_intent?.includes('[Grok-parsed]');
       const isGemini = res.parsing_method === 'gemini' || res.interpreted_intent?.includes('[Gemini-parsed]');
-      const methodLabel = isGrok ? '🚀 Grok AI Extraction' : (isGemini ? '✨ Gemini AI Extraction' : '⚡ Exact Keyword Match');
-      const cleanIntent = (res.interpreted_intent || '').replace(/^\[(Gemini|Grok)-parsed\]\s*/, '');
+      const methodLabel = isGroq ? '⚡ Groq AI Extraction' : (isGrok ? '🚀 Grok AI Extraction' : (isGemini ? '✨ Gemini AI Extraction' : '⚡ Exact Keyword Match'));
+      const cleanIntent = (res.interpreted_intent || '').replace(/^\[(Gemini|Groq|Grok)-parsed\]\s*/, '');
       toast.success(`${methodLabel}: ${cleanIntent}`, { id: toastId, duration: 4000 });
       playTelemetryChime();
 
@@ -144,7 +145,7 @@ export default function CommandPaletteModal() {
               </span>
               <span>&rarr;</span>
               <span className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-purple-400">
-                xAI Grok
+                Groq / Grok
               </span>
             </div>
 

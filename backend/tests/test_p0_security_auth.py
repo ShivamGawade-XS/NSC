@@ -55,8 +55,12 @@ def test_two_tier_auth_valid_api_key_unlocks_metrics(monkeypatch):
 
 
 def test_anonymous_explain_forces_deterministic_template(monkeypatch):
-    """Anonymous /explain must never call external LLM; returns deterministic template only."""
-    monkeypatch.setenv("GEMINI_API_KEY", "fake-gemini-key")
+    """Anonymous /explain falls back to deterministic template when LLMs are unconfigured or offline."""
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.delenv("GROK_API_KEY", raising=False)
+    monkeypatch.delenv("XAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     payload = {
         "variable_name": "2-Meter Air Temperature",
         "location": "Dallas, TX [32.7°N, -96.8°E]",
