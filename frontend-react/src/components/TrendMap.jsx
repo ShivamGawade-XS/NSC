@@ -166,7 +166,7 @@ function inferGridStep(grid) {
         : 'N/A';
 
       marker.bindTooltip(`
-        <div style="font-family: Inter, sans-serif; font-size: 11px;">
+        <div style="font-family: var(--font-sans, system-ui, sans-serif); font-size: 11px;">
           <strong>Coords:</strong> ${escapeHtml(formatCoords(cell.lat, cell.lon))}<br/>
           <strong>Slope:</strong> ${escapeHtml((cell.slope > 0 ? '+' : '') + cell.slope.toFixed(4))}<br/>
           <strong>95% CI:</strong> ${escapeHtml(ciText)}<br/>
@@ -219,7 +219,7 @@ function inferGridStep(grid) {
           });
 
       marker.bindTooltip(`
-        <div style="font-family: Inter, sans-serif; font-size: 11px;">
+        <div style="font-family: var(--font-sans, system-ui, sans-serif); font-size: 11px;">
           <strong>Coords:</strong> ${escapeHtml(formatCoords(cell.lat, cell.lon))}<br/>
           <strong>Hazard:</strong> <span style="color:${color};font-weight:700;">${escapeHtml(String(cell.hazard_type || '').replace(/_/g, ' ').toUpperCase())}</span><br/>
           <strong>CAI:</strong> ${escapeHtml(cell.cai !== undefined ? cell.cai.toFixed(3) : 'N/A')}<br/>
