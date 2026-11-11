@@ -223,10 +223,11 @@ async def explain_evidence_with_ai_async(req: ExplainRequest) -> ExplainResponse
     """
     t0 = time.perf_counter()
     gemini_key = os.environ.get("GEMINI_API_KEY")
+    xai_key = os.environ.get("XAI_API_KEY") or os.environ.get("GROK_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
 
-    if not gemini_key and not openai_key:
-        logger.debug("No GEMINI_API_KEY or OPENAI_API_KEY configured; utilizing deterministic scientific fallback.")
+    if not gemini_key and not xai_key and not openai_key:
+        logger.debug("No GEMINI_API_KEY, XAI_API_KEY, or OPENAI_API_KEY configured; utilizing deterministic scientific fallback.")
         return deterministic_fallback_explanation(req)
 
     def _clean_field(v: str) -> str:
@@ -298,7 +299,42 @@ async def explain_evidence_with_ai_async(req: ExplainRequest) -> ExplainResponse
                 except Exception as e:
                     logger.warning("Gemini model %s failed (%s); trying next.", model, e)
 
-        # 2. Attempt OpenAI API
+        # 2. Attempt xAI Grok API (High-throughput fallback)
+        if xai_key:
+            grok_models = ["grok-2-mini", "grok-beta", "grok-2-latest"]
+            for g_model in grok_models:
+                try:
+                    url = "https://api.x.ai/v1/chat/completions"
+                    headers = {
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {xai_key}",
+                    }
+                    payload = {
+                        "model": g_model,
+                        "messages": [
+                            {"role": "system", "content": "You are a scientific interpreter. Return strict JSON."},
+                            {"role": "user", "content": prompt},
+                        ],
+                        "temperature": 0.2,
+                        "response_format": {"type": "json_object"},
+                    }
+                    res = await client.post(url, headers=headers, json=payload)
+                    if res.status_code == 200:
+                        data = res.json()
+                        content = data["choices"][0]["message"]["content"]
+                        parsed = _clean_and_parse_json(content)
+                        latency_ms = round((time.perf_counter() - t0) * 1000, 1)
+                        model_label = f"Live xAI Grok ({g_model})"
+                        return _ground_evidence(req, parsed, model_used=model_label, inference_time_ms=latency_ms)
+                    elif res.status_code in (401, 403):
+                        logger.warning("xAI API rejected key with HTTP %d.", res.status_code)
+                        break
+                    else:
+                        logger.warning("xAI Grok model %s returned HTTP %d: %s", g_model, res.status_code, res.text[:150])
+                except Exception as e:
+                    logger.warning("xAI Grok model %s failed (%s); trying next.", g_model, e)
+
+        # 3. Attempt OpenAI API
         if openai_key:
             try:
                 url = "https://api.openai.com/v1/chat/completions"
@@ -337,7 +373,12 @@ def explain_evidence_with_ai(req: ExplainRequest) -> ExplainResponse:
     Synchronous wrapper for explain_evidence_with_ai_async.
     Maintains compatibility with synchronous callers and test suites.
     """
-    if not os.environ.get("GEMINI_API_KEY") and not os.environ.get("OPENAI_API_KEY"):
+    if (
+        not os.environ.get("GEMINI_API_KEY")
+        and not os.environ.get("XAI_API_KEY")
+        and not os.environ.get("GROK_API_KEY")
+        and not os.environ.get("OPENAI_API_KEY")
+    ):
         return deterministic_fallback_explanation(req)
 
     try:

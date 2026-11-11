@@ -51,9 +51,11 @@ export default function CommandPaletteModal() {
     try {
       const res = await api.parseNLQ(q);
       const req = res.analysis_request;
+      const isGrok = res.parsing_method === 'grok' || res.interpreted_intent?.includes('[Grok-parsed]');
       const isGemini = res.parsing_method === 'gemini' || res.interpreted_intent?.includes('[Gemini-parsed]');
-      const methodLabel = isGemini ? '✨ Gemini AI Extraction' : '⚡ Exact Keyword Match';
-      toast.success(`${methodLabel}: ${res.interpreted_intent.replace('[Gemini-parsed] ', '')}`, { id: toastId, duration: 4000 });
+      const methodLabel = isGrok ? '🚀 Grok AI Extraction' : (isGemini ? '✨ Gemini AI Extraction' : '⚡ Exact Keyword Match');
+      const cleanIntent = (res.interpreted_intent || '').replace(/^\[(Gemini|Grok)-parsed\]\s*/, '');
+      toast.success(`${methodLabel}: ${cleanIntent}`, { id: toastId, duration: 4000 });
       playTelemetryChime();
 
       useStore.setState({
@@ -131,14 +133,18 @@ export default function CommandPaletteModal() {
             </div>
 
             {/* Parser Method Engine Indicator (Task 4.2) */}
-            <div className="flex items-center gap-2 mt-2 text-[10px] font-mono text-[var(--color-text-muted)]">
-              <span>Resolution Engine:</span>
+            <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px] font-mono text-[var(--color-text-muted)]">
+              <span>Resolution Pipeline:</span>
               <span className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-accent-blue)]">
-                Regex Keyword Matcher
+                Regex Matcher
               </span>
               <span>&rarr;</span>
               <span className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-emerald-400">
-                Google Gemini 2.5 Flash
+                Google Gemini
+              </span>
+              <span>&rarr;</span>
+              <span className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-purple-400">
+                xAI Grok
               </span>
             </div>
 

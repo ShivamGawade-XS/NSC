@@ -207,7 +207,11 @@ Rules:
 Query: """
 
 
-def _build_upgraded_response(query: str, parsed: dict[str, Any]) -> NLQParseResponse:
+def _build_upgraded_response(
+    query: str,
+    parsed: dict[str, Any],
+    method: str = "gemini",
+) -> NLQParseResponse:
     var_id = parsed.get("variable_id", "T2M")
     if var_id not in VALID_VARS:
         var_id = "T2M"
@@ -238,8 +242,9 @@ def _build_upgraded_response(query: str, parsed: dict[str, Any]) -> NLQParseResp
         use_fdr=True,
     )
     region_desc = f"in {region_name}" if region_name else "across global domain"
+    tag = "[Grok-parsed]" if method == "grok" else "[Gemini-parsed]"
     intent_desc = (
-        f"[Gemini-parsed] {var_id} trends {region_desc} "
+        f"{tag} {var_id} trends {region_desc} "
         f"from {start_year} to {end_year}, alpha={alpha}."
     )
     return NLQParseResponse(
@@ -248,68 +253,136 @@ def _build_upgraded_response(query: str, parsed: dict[str, Any]) -> NLQParseResp
         analysis_request=analysis_req,
         confidence=0.92,
         matched_regions=matched_regions,
-        parsing_method="gemini",
+        parsing_method=method,
     )
 
 
 async def _gemini_upgrade_async(query: str, fallback: NLQParseResponse) -> NLQParseResponse:
-    """Asynchronous Gemini semantic parser with non-blocking network calls."""
+    """Asynchronous Gemini/Grok semantic parser with non-blocking network calls."""
     gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if not gemini_key:
-        return fallback
+    xai_key = os.environ.get("XAI_API_KEY", "") or os.environ.get("GROK_API_KEY", "")
 
-    models = ["gemini-flash-lite-latest", "gemini-2.5-flash"]
-    for model in models:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
-        body: dict[str, Any] = {
-            "contents": [{"parts": [{"text": _GEMINI_NLQ_PROMPT + query}]}],
-            "generationConfig": {"temperature": 0.0, "maxOutputTokens": 256},
-        }
-        try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(4.0, connect=2.0)) as client:
-                resp = await client.post(url, json=body)
-            if resp.status_code != 200:
-                logger.debug("Gemini NLQ %s returned %s", model, resp.status_code)
-                continue
-            text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-            text = re.sub(r"^```(?:json)?\s*", "", text)
-            text = re.sub(r"\s*```$", "", text)
-            parsed: dict[str, Any] = json.loads(text)
-            logger.info("NLQ upgraded asynchronously by Gemini model %s", model)
-            return _build_upgraded_response(query, parsed)
-        except Exception as exc:  # noqa: BLE001
-            logger.debug("Gemini async NLQ upgrade failed on %s: %s", model, exc)
+    # 1. Primary: Google Gemini
+    if gemini_key:
+        models = ["gemini-flash-lite-latest", "gemini-2.5-flash"]
+        for model in models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+            body: dict[str, Any] = {
+                "contents": [{"parts": [{"text": _GEMINI_NLQ_PROMPT + query}]}],
+                "generationConfig": {"temperature": 0.0, "maxOutputTokens": 256},
+            }
+            try:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(4.0, connect=2.0)) as client:
+                    resp = await client.post(url, json=body)
+                if resp.status_code != 200:
+                    logger.debug("Gemini NLQ %s returned %s", model, resp.status_code)
+                    continue
+                text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                text = re.sub(r"^```(?:json)?\s*", "", text)
+                text = re.sub(r"\s*```$", "", text)
+                parsed: dict[str, Any] = json.loads(text)
+                logger.info("NLQ upgraded asynchronously by Gemini model %s", model)
+                return _build_upgraded_response(query, parsed, method="gemini")
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("Gemini async NLQ upgrade failed on %s: %s", model, exc)
+
+    # 2. Secondary: xAI Grok Fallback
+    if xai_key:
+        grok_models = ["grok-2-mini", "grok-beta"]
+        for g_model in grok_models:
+            url = "https://api.x.ai/v1/chat/completions"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {xai_key}",
+            }
+            grok_body = {
+                "model": g_model,
+                "messages": [
+                    {"role": "system", "content": _GEMINI_NLQ_PROMPT},
+                    {"role": "user", "content": query},
+                ],
+                "temperature": 0.0,
+                "response_format": {"type": "json_object"},
+            }
+            try:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(4.0, connect=2.0)) as client:
+                    resp = await client.post(url, headers=headers, json=grok_body)
+                if resp.status_code != 200:
+                    logger.debug("xAI Grok NLQ %s returned %s", g_model, resp.status_code)
+                    continue
+                text = resp.json()["choices"][0]["message"]["content"].strip()
+                text = re.sub(r"^```(?:json)?\s*", "", text)
+                text = re.sub(r"\s*```$", "", text)
+                parsed_grok: dict[str, Any] = json.loads(text)
+                logger.info("NLQ upgraded asynchronously by xAI Grok model %s", g_model)
+                return _build_upgraded_response(query, parsed_grok, method="grok")
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("xAI Grok async NLQ upgrade failed on %s: %s", g_model, exc)
 
     return fallback
 
 
 def _gemini_upgrade(query: str, fallback: NLQParseResponse) -> NLQParseResponse:
-    """Synchronous Gemini semantic parser fallback."""
+    """Synchronous Gemini/Grok semantic parser fallback."""
     gemini_key = os.environ.get("GEMINI_API_KEY", "")
-    if not gemini_key:
-        return fallback
+    xai_key = os.environ.get("XAI_API_KEY", "") or os.environ.get("GROK_API_KEY", "")
 
-    models = ["gemini-flash-lite-latest", "gemini-2.5-flash"]
-    for model in models:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
-        body: dict[str, Any] = {
-            "contents": [{"parts": [{"text": _GEMINI_NLQ_PROMPT + query}]}],
-            "generationConfig": {"temperature": 0.0, "maxOutputTokens": 256},
-        }
-        try:
-            with httpx.Client(timeout=httpx.Timeout(4.0, connect=2.0)) as client:
-                resp = client.post(url, json=body)
-            if resp.status_code != 200:
-                logger.debug("Gemini NLQ %s returned %s", model, resp.status_code)
-                continue
-            text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-            text = re.sub(r"^```(?:json)?\s*", "", text)
-            text = re.sub(r"\s*```$", "", text)
-            parsed: dict[str, Any] = json.loads(text)
-            logger.info("NLQ upgraded synchronously by Gemini model %s", model)
-            return _build_upgraded_response(query, parsed)
-        except Exception as exc:  # noqa: BLE001
-            logger.debug("Gemini NLQ upgrade failed on %s: %s", model, exc)
+    # 1. Primary: Google Gemini
+    if gemini_key:
+        models = ["gemini-flash-lite-latest", "gemini-2.5-flash"]
+        for model in models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+            body: dict[str, Any] = {
+                "contents": [{"parts": [{"text": _GEMINI_NLQ_PROMPT + query}]}],
+                "generationConfig": {"temperature": 0.0, "maxOutputTokens": 256},
+            }
+            try:
+                with httpx.Client(timeout=httpx.Timeout(4.0, connect=2.0)) as client:
+                    resp = client.post(url, json=body)
+                if resp.status_code != 200:
+                    logger.debug("Gemini NLQ %s returned %s", model, resp.status_code)
+                    continue
+                text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                text = re.sub(r"^```(?:json)?\s*", "", text)
+                text = re.sub(r"\s*```$", "", text)
+                parsed: dict[str, Any] = json.loads(text)
+                logger.info("NLQ upgraded synchronously by Gemini model %s", model)
+                return _build_upgraded_response(query, parsed, method="gemini")
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("Gemini NLQ upgrade failed on %s: %s", model, exc)
+
+    # 2. Secondary: xAI Grok Fallback
+    if xai_key:
+        grok_models = ["grok-2-mini", "grok-beta"]
+        for g_model in grok_models:
+            url = "https://api.x.ai/v1/chat/completions"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {xai_key}",
+            }
+            grok_body = {
+                "model": g_model,
+                "messages": [
+                    {"role": "system", "content": _GEMINI_NLQ_PROMPT},
+                    {"role": "user", "content": query},
+                ],
+                "temperature": 0.0,
+                "response_format": {"type": "json_object"},
+            }
+            try:
+                with httpx.Client(timeout=httpx.Timeout(4.0, connect=2.0)) as client:
+                    resp = client.post(url, headers=headers, json=grok_body)
+                if resp.status_code != 200:
+                    logger.debug("xAI Grok NLQ %s returned %s", g_model, resp.status_code)
+                    continue
+                text = resp.json()["choices"][0]["message"]["content"].strip()
+                text = re.sub(r"^```(?:json)?\s*", "", text)
+                text = re.sub(r"\s*```$", "", text)
+                parsed_grok_sync: dict[str, Any] = json.loads(text)
+                logger.info("NLQ upgraded synchronously by xAI Grok model %s", g_model)
+                return _build_upgraded_response(query, parsed_grok_sync, method="grok")
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("xAI Grok NLQ upgrade failed on %s: %s", g_model, exc)
 
     return fallback
 

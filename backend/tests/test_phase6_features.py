@@ -7,6 +7,7 @@ Test Phase 6 Scientific Instrument capabilities:
 5. NASA Climate Science Dossier generation endpoint
 """
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -134,4 +135,87 @@ def test_export_netcdf_geojson_and_dossier():
         assert "Gilbert (1987)" in dossier_md
         assert "Moran's I" in dossier_md
         assert "Anselin LISA" in dossier_md
+
+
+@pytest.mark.asyncio
+async def test_xai_grok_explainer_and_nlq_fallback(monkeypatch):
+    """Verify Grok (xAI) fallback when Gemini is offline or quota-exhausted."""
+    from unittest.mock import AsyncMock, patch
+
+    import httpx
+
+    from app.schemas.analysis import ExplainRequest
+    from app.science.explainer import explain_evidence_with_ai_async
+    from app.science.nlq_parser import AnalysisRequest, NLQParseResponse, _gemini_upgrade_async
+
+    # Ensure Gemini key is unset so it falls through to Grok
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("XAI_API_KEY", "mock-xai-key-12345")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    # 1. Mock Grok Explainer response
+    mock_grok_explainer_resp = httpx.Response(
+        status_code=200,
+        json={
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"summary": "At Texas Thermal Basin, Surface Temperature demonstrated a warming of +0.350 deg C / decade across 2000 - 2023.", "statistical_assessment": "Verified p = 0.0010, q = 0.0020.", "limitations": "Model grid resolution effects."}'
+                    }
+                }
+            ]
+        },
+        request=httpx.Request("POST", "https://api.x.ai/v1/chat/completions"),
+    )
+
+    with patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = mock_grok_explainer_resp
+        req = ExplainRequest(
+            variable_name="Surface Temperature",
+            location="Texas Thermal Basin",
+            time_span="2000 - 2023",
+            slope=0.35,
+            slope_units="deg C / decade",
+            p_value=0.001,
+            q_value=0.002,
+            significant=True,
+            direction="increasing",
+            sample_count=24,
+            source="NASA POWER",
+        )
+        res = await explain_evidence_with_ai_async(req)
+        assert "xAI Grok" in res.model_used
+        assert "+0.350" in res.summary
+
+    # 2. Mock Grok NLQ response
+    mock_grok_nlq_resp = httpx.Response(
+        status_code=200,
+        json={
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"dataset_id": "nasa_power", "variable_id": "T2M", "start_year": 2005, "end_year": 2022, "bbox": [78.0, 28.0, 103.0, 38.0], "region_name": "Tibetan Plateau"}'
+                    }
+                }
+            ]
+        },
+        request=httpx.Request("POST", "https://api.x.ai/v1/chat/completions"),
+    )
+
+    with patch.object(httpx.AsyncClient, "post", new_callable=AsyncMock) as mock_post:
+        mock_post.return_value = mock_grok_nlq_resp
+        fallback_nlq = NLQParseResponse(
+            raw_query="Warming in Tibetan Plateau from 2005 to 2022",
+            interpreted_intent="keyword match",
+            analysis_request=AnalysisRequest(),
+            confidence=0.5,
+            matched_regions=[],
+            parsing_method="keyword",
+        )
+        upgraded = await _gemini_upgrade_async("Warming in Tibetan Plateau from 2005 to 2022", fallback_nlq)
+        assert upgraded.parsing_method == "grok"
+        assert "[Grok-parsed]" in upgraded.interpreted_intent
+        assert upgraded.analysis_request.start_year == 2005
+        assert upgraded.analysis_request.end_year == 2022
+
 

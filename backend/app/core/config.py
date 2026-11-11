@@ -30,9 +30,21 @@ class Settings:
     """Core application settings with NASA Earthdata integration."""
 
     # Application Info
-    APP_NAME: str = "EarthSift Scientific API"
+    APP_NAME: str = "Tellura Scientific API"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+
+    # AI Model Providers (Cascade: Gemini -> xAI Grok -> OpenAI -> Deterministic)
+    GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
+    XAI_API_KEY: str | None = os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY")
+    OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
+
+    # Transactional Mailer
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: str = os.getenv("SMTP_USER", "nsc26cs@gmail.com")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    CONTACT_RECIPIENT_EMAIL: str = os.getenv("CONTACT_RECIPIENT_EMAIL", "nsc26cs@gmail.com")
 
     # NASA Earthdata Login (EDL)
     EARTHDATA_USERNAME: str | None = os.getenv("EARTHDATA_USERNAME")

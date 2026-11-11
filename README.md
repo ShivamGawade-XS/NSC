@@ -3,7 +3,7 @@
 ## *The Next-Generation Empirical Analytics & Physical Attribution Workstation for NASA Earth Observations*
 
 [![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-Global%20Nominee%202026-0B3D91?style=for-the-badge&logo=nasa)](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/)
-[![Tests: 335 Passing](https://img.shields.io/badge/Tests-335%20Passing%20(100%25)-success?style=for-the-badge)](backend/tests/)
+[![Tests: 336 Passing](https://img.shields.io/badge/Tests-336%20Passing%20(100%25)-success?style=for-the-badge)](backend/tests/)
 [![Conventions: CF-1.8](https://img.shields.io/badge/Conventions-CF--1.8%20NetCDF--4-blue?style=for-the-badge)](https://cfconventions.org/)
 [![Standards: NASA Open Science](https://img.shields.io/badge/Standards-NASA%20Open%20Science-blue?style=for-the-badge)](https://science.nasa.gov/open-science/)
 [![Reproducibility: Google Colab Ready](https://img.shields.io/badge/Reproducibility-Google%20Colab%20Ready-F9AB00?style=for-the-badge&logo=googlecolab)](notebooks/)

@@ -62,7 +62,7 @@ def send_contact_inquiry(
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
     smtp_user = os.environ.get("SMTP_USER", "").strip()
     smtp_pass = os.environ.get("SMTP_PASSWORD", "").strip()
-    recipient = os.environ.get("CONTACT_RECIPIENT_EMAIL", "shivamgawade.dev@gmail.com").strip()
+    recipient = os.environ.get("CONTACT_RECIPIENT_EMAIL", "nsc26cs@gmail.com").strip()
 
     if not smtp_host or not smtp_user or not smtp_pass:
         saved_file = _fallback_write(payload)
