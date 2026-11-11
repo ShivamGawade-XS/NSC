@@ -92,24 +92,15 @@ export default function Header() {
         <div className="flex items-center gap-6 sm:gap-8">
           <Link
             to="/"
-            className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0066ff] rounded py-1 px-1"
+            className="flex items-center group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0066ff] rounded py-1 px-1"
             aria-label="Tellura Home"
           >
             <img
-              src="/tellura_icon.png"
-              alt="Tellura Planetary Intelligence brand mark"
-              className="w-7 h-7 rounded object-contain shadow-xs shrink-0"
-              width="28"
-              height="28"
+              src="/tellura_primary_lockup_transparent.png"
+              alt="Tellura — Planetary Intelligence"
+              className="h-8 sm:h-9 w-auto object-contain shrink-0 brightness-0 dark:brightness-100 transition-all"
+              height="36"
             />
-            <div className="flex flex-col">
-              <span className="font-['Space_Grotesk'] font-bold text-sm tracking-tight text-[var(--color-text-main)] group-hover:text-[var(--color-accent-blue)] transition-colors">
-                Tellura
-              </span>
-              <span className="text-[9px] font-mono tracking-wider text-[var(--color-text-muted)] hidden sm:inline-block">
-                Planetary Intelligence
-              </span>
-            </div>
           </Link>
 
           {/* Desktop Navigation Links */}

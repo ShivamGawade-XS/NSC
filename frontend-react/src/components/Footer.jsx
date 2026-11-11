@@ -11,22 +11,15 @@ export default function Footer() {
       <footer className="border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-deep)] py-12 px-4 sm:px-6 text-[var(--color-text-secondary)] text-xs transition-colors">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         {/* Left: Brand & Tagline */}
-        <div className="space-y-2 max-w-sm">
-          <div className="flex items-center gap-2.5">
+        <div className="space-y-3 max-w-sm">
+          <Link to="/" className="inline-block" aria-label="Tellura Home">
             <img
-              src="/tellura_icon.png"
-              alt="Tellura Planetary Intelligence icon"
-              className="w-5 h-5 rounded object-contain shrink-0"
-              width="20"
-              height="20"
+              src="/tellura_primary_lockup_transparent.png"
+              alt="Tellura — Planetary Intelligence"
+              className="h-7 sm:h-8 w-auto object-contain brightness-0 dark:brightness-100 transition-all"
+              height="32"
             />
-            <span className="font-['Space_Grotesk'] font-bold text-sm text-[var(--color-text-main)]">
-              Tellura
-            </span>
-            <span className="text-[10px] font-mono text-[var(--color-text-muted)] tracking-wider">
-              Planetary Intelligence
-            </span>
-          </div>
+          </Link>
           <p className="text-[var(--color-text-muted)] text-[11px] leading-relaxed">
             Evidence-first scientific workbench discovering statistically defensible trends in NASA MERRA-2 and POWER Earth-system data.
           </p>
