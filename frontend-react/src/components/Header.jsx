@@ -96,7 +96,7 @@ export default function Header() {
             aria-label="Tellura Home"
           >
             <img
-              src="/favicon.svg"
+              src="/tellura_icon.png"
               alt="Tellura Planetary Intelligence brand mark"
               className="w-7 h-7 rounded object-contain shadow-xs shrink-0"
               width="28"

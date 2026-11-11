@@ -63,7 +63,9 @@ PLANETARY INTELLIGENCE
 
 | Asset | Path | Format & Dimension |
 | :--- | :--- | :--- |
-| Vector Symbol | `frontend-react/public/favicon.svg` | Scalable Vector Graphic |
+| Master Symbol (Transparent) | `frontend-react/public/tellura_icon.png` | Native Alpha PNG (Direct from Master Board) |
+| Master Hero Lockup | `frontend-react/public/tellura_hero_lockup.png` | 732×150 px PNG (Symbol + Custom Wordmark) |
+| Vector Symbol | `frontend-react/public/favicon.svg` | Scalable Vector Graphic (Embedded Master Data) |
 | Multi-res Favicon | `frontend-react/public/favicon.ico` | 16x16, 32x32, 48x48 Multi-res ICO |
 | Small Browser Tab | `frontend-react/public/favicon-16x16.png` | 16×16 px PNG |
 | Standard Browser Tab | `frontend-react/public/favicon-32x32.png` | 32×32 px PNG |

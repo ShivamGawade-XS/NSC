@@ -14,7 +14,7 @@ export default function Footer() {
         <div className="space-y-2 max-w-sm">
           <div className="flex items-center gap-2.5">
             <img
-              src="/favicon.svg"
+              src="/tellura_icon.png"
               alt="Tellura Planetary Intelligence icon"
               className="w-5 h-5 rounded object-contain shrink-0"
               width="20"

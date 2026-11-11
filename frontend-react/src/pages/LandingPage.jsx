@@ -161,7 +161,7 @@ export default function LandingPage() {
               {/* Dignified Institutional Attribution Header */}
               <div className="flex items-center gap-2.5 text-xs font-mono tracking-wider text-[var(--color-text-muted)] uppercase mb-6 font-medium">
                 <img
-                  src="/favicon.svg"
+                  src="/tellura_icon.png"
                   alt="Tellura NASA Space Apps 2026 challenge emblem"
                   className="w-5 h-5 rounded object-contain shrink-0"
                   width="20"
