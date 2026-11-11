@@ -1263,16 +1263,18 @@ def get_analysis_provenance(request: Request, analysis_id: str) -> ProvenanceRes
 async def explain_evidence(request: Request, req: ExplainRequest) -> ExplainResponse:
     """
     Downstream scientific explainer:
-    - Anonymous tier: returns verified deterministic scientific template (zero external LLM token cost).
-    - Keyed tier: queries external LLM (Gemini/OpenAI) with anti-hallucination guardrails,
-      enforcing global daily LLM budget limit before falling back to deterministic template.
+    - All tiers: queries external LLM (Gemini) with anti-hallucination guardrails.
+    - Falls back to deterministic scientific template if LLM is offline or budget exhausted.
+    - Keyed tier: not subject to daily LLM budget (unlimited).
+    - Anonymous tier: subject to global daily LLM budget; falls back gracefully.
     """
     tier = get_auth_tier(request)
-    if tier == AuthTier.ANONYMOUS:
-        logger.info("Anonymous request to /explain: returning verified deterministic template.")
-        return deterministic_fallback_explanation(req)
 
-    # Keyed tier: check global daily LLM call limit
+    # Keyed tier skips budget check
+    if tier == AuthTier.KEYED:
+        return await explain_evidence_with_ai_async(req)
+
+    # Anonymous tier: check daily LLM budget first
     if not llm_budget_tracker.check_and_increment():
         logger.warning("Daily LLM call budget reached; returning deterministic template.")
         return deterministic_fallback_explanation(req)
@@ -2341,5 +2343,57 @@ print(f"Reproducing analysis for {{VARIABLE}} over {{START_YEAR}}-{{END_YEAR}}..
         python_replication_code=python_code,
         bibtex_citations=bibtex
     )
+
+
+# ---------------------------------------------------------------------------
+# Contact inquiry endpoint
+# ---------------------------------------------------------------------------
+
+@router.post("/contact", response_model=ContactInquiryResponse)
+@limiter.limit("5/minute")
+async def submit_contact(request: Request, req: ContactInquiryRequest) -> ContactInquiryResponse:
+    """
+    Accepts a contact form submission.
+    Dispatches via SMTP when configured; falls back to local JSON inbox.
+    """
+    try:
+        send_contact_inquiry(
+            name=req.name,
+            email=req.email,
+            topic=req.topic,
+            message=req.message,
+        )
+        return ContactInquiryResponse(success=True, message="Thank you — we'll be in touch soon.")
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Contact submission error: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to submit contact inquiry.") from exc
+
+
+# ---------------------------------------------------------------------------
+# Telemetry endpoint
+# ---------------------------------------------------------------------------
+
+@router.post("/telemetry", response_model=TelemetryResponse)
+@limiter.limit("60/minute")
+async def record_telemetry(request: Request, event: TelemetryEvent) -> TelemetryResponse:
+    """
+    Accepts anonymised front-end analytics events.
+    Persists to SQLite cache under key 'telemetry:<event>:<page>'.
+    No PII is stored.
+    """
+    import json as _json
+    from datetime import datetime, timezone
+    key = f"telemetry:{event.event}:{event.page}"
+    payload = {
+        "event": event.event,
+        "page": event.page,
+        "properties": event.properties,
+        "ts": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        save_to_db_cache(key, _json.dumps(payload))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Telemetry write failed: %s", exc)
+    return TelemetryResponse(recorded=True)
 
 

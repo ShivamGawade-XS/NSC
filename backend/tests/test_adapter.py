@@ -69,6 +69,18 @@ def test_merra2_fetch_and_synthetic_labeling():
     assert data["data"].shape[0] == 11  # 2005 to 2015 inclusive
 
 
+def test_merra2_strict_zero_synthetic_enforcement(monkeypatch):
+    """Verify that STRICT_ZERO_SYNTHETIC blocks synthetic data generation outside pytest."""
+    from fastapi import HTTPException as FastAPIHTTPException
+    adapter = MERRA2Adapter()
+    monkeypatch.setenv("STRICT_ZERO_SYNTHETIC", "true")
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    with pytest.raises(FastAPIHTTPException) as exc_info:
+        adapter.fetch(variable="T2M", start_year=2005, end_year=2015, prefer_live=False)
+    assert exc_info.value.status_code == 503
+    assert "STRICT_ZERO_SYNTHETIC" in exc_info.value.detail
+
+
 def test_merra2_subset_and_normalize():
     adapter = MERRA2Adapter()
     raw = adapter.fetch(variable="T2M", start_year=2000, end_year=2010, bbox=[-120.0, 30.0, -80.0, 48.0], prefer_live=False)

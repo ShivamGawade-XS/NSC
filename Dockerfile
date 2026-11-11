@@ -1,4 +1,4 @@
-# EarthSift — Hardened Production Multi-Stage Dockerfile
+# Tellura — Hardened Production Multi-Stage Dockerfile
 # Conforms to OWASP ASVS Level 2 & CIS Docker Benchmark (Least-Privilege Non-Root)
 
 # ==========================================
@@ -63,6 +63,7 @@ RUN mkdir -p /app/cache /app/backend/data /app/data && \
 ENV PYTHONPATH=/app/backend \
     PYTHONUNBUFFERED=1 \
     ENVIRONMENT=production \
+    STRICT_ZERO_SYNTHETIC=true \
     HOME=/app/cache \
     NETRC_DIR=/app/cache \
     NASA_POWER_CACHE_DIR=/app/cache/nasa_power \

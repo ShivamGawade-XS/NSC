@@ -38,7 +38,7 @@ export default function DashboardPage() {
   const hasInitialized = useRef(false);
 
   usePageMetadata({
-    title: 'Analysis Workspace — EarthSift Scientific Workbench',
+    title: 'Analysis Workspace — Tellura Scientific Workbench',
     description: 'Interactive spatiotemporal climate trend detective workspace. Real-time Mann-Kendall statistics, Sen slope, Anselin LISA clustering, and CF-1.8 NetCDF downloads.',
     canonicalPath: '/dashboard',
   });

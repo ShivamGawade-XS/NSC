@@ -351,6 +351,17 @@ class MERRA2Adapter(BaseDatasetAdapter):
                 detail="Synthetic data generation is strictly prohibited in production mode."
             )
 
+        if os.getenv("STRICT_ZERO_SYNTHETIC", "").lower() == "true" and not os.getenv("PYTEST_CURRENT_TEST"):
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    f"STRICT_ZERO_SYNTHETIC is enabled: synthetic fallback for '{variable}' "
+                    f"({start_year}-{end_year}) is blocked. "
+                    "Download the real NASA MERRA-2 granule or switch dataset to nasa_power."
+                )
+            )
+
         # DEMO / OFFLINE UNIT TEST FIXTURE MODE (Only accessible when prefer_live=False outside production)
         # Generates deterministic, physically grounded atmospheric field
         lats = np.arange(min_lat, max_lat + 1.0, 2.0, dtype=float)

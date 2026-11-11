@@ -1,6 +1,6 @@
 {
-  "name": "EarthSift — Earth System Trend Detective",
-  "short_name": "EarthSift",
+  "name": "Tellura — Earth System Trend Detective",
+  "short_name": "Tellura",
   "description": "Evidence-first scientific workbench discovering statistically defensible trends in NASA Earth-system data.",
   "start_url": "/",
   "display": "standalone",

@@ -7,7 +7,7 @@ export function usePageMetadata({
   title,
   description,
   canonicalPath = '',
-  ogImage = 'https://earthsift.org/og-image.png',
+  ogImage = '/og-image.png',
   ogType = 'website',
 }) {
   useEffect(() => {
@@ -50,8 +50,10 @@ export function usePageMetadata({
     // 5. OpenGraph Type
     setMetaTag('property', 'og:type', ogType);
 
-    // 6. Canonical URL
-    const baseUrl = 'https://earthsift.org';
+    // 6. Canonical URL — dynamic, using window.location.origin at runtime
+    const baseUrl = (typeof window !== 'undefined' ? window.location.origin : null)
+      || import.meta.env.VITE_APP_URL
+      || 'https://tellura.shivamgawade.dev';
     const canonicalUrl = `${baseUrl}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`;
     setMetaTag('property', 'og:url', canonicalUrl);
 

@@ -83,3 +83,8 @@ dossier_test.md
 test-results/
 playwright-report/
 !backend/tests/test_f006_prompt_injection_defense.py
+
+agy.exe
+skills-lock.json
+data/inbox/
+.agents/

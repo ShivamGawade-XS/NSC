@@ -53,7 +53,7 @@ export default function ContactModal({ isOpen, onClose }) {
 
     // Store in session storage for the thank you page
     try {
-      sessionStorage.setItem('earthsift_last_inquiry', JSON.stringify({
+      sessionStorage.setItem('tellura_last_inquiry', JSON.stringify({
         name: formData.name,
         topic: formData.topic,
         timestamp: new Date().toISOString(),
@@ -62,11 +62,37 @@ export default function ContactModal({ isOpen, onClose }) {
       // Storage unavailable
     }
 
-    setTimeout(() => {
-      setSubmitting(false);
-      onClose?.();
-      navigate('/thank-you');
-    }, 450);
+    // POST to real backend contact endpoint
+    fetch('/api/v1/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        topic: formData.topic,
+        message: formData.message,
+      }),
+    })
+      .then(async (res) => {
+        if (res.status === 429) {
+          setErrors({ message: 'Too many submissions — please wait a minute and try again.' });
+          setSubmitting(false);
+          return;
+        }
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setErrors({ message: body.detail || 'Submission failed. Please email us directly.' });
+          setSubmitting(false);
+          return;
+        }
+        setSubmitting(false);
+        onClose?.();
+        navigate('/thank-you');
+      })
+      .catch(() => {
+        setErrors({ message: 'Network error — please email shivamgawade.dev@gmail.com directly.' });
+        setSubmitting(false);
+      });
   };
 
   return (

@@ -6,8 +6,8 @@ import { usePageMetadata } from '../utils/usePageMetadata';
 
 export default function PrivacyPolicyPage() {
   usePageMetadata({
-    title: 'Privacy Policy & Governance — EarthSift Open Science',
-    description: 'Privacy policy and governance protocol for EarthSift: zero tracking, complete data minimization, and strict open-science compliance for NASA Space Apps 2026.',
+    title: 'Privacy Policy & Governance — Tellura Open Science',
+    description: 'Privacy policy and governance protocol for Tellura: zero tracking, complete data minimization, and strict open-science compliance for NASA Space Apps 2026.',
     canonicalPath: '/privacy',
   });
 
@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
             Privacy Policy
           </h1>
           <p className="text-xs text-[var(--color-text-muted)] font-mono">
-            Effective Date: October 19, 2026 • EarthSift Open Science Protocol
+            Effective Date: October 19, 2026 • Tellura Open Science Protocol
           </p>
         </header>
 
@@ -39,7 +39,7 @@ export default function PrivacyPolicyPage() {
               1. Fundamental Privacy Commitment
             </h2>
             <p>
-              EarthSift is an open-science climate trend discovery instrument built for the NASA Space Apps Challenge 2026. We are committed to transparency, data minimization, and the complete elimination of surveillance capitalism. We do not sell, rent, monetize, or broker any user data.
+              Tellura is an open-science climate trend discovery instrument built for the NASA Space Apps Challenge 2026. We are committed to transparency, data minimization, and the complete elimination of surveillance capitalism. We do not sell, rent, monetize, or broker any user data.
             </p>
           </section>
 
@@ -57,11 +57,11 @@ export default function PrivacyPolicyPage() {
               3. Local Browser Storage
             </h2>
             <p>
-              EarthSift utilizes client-side Web Storage APIs (<code>localStorage</code> and IndexedDB) strictly for functional application performance:
+              Tellura utilizes client-side Web Storage APIs (<code>localStorage</code> and IndexedDB) strictly for functional application performance:
             </p>
             <ul className="list-disc pl-5 space-y-1.5 text-xs font-mono">
-              <li><code>earthsift_theme</code>: Remembers your Light or Dark display choice.</li>
-              <li><code>earthsift_consent</code>: Records your acknowledgment of local preference storage.</li>
+              <li><code>Tellura_theme</code>: Remembers your Light or Dark display choice.</li>
+              <li><code>Tellura_consent</code>: Records your acknowledgment of local preference storage.</li>
               <li><code>earthdata_cache</code>: Caches recent NASA satellite query bounding boxes locally on your machine to prevent redundant network bandwidth consumption.</li>
             </ul>
             <p>
@@ -83,7 +83,7 @@ export default function PrivacyPolicyPage() {
               5. Analytics and 'Do Not Track' Respect
             </h2>
             <p>
-              EarthSift respects standard browser privacy signals, including <code>navigator.doNotTrack</code> and Global Privacy Control (GPC). If your browser transmits a Do Not Track header, all client-side event tracking is unconditionally disabled.
+              Tellura respects standard browser privacy signals, including <code>navigator.doNotTrack</code> and Global Privacy Control (GPC). If your browser transmits a Do Not Track header, all client-side event tracking is unconditionally disabled.
             </p>
           </section>
 
@@ -92,7 +92,7 @@ export default function PrivacyPolicyPage() {
               6. Open Source Verification
             </h2>
             <p>
-              In accordance with NASA Open Science directives, the entire source code of EarthSift is publicly inspectable on GitHub. You can review and verify our client-side storage, networking calls, and cryptographic hashing directly in the repository:
+              In accordance with NASA Open Science directives, the entire source code of Tellura is publicly inspectable on GitHub. You can review and verify our client-side storage, networking calls, and cryptographic hashing directly in the repository:
             </p>
             <p className="font-mono text-xs">
               <a
@@ -116,7 +116,7 @@ export default function PrivacyPolicyPage() {
             <div className="bg-[var(--color-bg-elevated)] p-4 rounded border border-[var(--color-border-subtle)] font-mono text-xs space-y-1.5">
               <div><strong>Project Maintainer:</strong> Shivam Gawade</div>
               <div><strong>Lead Engineering Contact:</strong> <a href="mailto:shivamgawade.dev@gmail.com" className="text-[var(--color-accent-blue)] hover:underline">shivamgawade.dev@gmail.com</a></div>
-              <div><strong>Institutional Inquiries:</strong> <a href="mailto:contact@earthsift.org" className="text-[var(--color-accent-blue)] hover:underline">contact@earthsift.org</a></div>
+              <div><strong>Institutional Inquiries:</strong> <a href="mailto:contact@Tellura.org" className="text-[var(--color-accent-blue)] hover:underline">contact@Tellura.org</a></div>
               <div><strong>Challenge Team:</strong> NASA Space Apps Challenge 2026 Global Participant</div>
             </div>
           </section>

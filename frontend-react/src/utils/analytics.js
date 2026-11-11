@@ -3,6 +3,9 @@
  * Compliant with GDPR, ePrivacy, and CCPA.
  * Zero third-party trackers, zero persistent tracking cookies, zero PII collection.
  * Strictly respects 'Do Not Track' (DNT) and explicit cookie consent preferences.
+ *
+ * Events are POSTed to /api/v1/telemetry (self-hosted FastAPI endpoint).
+ * Falls back to CustomEvent-only when endpoint is unreachable.
  */
 import { safeStorage } from './safeStorage';
 
@@ -12,41 +15,35 @@ const DNT_ENABLED = typeof navigator !== 'undefined' && (
   window.doNotTrack === '1'
 );
 
+// Self-hosted endpoint (Vite env var, falls back to relative path)
+const ENDPOINT = import.meta.env.VITE_ANALYTICS_ENDPOINT || '/api/v1/telemetry';
+
 export function trackEvent(eventName, properties = {}) {
-  if (DNT_ENABLED) {
-    return; // User has requested not to be tracked via browser DNT
-  }
+  if (DNT_ENABLED) return;
 
-  // Check user consent banner preference
-  const consent = safeStorage.getItem('earthsift_consent');
-  if (consent === 'essential_only') {
-    return; // User explicitly selected essential-only storage
-  }
+  const consent = safeStorage.getItem('tellura_consent');
+  if (consent === 'essential_only') return;
 
-  // Safe client telemetry payload
   const payload = {
     event: eventName,
-    timestamp: new Date().toISOString(),
-    route: typeof window !== 'undefined' ? window.location.pathname : '',
-    ...properties,
+    page: typeof window !== 'undefined' ? window.location.pathname : '',
+    properties: {
+      timestamp: new Date().toISOString(),
+      ...properties,
+    },
   };
 
-  if (process.env.NODE_ENV === 'development') {
-    // Audit telemetry payload in development console
-    // console.debug('[EarthSift Telemetry]', payload);
-  }
-
-  // Dispatch via navigator.sendBeacon if configured or dispatch custom window event
   try {
     if (typeof window !== 'undefined') {
+      // 1. Fire-and-forget POST to our own backend telemetry endpoint
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      navigator.sendBeacon(ENDPOINT, blob);
+
+      // 2. Also dispatch local CustomEvent for any in-page listeners
       window.dispatchEvent(new CustomEvent('earthsift:telemetry', { detail: payload }));
-      if (window.EARTHSIFT_ANALYTICS_ENDPOINT) {
-        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-        navigator.sendBeacon(window.EARTHSIFT_ANALYTICS_ENDPOINT, blob);
-      }
     }
   } catch {
-    // Silent failover
+    // Silent failover — telemetry must never break the app
   }
 }
 
