@@ -15,7 +15,7 @@ export default function Footer() {
           <div className="flex items-center gap-2.5">
             <img
               src="/favicon.svg"
-              alt="Tellura Earth System Trend Detective icon"
+              alt="Tellura Planetary Intelligence icon"
               className="w-5 h-5 rounded object-contain shrink-0"
               width="20"
               height="20"
@@ -24,7 +24,7 @@ export default function Footer() {
               Tellura
             </span>
             <span className="text-[10px] font-mono text-[var(--color-text-muted)] tracking-wider">
-              Earth System Trend Instrument
+              Planetary Intelligence
             </span>
           </div>
           <p className="text-[var(--color-text-muted)] text-[11px] leading-relaxed">

@@ -97,7 +97,7 @@ export default function Header() {
           >
             <img
               src="/favicon.svg"
-              alt="Tellura Earth System Trend Detective brand mark"
+              alt="Tellura Planetary Intelligence brand mark"
               className="w-7 h-7 rounded object-contain shadow-xs shrink-0"
               width="28"
               height="28"
@@ -107,7 +107,7 @@ export default function Header() {
                 Tellura
               </span>
               <span className="text-[9px] font-mono tracking-wider text-[var(--color-text-muted)] hidden sm:inline-block">
-                Atmospheric Trend Analysis
+                Planetary Intelligence
               </span>
             </div>
           </Link>

@@ -1,23 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="12" fill="#0A0F1E"/>
-  <!-- Rising trend line: bottom-left to top-right -->
-  <polyline
-    points="10,52 24,38 36,42 50,18"
-    stroke="#FFFFFF"
-    stroke-width="4"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    fill="none"
-  />
-  <!-- Satellite orbit arc at the peak -->
-  <ellipse
-    cx="50" cy="14"
-    rx="10" ry="5"
-    stroke="#00E5FF"
-    stroke-width="2.5"
-    fill="none"
-    transform="rotate(-30 50 14)"
-  />
-  <!-- Satellite dot -->
-  <circle cx="57" cy="10" r="2" fill="#00E5FF"/>
+  <rect width="64" height="64" rx="12.8" fill="#0B1120"/>
+  <!-- White top-left arc -->
+  <path d="M 16.71 43.61 A 19.20 19.20 0 0 0 47.29 20.39" 
+        stroke="#F8FAFC" stroke-width="3.87" stroke-linecap="round" fill="none"/>
+  <!-- Blue bottom-right arc -->
+  <path d="M 49.90 25.06 A 19.20 19.20 0 0 0 14.10 38.94" 
+        stroke="#2563EB" stroke-width="3.87" stroke-linecap="round" fill="none"/>
+  <!-- Diagonal Signal line -->
+  <line x1="7.42" y1="45.74" x2="57.70" y2="17.64" 
+        stroke="#2563EB" stroke-width="2.13" stroke-linecap="round"/>
+  <!-- Satellite node/dot -->
+  <circle cx="48.76" cy="22.63" r="2.90" fill="#2563EB"/>
+  <circle cx="48.76" cy="22.63" r="1.36" fill="#F8FAFC"/>
 </svg>
