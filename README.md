@@ -1,18 +1,19 @@
-# EarthSift: Spatiotemporal Climate Trend Discovery System
+# Tellura: Spatiotemporal Climate Trend Discovery System
 
 ## *The Next-Generation Empirical Analytics & Physical Attribution Workstation for NASA Earth Observations*
+*(Formerly EarthSift — NASA Space Apps Challenge 2026 Nominee)*
 
 [![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-Global%20Nominee%202026-0B3D91?style=for-the-badge&logo=nasa)](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/)
 [![Tests: 337 Passing](https://img.shields.io/badge/Tests-337%20Passing%20(100%25)-success?style=for-the-badge)](backend/tests/)
 [![Conventions: CF-1.8](https://img.shields.io/badge/Conventions-CF--1.8%20NetCDF--4-blue?style=for-the-badge)](https://cfconventions.org/)
 [![Standards: NASA Open Science](https://img.shields.io/badge/Standards-NASA%20Open%20Science-blue?style=for-the-badge)](https://science.nasa.gov/open-science/)
 [![Reproducibility: Google Colab Ready](https://img.shields.io/badge/Reproducibility-Google%20Colab%20Ready-F9AB00?style=for-the-badge&logo=googlecolab)](notebooks/)
-[![Code Quality: Oxlint Clean](https://img.shields.io/badge/Code%20Quality-0%20Warnings%20%2F%200%20Errors-brightgreen?style=for-the-badge)](#7-verification--telemetry-9090-passing-tests)
+[![Code Quality: Oxlint Clean](https://img.shields.io/badge/Code%20Quality-0%20Warnings%20%2F%200%20Errors-brightgreen?style=for-the-badge)](#7-verification--observability-337337-passing-tests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 ---
 
-## 1. Executive Summary & Why EarthSift Wins
+## 1. Executive Summary & Why Tellura Wins
 
 Most climate visualization tools suffer from three fatal scientific flaws:
 
@@ -20,7 +21,7 @@ Most climate visualization tools suffer from three fatal scientific flaws:
 2. **The Red-Noise Mirage**: They fail to correct for temporal serial autocorrelation, creating hundreds of "statistically significant" trends that are merely random climate inertia.
 3. **The Multiplicity Trap**: Evaluating thousands of spatial pixels simultaneously inflates Type-I errors, resulting in false discoveries across large swathes of the globe.
 
-**EarthSift fundamentally solves all three.** Built specifically for the NASA Space Apps Challenge (*"Be An Earth System Trend Detective!"*), EarthSift is a production-grade spatiotemporal analytics workstation designed to detect, verify, spatially cluster, and physically attribute true multi-decadal monotonic climate drift across NASA Earth observation archives.
+**Tellura fundamentally solves all three.** Built specifically for the NASA Space Apps Challenge (*"Be An Earth System Trend Detective!"*), Tellura is a production-grade spatiotemporal analytics workstation designed to detect, verify, spatially cluster, and physically attribute true multi-decadal monotonic climate drift across NASA Earth observation archives.
 
 ```text
 ═════════════════════════════════════════════════════════════════════════════════════════
@@ -226,35 +227,29 @@ EarthSift is built on the tenet that **an analysis is only as good as its indepe
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### 6.1 Cascading Multi-LLM Scientific Explainer & NLQ Copilot
+
+Tellura integrates a multi-tier LLM fallback cascade designed for zero downtime, strict numerical fidelity, and budget protection:
+
+1. **Tier 1 (Primary)**: **Google Gemini** (`gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-2.5-flash`) via `generativelanguage.googleapis.com` for rapid, high-fidelity scientific synthesis.
+2. **Tier 2 (Ultra-Fast Secondary Fallback)**: **Groq Cloud** (`qwen/qwen3.8-27b`, `openai/gpt-oss-120b`) via `api.groq.com` or **xAI Grok** (`grok-2-mini`, `grok-beta`) via `api.x.ai` (auto-detected via key prefix `gsk_...` vs `xai-...`).
+3. **Tier 3 (Tertiary Fallback)**: **OpenAI** (`gpt-4o-mini`) via `api.openai.com`.
+4. **Tier 4 (Guaranteed Offline Base)**: **Deterministic Scientific Template Engine** (0.5 ms execution, 100% offline uptime, zero hallucinations, verified p/q-values, and peer-reviewed DOI citations).
+5. **Guardrails & Budget Caps**: Strict XML evidence containment (`<evidence_context>`), temperature 0.2, regex anti-injection sanitization, numerical value validation, and a daily spend cap (`DailyLLMBudgetTracker` default 200 calls/day for anonymous queries). Every response carries an inspectable provenance badge (`model_used`).
+
 ---
 
-## 7. Verification & Telemetry (90/90 Passing Tests)
+## 7. Verification & Observability (337/337 Passing Tests)
 
-EarthSift is backed by an automated test suite verifying scientific accuracy, numerical convergence, edge cases, and cybersecurity hardening.
+Tellura is backed by an extensive automated test suite verifying scientific accuracy, numerical convergence, edge cases, rate limiting, and cybersecurity hardening:
 
 ```bash
 cd backend
-pytest -v
+python -m pytest backend/tests -v
 ```
 
 ```text
-================================== test session starts ===================================
-platform win32 -- Python 3.12.x, pytest-8.x.x
-collected 90 items
-
-tests/test_adapter.py .................                                           [ 12%]
-tests/test_api.py ...........                                                     [ 24%]
-tests/test_application.py ............                                            [ 37%]
-tests/test_attribution.py ....                                                    [ 41%]
-tests/test_audit_fixes.py ........                                                [ 50%]
-tests/test_championship_features.py .....                                         [ 55%]
-tests/test_db_cache.py .                                                          [ 56%]
-tests/test_omni_scale.py .........                                                [ 66%]
-tests/test_phase6_features.py .                                                   [ 67%]
-tests/test_security_hardening.py ................                                 [ 85%]
-tests/test_trend.py .............                                                 [100%]
-
-======================== 90 passed, 1 warning in 31.96s (100%) ========================
+======================= 337 passed in 71.88s (100%) =======================
 ```
 
 ### Verified Test Matrix
@@ -264,6 +259,8 @@ tests/test_trend.py .............                                               
 - **`test_omni_scale.py`**: Validates Burrows climate velocity vector fields, Archimedean copula return periods, and natural language query parser.
 - **`test_security_hardening.py`**: Verifies OWASP security headers, CORS strictness, payload DOS limits, bounding box sanitization, and HMAC tamper detection.
 - **`test_championship_features.py`**: Verifies Pettitt changepoints, Jupyter notebook generation, and system metrics.
+- **`test_phase6_features.py`**: Verifies NetCDF-4 CF-1.8 export, GeoJSON generation, Google Colab launchers, and xAI Grok / Groq Cloud LLM fallback.
+- **`test_db_cache.py`**: Verifies SQLite B-tree WAL cache persistence, HMAC-SHA256 signature sealing, and privacy-preserving telemetry aggregation.
 
 ---
 
@@ -349,5 +346,5 @@ If you use EarthSift in academic work, please cite:
 
 ## 11. License & Team Attribution
 
-EarthSift is open-source software released under the [MIT License](LICENSE).  
-Developed for the **NASA International Space Apps Challenge 2026** by the **EarthSift Team** (`CertXchange@gmail.com`).
+Tellura is open-source software released under the [MIT License](LICENSE).  
+Developed for the **NASA International Space Apps Challenge 2026** by the **Tellura Team** (`nsc26cs@gmail.com`).

@@ -124,6 +124,29 @@ For any analyzed variable, EarthSift deterministically answers:
 * **Acoustic Sonification:** Native browser **Web Audio API** (`audio.js`, `sonification.js`) pitch-mapping warming and cooling velocities into audible soundscapes with comprehensive node cleanup.
 * **Evidence Panel:** Displays live computed domain metrics, confidence intervals, Moran's I spatial coherence, data completeness, DOI links, and provenance warnings.
 
+### 4.5 Multi-LLM Scientific Explainer & NLQ Copilot (`/backend/app/science`)
+* **Downstream Scientific Explainer (`explainer.py`):** Translates verified empirical calculations into peer-reviewed scientific English without hallucination. Enforces strict XML evidence boundaries (`<evidence_context>`), temperature 0.2, and numerical preservation checks.
+* **Cascading Multi-Provider Architecture:**
+  1. **Primary**: Google Gemini (`gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-2.5-flash`).
+  2. **Secondary Fallback**: Groq Cloud ultra-fast LLaMA (`api.groq.com`) or xAI Grok (`api.x.ai`).
+  3. **Tertiary Fallback**: OpenAI (`gpt-4o-mini`).
+  4. **Quaternary Base**: Zero-hallucination deterministic scientific template engine.
+* **Natural Language Query Copilot (`nlq_parser.py`):** Translates freeform research inquiries (e.g., *"Show warming in Tibetan Plateau between 2005 and 2022"*) into structured bounding boxes, variable IDs, and temporal horizons using regex caching coupled with LLM JSON schema extraction.
+* **Resource Protection & Spend Caps (`auth.py`):** Implements `DailyLLMBudgetTracker` capping anonymous external LLM calls to 200/day, gracefully degrading to deterministic templates once exhausted to protect project compute budgets.
+
+### 4.6 Privacy-Preserving Telemetry & Observability (`/backend/app/core`)
+* **Self-Hosted Telemetry:** `POST /api/v1/telemetry` stores anonymized route views and query dataset frequencies in local SQLite B-trees.
+* **Zero PII & GDPR/CCPA Compliance:** Unconditionally honors `Do Not Track` (`navigator.doNotTrack === '1'`) and user cookie consent preferences. Collects zero IP addresses, zero device fingerprints, and zero advertising trackers.
+* **Prometheus Observability:** Exposes live system metrics at `/metrics` and `/metrics/prometheus` for server health, memory RSS, cache hit ratios, and computed trend telemetry.
+
+### 4.7 Zero-Synthetic Guarantee (`/backend/app/adapters`)
+* **Strict Real Data Mandate:** In production mode (`STRICT_ZERO_SYNTHETIC=true`), synthetic data generation is permanently prohibited. If a NetCDF granule is unavailable, the system raises an explicit HTTP 503 guidance error instead of fabricating numbers.
+* **Live Streaming:** Streams authentic NASA POWER and MERRA-2 Earth observations covering global coordinates from 1980 to 2026.
+
+### 4.8 Transactional Communications (`/backend/app/core/mailer.py`)
+* **Python Standard Library Mailer:** Direct SMTP dispatch using Python stdlib `smtplib` and `email.message.EmailMessage` over SSL/TLS port 587.
+* **Zero Message Loss Queue:** If offline or credentials pending, submissions are safely archived to a local JSON inbox queue (`backend/data/inbox/`) with unique UUID receipt identifiers.
+
 ---
 
 ## 5. UI Workspace Layout

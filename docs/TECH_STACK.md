@@ -1,12 +1,12 @@
-# EarthSift — Technical Stack & Dependency Architecture
+# Tellura — Technical Stack & Dependency Architecture
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
-**Verified:** 2026-10-21  
+**Verified:** 2026-11-11  
 
 ---
 
 ## 1. Architecture Overview
-EarthSift is structured as a decoupled scientific computing platform with a high-performance Python FastAPI backend service executing vectorized mathematical trend models, and a modern React 19 + Vite 8 single-page application (SPA) featuring off-thread Web Worker statistical acceleration and dual 2D/3D geospatial visualization.
+Tellura is structured as a decoupled scientific computing platform with a high-performance Python FastAPI backend service executing vectorized mathematical trend models, and a modern React 19 + Vite 8 single-page application (SPA) featuring off-thread Web Worker statistical acceleration and dual 2D/3D geospatial visualization.
 
 ```
                           ┌──────────────────────────────────────────────┐
@@ -53,9 +53,10 @@ EarthSift is structured as a decoupled scientific computing platform with a high
 | **NetCDF IO** | netCDF4 & h5netcdf | >=1.6.5 / >=1.3.0 | Binary CF-1.8 compliant NetCDF file generation and NASA granule inspection. |
 | **NASA CMR Access** | earthaccess | >=0.19.0 | Client library for NASA Common Metadata Repository (CMR) search and Earthdata streaming. |
 | **Rate Limiting** | SlowAPI & Limits | >=0.1.9 / >=3.10.0 | IP-based request throttling with trusted proxy header parsing and RFC 6585 compliance. |
+| **Multi-LLM Synthesis** | Google Gemini / Groq / xAI Grok / OpenAI | REST APIs | Multi-tier AI explainer & NLQ copilot cascade with deterministic offline fallback and daily spend tracker. |
 | **Configuration** | python-dotenv | >=1.0.1 | Type-safe environment variable resolution across development and production containers. |
 | **System Metrics** | psutil | >=5.9.0 | Hardware resource monitoring (RAM, CPU, disk) for system readiness checks. |
-| **Test Suite** | pytest | >=8.0.0 (9.0.3) | Complete test suite (138 tests) covering unit math, security hardening, cache concurrency, and API integrity. |
+| **Test Suite** | pytest | >=8.0.0 (9.0.3) | Complete test suite (337 tests passing in 71s) covering unit math, security hardening, cache concurrency, and API integrity. |
 | **HTTP Client** | HTTPX | >=0.27.0 (0.28.1) | Synchronous and asynchronous ASGI test client for endpoint validation. |
 
 ---
@@ -86,4 +87,4 @@ EarthSift is structured as a decoupled scientific computing platform with a high
 2. **In-House Vectorized NumPy/SciPy Statistical Engine:** Avoids black-box dependencies (`pymannkendall`, `xclim`) in favor of our own rigorously tested 3D vectorized engine (`trend.py`) supporting Hamed & Rao (1998) serial autocorrelation corrections, Gilbert (1987) non-parametric confidence bounds, and Benjamini-Hochberg FDR control at $\alpha = 0.05$.
 3. **Dual 2D/3D Geospatial Visualization:** Combines Leaflet 1.9.4 Canvas rendering for micro-scale grid cell inspection with a custom HTML5 Canvas 3D orthographic globe (`PlanetaryGlobe3D.jsx`) for macro-scale hemispheric overview, requiring zero WebGL runtime complexity or external map vendor tokens.
 4. **Cryptographic HMAC-SHA256 SQLite Cache:** Persists analysis metadata and compressed payloads in a high-concurrency SQLite WAL database with thread-local connections and cryptographic HMAC signing to eliminate deserialization exploits and redundant NASA API queries.
-5. **Deterministic Fallback Explainer with AI Transparency:** When an OpenAI/Anthropic API key is absent, the system deterministically constructs peer-review-grade natural language evidence summaries directly from the verified mathematical record, guaranteeing zero numerical hallucinations.
+5. **Multi-LLM Fallback Cascade with Zero-Hallucination Guardrails:** Employs Google Gemini (`gemini-flash-lite-latest`) as primary, cascading seamlessly to Groq Cloud (`qwen/qwen3.8-27b`) or xAI Grok, then OpenAI (`gpt-4o-mini`), and finally an offline deterministic scientific template engine. Enforces strict XML evidence containment (`<evidence_context>`), mathematical value preservation, and a daily spend cap (`DailyLLMBudgetTracker` at 200 calls/day). Every response carries full provenance labeling.
