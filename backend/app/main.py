@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Tellura Scientific API",
+    title="EarthSift Scientific API",
     description="Evidence-first Earth-system trend discovery platform for NASA Space Apps 2026.",
     version="1.0.0",
     lifespan=lifespan,
@@ -303,7 +303,7 @@ def get_metrics(request: Request):
     from app.api.endpoints import ANALYSIS_CACHE
     from app.core.db_cache import get_cache_db_stats, get_telemetry_aggregates
     return {
-        "service": "Tellura Scientific API",
+        "service": "EarthSift Scientific API",
         "version": settings.VERSION,
         "uptime_seconds": round(uptime, 1),
         "cached_analyses": len(ANALYSIS_CACHE),

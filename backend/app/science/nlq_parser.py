@@ -1,5 +1,5 @@
 """
-Tellura — Natural Language Spatiotemporal Query Parser (NLQ)
+EarthSift — Natural Language Spatiotemporal Query Parser (NLQ)
 Converts human natural language scientific queries into structured Pydantic AnalysisRequests.
 
 Strategy:

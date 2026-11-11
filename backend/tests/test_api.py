@@ -29,7 +29,7 @@ def test_health_check_endpoints():
         assert res.status_code == 200
         data = res.json()
         assert data["status"] == "healthy"
-        assert "Tellura" in data["service"]
+        assert "EarthSift" in data["service"]
         assert "engine" in data
 
     # 2. GET /ready and /api/v1/ready

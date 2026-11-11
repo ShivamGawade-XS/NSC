@@ -216,7 +216,7 @@ def test_system_metrics_and_readiness():
     m_res = client.get("/metrics")
     assert m_res.status_code == 200
     m_data = m_res.json()
-    assert m_data["service"] == "Tellura Scientific API"
+    assert m_data["service"] == "EarthSift Scientific API"
     assert "uptime_seconds" in m_data
     assert "memory_rss_mb" in m_data
     assert "telemetry" in m_data

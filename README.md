@@ -1,8 +1,6 @@
-# Tellura: Spatiotemporal Climate Trend Discovery System
+# EarthSift: Spatiotemporal Climate Trend Discovery System
 
 ## *The Next-Generation Empirical Analytics & Physical Attribution Workstation for NASA Earth Observations*
-*(Formerly EarthSift — NASA Space Apps Challenge 2026 Nominee)*
-
 [![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-Global%20Nominee%202026-0B3D91?style=for-the-badge&logo=nasa)](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/)
 [![Tests: 337 Passing](https://img.shields.io/badge/Tests-337%20Passing%20(100%25)-success?style=for-the-badge)](backend/tests/)
 [![Conventions: CF-1.8](https://img.shields.io/badge/Conventions-CF--1.8%20NetCDF--4-blue?style=for-the-badge)](https://cfconventions.org/)
@@ -13,7 +11,7 @@
 
 ---
 
-## 1. Executive Summary & Why Tellura Wins
+## 1. Executive Summary & Why EarthSift Wins
 
 Most climate visualization tools suffer from three fatal scientific flaws:
 
@@ -21,7 +19,7 @@ Most climate visualization tools suffer from three fatal scientific flaws:
 2. **The Red-Noise Mirage**: They fail to correct for temporal serial autocorrelation, creating hundreds of "statistically significant" trends that are merely random climate inertia.
 3. **The Multiplicity Trap**: Evaluating thousands of spatial pixels simultaneously inflates Type-I errors, resulting in false discoveries across large swathes of the globe.
 
-**Tellura fundamentally solves all three.** Built specifically for the NASA Space Apps Challenge (*"Be An Earth System Trend Detective!"*), Tellura is a production-grade spatiotemporal analytics workstation designed to detect, verify, spatially cluster, and physically attribute true multi-decadal monotonic climate drift across NASA Earth observation archives.
+**EarthSift fundamentally solves all three.** Built specifically for the NASA Space Apps Challenge (*"Be An Earth System Trend Detective!"*), EarthSift is a production-grade spatiotemporal analytics workstation designed to detect, verify, spatially cluster, and physically attribute true multi-decadal monotonic climate drift across NASA Earth observation archives.
 
 ```text
 ═════════════════════════════════════════════════════════════════════════════════════════
@@ -229,7 +227,7 @@ EarthSift is built on the tenet that **an analysis is only as good as its indepe
 
 ### 6.1 Cascading Multi-LLM Scientific Explainer & NLQ Copilot
 
-Tellura integrates a multi-tier LLM fallback cascade designed for zero downtime, strict numerical fidelity, and budget protection:
+EarthSift integrates a multi-tier LLM fallback cascade designed for zero downtime, strict numerical fidelity, and budget protection:
 
 1. **Tier 1 (Primary)**: **Google Gemini** (`gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-2.5-flash`) via `generativelanguage.googleapis.com` for rapid, high-fidelity scientific synthesis.
 2. **Tier 2 (Ultra-Fast Secondary Fallback)**: **Groq Cloud** (`qwen/qwen3.8-27b`, `openai/gpt-oss-120b`) via `api.groq.com` or **xAI Grok** (`grok-2-mini`, `grok-beta`) via `api.x.ai` (auto-detected via key prefix `gsk_...` vs `xai-...`).
@@ -241,7 +239,7 @@ Tellura integrates a multi-tier LLM fallback cascade designed for zero downtime,
 
 ## 7. Verification & Observability (337/337 Passing Tests)
 
-Tellura is backed by an extensive automated test suite verifying scientific accuracy, numerical convergence, edge cases, rate limiting, and cybersecurity hardening:
+EarthSift is backed by an extensive automated test suite verifying scientific accuracy, numerical convergence, edge cases, rate limiting, and cybersecurity hardening:
 
 ```bash
 cd backend
@@ -346,5 +344,5 @@ If you use EarthSift in academic work, please cite:
 
 ## 11. License & Team Attribution
 
-Tellura is open-source software released under the [MIT License](LICENSE).  
-Developed for the **NASA International Space Apps Challenge 2026** by the **Tellura Team** (`nsc26cs@gmail.com`).
+EarthSift is open-source software released under the [MIT License](LICENSE).  
+Developed for the **NASA International Space Apps Challenge 2026** by the **EarthSift Team** (`nsc26cs@gmail.com`).

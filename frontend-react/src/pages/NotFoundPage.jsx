@@ -6,8 +6,8 @@ import { playTactileClick } from '../utils/audio';
 
 export default function NotFoundPage() {
   usePageMetadata({
-    title: '404: Route Not Found — Tellura',
-    description: 'The requested scientific instrument route or resource does not exist in this Tellura deployment.',
+    title: '404: Route Not Found — EarthSift',
+    description: 'The requested scientific instrument route or resource does not exist in this EarthSift deployment.',
     canonicalPath: '/404',
   });
 

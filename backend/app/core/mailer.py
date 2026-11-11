@@ -76,7 +76,7 @@ def send_contact_inquiry(
         }
 
     msg = EmailMessage()
-    msg["Subject"] = f"[Tellura Contact] {topic} — from {name} [{receipt_id}]"
+    msg["Subject"] = f"[EarthSift Contact] {topic} — from {name} [{receipt_id}]"
     msg["From"] = smtp_user
     msg["To"] = recipient
     msg["Reply-To"] = email

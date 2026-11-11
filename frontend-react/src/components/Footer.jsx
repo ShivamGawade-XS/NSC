@@ -15,13 +15,13 @@ export default function Footer() {
           <div className="flex items-center gap-2.5">
             <img
               src="/favicon.svg"
-              alt="Tellura Earth System Trend Detective icon"
+              alt="EarthSift Earth System Trend Detective icon"
               className="w-5 h-5 rounded object-contain shrink-0"
               width="20"
               height="20"
             />
             <span className="font-['Space_Grotesk'] font-bold text-sm text-[var(--color-text-main)]">
-              Tellura
+              EarthSift
             </span>
             <span className="text-[10px] font-mono text-[var(--color-text-muted)] tracking-wider">
               Earth System Trend Instrument

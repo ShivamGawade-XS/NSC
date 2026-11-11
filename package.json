@@ -1,8 +1,8 @@
 {
-  "name": "tellura-workspace",
+  "name": "earthsift-workspace",
   "private": true,
   "version": "1.0.0",
-  "description": "Tellura — Autonomous Spatial Trend Discovery Instrument for NASA Earth Observations",
+  "description": "EarthSift — Autonomous Spatial Trend Discovery Instrument for NASA Earth Observations",
   "scripts": {
     "dev": "npm --prefix frontend-react run dev",
     "build": "npm --prefix frontend-react run build",

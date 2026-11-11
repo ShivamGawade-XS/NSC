@@ -14,7 +14,7 @@ export default function Header() {
   const [contactOpen, setContactOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;
-    const savedTheme = safeStorage.getItem('tellura_theme');
+    const savedTheme = safeStorage.getItem('earthsift_theme');
     if (savedTheme) return savedTheme === 'dark';
     return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true;
   });
@@ -34,10 +34,10 @@ export default function Header() {
     setIsDark(nextDark);
     if (nextDark) {
       document.documentElement.classList.add('dark');
-      safeStorage.setItem('tellura_theme', 'dark');
+      safeStorage.setItem('earthsift_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      safeStorage.setItem('tellura_theme', 'light');
+      safeStorage.setItem('earthsift_theme', 'light');
     }
   };
 
@@ -93,11 +93,11 @@ export default function Header() {
           <Link
             to="/"
             className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0066ff] rounded py-1 px-1"
-            aria-label="Tellura Home"
+            aria-label="EarthSift Home"
           >
             <img
               src="/favicon.svg"
-              alt="Tellura Earth System Trend Detective brand mark"
+              alt="EarthSift Earth System Trend Detective brand mark"
               className="w-7 h-7 rounded object-contain shadow-xs shrink-0"
               width="28"
               height="28"

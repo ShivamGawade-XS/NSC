@@ -30,7 +30,7 @@ class Settings:
     """Core application settings with NASA Earthdata integration."""
 
     # Application Info
-    APP_NAME: str = "Tellura Scientific API"
+    APP_NAME: str = "EarthSift Scientific API"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 

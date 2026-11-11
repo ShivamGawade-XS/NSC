@@ -21,7 +21,7 @@ const ENDPOINT = import.meta.env.VITE_ANALYTICS_ENDPOINT || '/api/v1/telemetry';
 export function trackEvent(eventName, properties = {}) {
   if (DNT_ENABLED) return;
 
-  const consent = safeStorage.getItem('tellura_consent');
+  const consent = safeStorage.getItem('earthsift_consent');
   if (consent === 'essential_only') return;
 
   const payload = {

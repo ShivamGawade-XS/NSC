@@ -1,4 +1,4 @@
-# Tellura — Technical Stack & Dependency Architecture
+# EarthSift — Technical Stack & Dependency Architecture
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Verified:** 2026-11-11  
@@ -6,7 +6,7 @@
 ---
 
 ## 1. Architecture Overview
-Tellura is structured as a decoupled scientific computing platform with a high-performance Python FastAPI backend service executing vectorized mathematical trend models, and a modern React 19 + Vite 8 single-page application (SPA) featuring off-thread Web Worker statistical acceleration and dual 2D/3D geospatial visualization.
+EarthSift is structured as a decoupled scientific computing platform with a high-performance Python FastAPI backend service executing vectorized mathematical trend models, and a modern React 19 + Vite 8 single-page application (SPA) featuring off-thread Web Worker statistical acceleration and dual 2D/3D geospatial visualization.
 
 ```
                           ┌──────────────────────────────────────────────┐

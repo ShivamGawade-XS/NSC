@@ -53,7 +53,7 @@ export function usePageMetadata({
     // 6. Canonical URL — dynamic, using window.location.origin at runtime
     const baseUrl = (typeof window !== 'undefined' ? window.location.origin : null)
       || import.meta.env.VITE_APP_URL
-      || 'https://tellura.shivamgawade.dev';
+      || 'https://earthsift.shivamgawade.dev';
     const canonicalUrl = `${baseUrl}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`;
     setMetaTag('property', 'og:url', canonicalUrl);
 

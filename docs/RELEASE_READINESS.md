@@ -1,4 +1,4 @@
-# Tellura — Release Readiness & Release Gate Audit
+# EarthSift — Release Readiness & Release Gate Audit
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/RELEASE_READINESS.md`  

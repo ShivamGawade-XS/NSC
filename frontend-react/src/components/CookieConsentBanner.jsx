@@ -7,7 +7,7 @@ export default function CookieConsentBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const consent = safeStorage.getItem('tellura_consent');
+    const consent = safeStorage.getItem('earthsift_consent');
     if (!consent) {
       // Delay slightly for smooth non-intrusive entrance
       const timer = setTimeout(() => setVisible(true), 1200);
@@ -17,13 +17,13 @@ export default function CookieConsentBanner() {
 
   const handleAccept = () => {
     playTactileClick(600);
-    safeStorage.setItem('tellura_consent', 'accepted');
+    safeStorage.setItem('earthsift_consent', 'accepted');
     setVisible(false);
   };
 
   const handleDecline = () => {
     playTactileClick(500);
-    safeStorage.setItem('tellura_consent', 'essential_only');
+    safeStorage.setItem('earthsift_consent', 'essential_only');
     setVisible(false);
   };
 
@@ -51,7 +51,7 @@ export default function CookieConsentBanner() {
             Privacy & Essential Storage
           </h4>
           <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed mb-3">
-            Tellura stores local preferences (theme selection, recent coordinate bounds, and cached NASA query responses) in your browser. We never deploy third-party advertising cookies or tracking scripts. Learn more in our{' '}
+            EarthSift stores local preferences (theme selection, recent coordinate bounds, and cached NASA query responses) in your browser. We never deploy third-party advertising cookies or tracking scripts. Learn more in our{' '}
             <Link to="/privacy" className="text-[var(--color-accent-blue)] underline hover:text-[var(--color-accent-blue-hover)]">
               Privacy Policy
             </Link>.

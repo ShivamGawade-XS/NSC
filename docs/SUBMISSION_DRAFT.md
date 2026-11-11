@@ -1,6 +1,6 @@
-# Tellura — NASA Space Apps 2026 Submission Document
+# EarthSift — NASA Space Apps 2026 Submission Document
 
-**Project Title:** Tellura (formerly EarthSift)  
+**Project Title:** EarthSift  
 **Challenge:** Be An Earth System Trend Detective!  
 **Tagline:** *Find the changes worth investigating.*  
 **Repository:** [https://github.com/ShivamGawade-XS/NSC](https://github.com/ShivamGawade-XS/NSC)  
@@ -12,9 +12,9 @@
 ## 1. High-Level Summary
 Change is pervasive across the Earth system. Yet when researchers test thousands of satellite and reanalysis grid cells simultaneously across multi-decadal timelines, conventional statistical tools encounter three fatal pitfalls: the linearity fallacy (spurious OLS regression lines over skewed data), the red-noise mirage (unadjusted serial autocorrelation manufacturing artificial significance), and the multiplicity trap (false discoveries from testing tens of thousands of spatial pixels without error-rate control).
 
-**Tellura** is an evidence-first, mathematically immutable spatiotemporal workstation engineered specifically for the NASA Space Apps Challenge (*"Be An Earth System Trend Detective!"*). Powered by live NASA Earth observations (NASA POWER ASDC & GMAO MERRA-2), Tellura pairs vectorized non-parametric Mann-Kendall trend tests, Hamed & Rao (1998) serial autocorrelation corrections, Sen's robust median slopes, Gilbert (1987) confidence intervals, and Benjamini-Hochberg False Discovery Rate (FDR) multiplicity control ($q \le 0.05$) into a blazing-fast, verifiable scientific instrument.
+**EarthSift** is an evidence-first, mathematically immutable spatiotemporal workstation engineered specifically for the NASA Space Apps Challenge (*"Be An Earth System Trend Detective!"*). Powered by live NASA Earth observations (NASA POWER ASDC & GMAO MERRA-2), EarthSift pairs vectorized non-parametric Mann-Kendall trend tests, Hamed & Rao (1998) serial autocorrelation corrections, Sen's robust median slopes, Gilbert (1987) confidence intervals, and Benjamini-Hochberg False Discovery Rate (FDR) multiplicity control ($q \le 0.05$) into a blazing-fast, verifiable scientific instrument.
 
-Beyond raw trend rates, Tellura delivers advanced physical attribution:
+Beyond raw trend rates, EarthSift delivers advanced physical attribution:
 - **Pettitt (1979) Regime Shift Detection**: Pinpoints exact non-parametric change-point years in multi-decadal series.
 - **Burrows et al. (Nature 2011) Climate Velocity**: Computes vector fields ($\text{km}/\text{decade}$) measuring the required spatial displacement pace for thermal envelopes.
 - **Archimedean Copulas**: Models joint bivariate return periods for compound climate hazards (e.g., heatwaves coupled with agricultural drought).
@@ -58,4 +58,4 @@ The NASA 2026 challenge *"Be An Earth System Trend Detective!"* asks teams to ex
 ---
 
 ## 5. Potential Impact
-Tellura delivers an uncompromisingly rigorous, inspectable instrument for climate scientists, environmental journalists, educators, and the public. By replacing statistical hallucinations with verifiable non-parametric mathematics, Tellura ensures that every detected trend is real, statistically sound, and physically grounded.
+EarthSift delivers an uncompromisingly rigorous, inspectable instrument for climate scientists, environmental journalists, educators, and the public. By replacing statistical hallucinations with verifiable non-parametric mathematics, EarthSift ensures that every detected trend is real, statistically sound, and physically grounded.
