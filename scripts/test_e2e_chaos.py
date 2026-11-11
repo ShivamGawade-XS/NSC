@@ -1,5 +1,5 @@
 """
-EarthSift — Real-Browser Playwright E2E Chaos Suite
+Tellura — Real-Browser Playwright E2E Chaos Suite
 Executes 5 Hostile Real-User Workflows against real FastAPI backend and Vite/React 19 SPA:
   1. Journey 1: Rapid Preset & Cell Clicking ("The Impatient Judge")
   2. Journey 2: Full Compound Hazard & Bivariate Drilldown

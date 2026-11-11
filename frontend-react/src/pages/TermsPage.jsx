@@ -6,8 +6,8 @@ import { usePageMetadata } from '../utils/usePageMetadata';
 
 export default function TermsPage() {
   usePageMetadata({
-    title: 'Terms of Service & Scientific Attribution — EarthSift',
-    description: 'Terms of service, open-science licensing (MIT), statistical disclaimers, and NASA Earthdata citation requirements for EarthSift.',
+    title: 'Terms of Service & Scientific Attribution — Tellura',
+    description: 'Terms of service, open-science licensing (MIT), statistical disclaimers, and NASA Earthdata citation requirements for Tellura.',
     canonicalPath: '/terms',
   });
 
@@ -39,7 +39,7 @@ export default function TermsPage() {
               1. Platform Purpose & License
             </h2>
             <p>
-              EarthSift is an evidence-first open science instrument developed for the NASA Space Apps Challenge 2026 challenge: <em>"Be an Earth System Trend Detective"</em>. The application and analytical algorithms are licensed under the terms of the MIT License, granting permission for free use, study, modification, and academic distribution.
+              Tellura is an evidence-first open science instrument developed for the NASA Space Apps Challenge 2026 challenge: <em>"Be an Earth System Trend Detective"</em>. The application and analytical algorithms are licensed under the terms of the MIT License, granting permission for free use, study, modification, and academic distribution.
             </p>
           </section>
 
@@ -48,7 +48,7 @@ export default function TermsPage() {
               2. Scientific Data Attribution
             </h2>
             <p>
-              Any academic publications, research dossiers, or derivative figures produced using EarthSift must appropriately cite the primary NASA observation sources:
+              Any academic publications, research dossiers, or derivative figures produced using Tellura must appropriately cite the primary NASA observation sources:
             </p>
             <div className="space-y-2 text-xs font-mono bg-[var(--color-bg-elevated)] p-4 rounded border border-[var(--color-border-subtle)]">
               <p>
@@ -67,10 +67,10 @@ export default function TermsPage() {
               3. Statistical Disclaimers
             </h2>
             <p>
-              EarthSift computes deterministic non-parametric statistics (Mann-Kendall rank correlation, Theil-Sen robust slope estimation, Benjamini-Hochberg FDR correction, and Anselin Local Moran’s I). While these mathematical models follow peer-reviewed scientific literature, observational reanalysis products are subject to sensor drift, reanalysis grid resolutions, and interpolation uncertainty.
+              Tellura computes deterministic non-parametric statistics (Mann-Kendall rank correlation, Theil-Sen robust slope estimation, Benjamini-Hochberg FDR correction, and Anselin Local Moran’s I). While these mathematical models follow peer-reviewed scientific literature, observational reanalysis products are subject to sensor drift, reanalysis grid resolutions, and interpolation uncertainty.
             </p>
             <p>
-              Data provided through EarthSift is intended for scientific research, educational exploration, and climate analysis. It should not be used as the sole basis for life-critical disaster management without consulting official regional meteorological authorities.
+              Data provided through Tellura is intended for scientific research, educational exploration, and climate analysis. It should not be used as the sole basis for life-critical disaster management without consulting official regional meteorological authorities.
             </p>
           </section>
 

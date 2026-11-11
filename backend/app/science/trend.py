@@ -1,5 +1,5 @@
 """
-EarthSift — Scientific Trend Analysis Engine
+Tellura — Scientific Trend Analysis Engine
 Implements non-parametric Mann-Kendall test, Hamed & Rao (1998) autocorrelation correction,
 Sen's slope (Theil-Sen robust estimator), and Benjamini-Hochberg False Discovery Rate (FDR).
 """

@@ -1,4 +1,4 @@
-# EarthSift — AI System Architecture, Fallback Cascade & Anti-Hallucination Policy
+# Tellura — AI System Architecture, Fallback Cascade & Anti-Hallucination Policy
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/AI_USAGE.md`  
@@ -6,9 +6,9 @@
 
 ---
 
-## 1. Role of AI in EarthSift
+## 1. Role of AI in Tellura
 
-In EarthSift, **Artificial Intelligence is strictly downstream of the mathematical analysis engine**. Generative models never compute, interpolate, or modify climate statistics. They serve solely as:
+In Tellura, **Artificial Intelligence is strictly downstream of the mathematical analysis engine**. Generative models never compute, interpolate, or modify climate statistics. They serve solely as:
 1. **Downstream Scientific Explainer (`explainer.py`):** Translates empirically calculated, non-parametric statistics into peer-reviewed scientific prose.
 2. **Spatiotemporal Natural Language Copilot (`nlq_parser.py`):** Converts free-form scientific inquiries (e.g. *"Show warming over the Mediterranean between 2000 and 2020"*) into structured, type-checked Pydantic query parameters.
 
@@ -64,7 +64,7 @@ In EarthSift, **Artificial Intelligence is strictly downstream of the mathematic
 
 ## 2. Multi-Model Cascade & Failover Logic
 
-EarthSift implements an automated, multi-tier fallback cascade ensuring that external API downtime, rate limits, or quota exhaustion never degrade user experience:
+Tellura implements an automated, multi-tier fallback cascade ensuring that external API downtime, rate limits, or quota exhaustion never degrade user experience:
 
 ### Tier 1: Primary — Google Gemini (`generativelanguage.googleapis.com`)
 - **Default Model**: `gemini-flash-lite-latest` (fastest latency, lightweight footprint).

@@ -1,6 +1,6 @@
-# EarthSift — Project Changelog
+# Tellura — Project Changelog
 
-All notable changes to the EarthSift platform are documented in this file.
+All notable changes to the Tellura platform are documented in this file.
 The project adheres to Semantic Versioning and rigorous engineering verification.
 
 ---

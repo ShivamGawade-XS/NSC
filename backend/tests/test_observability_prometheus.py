@@ -51,7 +51,7 @@ def test_prometheus_endpoint_anonymous_external_rejected():
 def test_prometheus_endpoint_keyed_external_allowed(monkeypatch):
     """Verify external client WITH valid API key receives 200 OK on Prometheus endpoint."""
     test_key = "test_api_key_earthdata_2026"
-    monkeypatch.setenv("EARTHSIFT_API_KEYS", test_key)
+    monkeypatch.setenv("TELLURA_API_KEYS", test_key)
     from app.core.auth import reload_api_keys
     reload_api_keys()
 

@@ -1,5 +1,5 @@
 """
-EarthSift — Security Regression Test Suite
+Tellura — Security Regression Test Suite
 Verifies defense-in-depth security controls:
 - CORS policy and OWASP security headers
 - Rate limiting and request payload bounds
@@ -566,7 +566,7 @@ def test_secret_key_production_enforcement(monkeypatch):
         Settings._init_secret_key("production")
 
     # 3. Default dev key in production must raise RuntimeError
-    monkeypatch.setenv("SECRET_KEY", "earthsift-scientific-hmac-sha256-production-token-2026")
+    monkeypatch.setenv("SECRET_KEY", "Tellura-scientific-hmac-sha256-production-token-2026")
     with pytest.raises(RuntimeError, match="SECRET_KEY environment variable must be set"):
         Settings._init_secret_key("production")
 
@@ -644,12 +644,12 @@ def test_sec_004_attachment_filename_sanitization_defense():
 
     # Injection with double quotes and header splitting
     malicious = 'temp"; Injected-Header: evil\r\n'
-    clean = sanitize_attachment_filename("earthsift", malicious, 2000, 2020, "nc")
+    clean = sanitize_attachment_filename("Tellura", malicious, 2000, 2020, "nc")
     assert '"' not in clean
     assert "\r" not in clean
     assert "\n" not in clean
     assert ";" not in clean
-    assert "earthsift_temp_Injected-Header_evil_2000_2020.nc" == clean
+    assert "Tellura_temp_Injected-Header_evil_2000_2020.nc" == clean
 
     # Path traversal attack in variable_id
     traversal = "../../../etc/passwd"

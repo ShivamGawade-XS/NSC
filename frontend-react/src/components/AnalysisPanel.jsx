@@ -335,7 +335,7 @@ export default function AnalysisPanel() {
           <span>Compound Hazard Analysis (T & P)</span>
         </button>
 
-        {/* EarthSift 2.0 Exploratory Launchers */}
+        {/* Tellura 2.0 Exploratory Launchers */}
         <div className="grid grid-cols-2 gap-2 pt-1">
           <button
             type="button"

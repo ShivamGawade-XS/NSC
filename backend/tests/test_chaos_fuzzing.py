@@ -1,5 +1,5 @@
 """
-NASA EarthSift — Comprehensive Chaos Engineering & Property-Based Fuzzing Suite
+NASA Tellura — Comprehensive Chaos Engineering & Property-Based Fuzzing Suite
 Tests mathematical engines and ASGI API endpoints against hostile, malformed,
 and boundary inputs using Hypothesis and adversarial vectors.
 Asserts zero unhandled crashes (ZeroDivisionError, FloatingPointError, 500 Server Errors).

@@ -1,4 +1,4 @@
-# EarthSift — Truth & Evidence Ledger
+# Tellura — Truth & Evidence Ledger
 
 _Last updated: 2026-10-05 — Release Verification_
 
@@ -18,7 +18,7 @@ This ledger records verified facts, tested assumptions, and engineering decision
 | **T-009** | `fastapi` v0.142.2 is on PyPI. License: MIT. | FACT | PyPI JSON API queried 2026-10-05 | ✅ | Active |
 | **T-010** | Environmental time series are frequently non-normal; Mann-Kendall + Sen's Slope is the accepted non-parametric standard in climate science. | FACT | Hirsch et al. (1982) *Technometrics*; Gilbert (1987) *Statistical Methods for Environmental Pollution Monitoring* | Literature | Active |
 | **T-011** | Multiple simultaneous grid-cell trend tests inflate false positives without correction; Benjamini-Hochberg FDR controls this at q = 0.05. | FACT | Benjamini & Hochberg (1995) *J. Royal Statistical Society* | Literature | Active |
-| **T-012** | EarthSift automated test suite passes 38/38 tests on native pytest covering unit math, adapter pipeline, typed endpoints, cache collision resilience, connected component clustering, and edge cases. | FACT | `pytest` output executed 2026-10-05 (100% green) | ✅ | Active |
+| **T-012** | Tellura automated test suite passes 38/38 tests on native pytest covering unit math, adapter pipeline, typed endpoints, cache collision resilience, connected component clustering, and edge cases. | FACT | `pytest` output executed 2026-10-05 (100% green) | ✅ | Active |
 | **T-013** | Challenge "Resources" tab content was empty as of 2026-10-05 inspection. | OBSERVATION | Live page JSON: `resourcesTabContent: ""` | ✅ | Active |
 | **T-014** | Serial autocorrelation in $AR(1)$ red noise series inflates uncorrected Mann-Kendall variance, causing false positive rejections of null hypothesis. | FACT | Hamed & Rao (1998) *Journal of Hydrology*; Von Storch (1995) | Literature | Active |
 | **T-015** | Hamed-Rao (1998) modified variance after Sen detrending successfully prevents false positive trend detection on $AR(1)$ series ($p = 0.0995$). | FACT | Verified in `backend/tests/test_trend.py:test_autocorrelated_series` | ✅ | Active |

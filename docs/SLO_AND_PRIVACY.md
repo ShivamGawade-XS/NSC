@@ -1,6 +1,6 @@
-# EarthSift — Service Level Objectives (SLOs) & Privacy Architecture
+# Tellura — Service Level Objectives (SLOs) & Privacy Architecture
 
-**Target System:** EarthSift Climate Science Engine  
+**Target System:** Tellura Climate Science Engine  
 **Standard Grounding:** Google SRE PRR, OWASP Privacy Risks, NIST Cybersecurity Framework  
 
 ---
@@ -21,7 +21,7 @@
 ## 2. Privacy & Data Handling Architecture
 
 ### 1. Zero Personal Identifiable Information (PII) Stored
-EarthSift is a public Earth science observation analysis tool. It processes purely geophysical geospatial variables (temperatures, precipitation, solar radiation, wind speed).
+Tellura is a public Earth science observation analysis tool. It processes purely geophysical geospatial variables (temperatures, precipitation, solar radiation, wind speed).
 - No user names, emails, physical addresses, or credentials are required or persisted.
 - API keys provided in `X-API-Key` headers are hashed via SHA-256 before memory comparison; raw key text is never logged or written to SQLite.
 

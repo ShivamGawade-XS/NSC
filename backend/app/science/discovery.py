@@ -1,5 +1,5 @@
 """
-EarthSift — Discovery Engine
+Tellura — Discovery Engine
 Surfaces candidate signals worth investigating using a transparent, documented composite score:
 - significance: FDR q <= alpha (weight 1.0), raw p <= alpha (0.5), non-sig (0.1)
 - magnitude: absolute slope rate |slope|

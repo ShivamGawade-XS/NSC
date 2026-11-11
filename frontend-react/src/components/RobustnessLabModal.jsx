@@ -1,5 +1,5 @@
 /**
- * EarthSift 2.0 — Trend Robustness Lab Modal
+ * Tellura 2.0 — Trend Robustness Lab Modal
  * Feature A: Quantifies sensitivity of climate trends to analytical choices.
  * Shows window perturbation, estimator comparison, autocorrelation sensitivity,
  * and jackknife stability.

@@ -1,5 +1,5 @@
 """
-EarthSift — NASA POWER Climate & Meteorological Reanalysis Adapter
+Tellura — NASA POWER Climate & Meteorological Reanalysis Adapter
 Provides on-demand and cached access to NASA Langley Research Center POWER Project
 (Prediction Of Worldwide Energy Resources) gridded meteorological reanalysis:
 - T2M: 2-meter Air Temperature (°C / K)
@@ -24,7 +24,7 @@ import numpy as np
 
 from app.adapters.base import BaseDatasetAdapter
 
-logger = logging.getLogger("earthsift.nasa_power")
+logger = logging.getLogger("Tellura.nasa_power")
 
 try:
     import xarray as xr
@@ -358,7 +358,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
             try:
                 req = urllib.request.Request(  # noqa: S310
                     url,
-                    headers={"User-Agent": "EarthSift-NASASpaceApps/2.0 (Scientific Research Instrument)"}
+                    headers={"User-Agent": "Tellura-NASASpaceApps/2.0 (Scientific Research Instrument)"}
                 )
                 with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # noqa: S310
                     if response.status == 200:
@@ -429,7 +429,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
         try:
             req = urllib.request.Request(  # noqa: S310
                 url,
-                headers={"User-Agent": "EarthSift-NASASpaceApps/2.0 (Scientific Research Instrument)"}
+                headers={"User-Agent": "Tellura-NASASpaceApps/2.0 (Scientific Research Instrument)"}
             )
             with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # noqa: S310
                 if response.status != 200:

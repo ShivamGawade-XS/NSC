@@ -1,5 +1,5 @@
 """
-EarthSift — Downstream AI Scientific Explainer
+Tellura — Downstream AI Scientific Explainer
 Translates verified empirical evidence records into plain scientific English.
 Integrates live Gemini / OpenAI API with strict zero-hallucination guardrails
 and a guaranteed deterministic scientific template fallback.
@@ -18,7 +18,7 @@ import httpx
 
 from app.schemas.analysis import ExplainRequest, ExplainResponse
 
-logger = logging.getLogger("earthsift.explainer")
+logger = logging.getLogger("Tellura.explainer")
 
 
 def deterministic_fallback_explanation(req: ExplainRequest) -> ExplainResponse:

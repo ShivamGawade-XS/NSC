@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * EarthSift — Comprehensive Playwright E2E Configuration
+ * Tellura — Comprehensive Playwright E2E Configuration
  * Tests real browser user journeys, scientific evidence integrity,
  * responsiveness across 7 viewports, and WCAG accessibility.
  */

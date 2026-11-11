@@ -1,5 +1,5 @@
 """
-Generate authentic NASA MERRA-2 baseline NetCDF dataset for EarthSift.
+Generate authentic NASA MERRA-2 baseline NetCDF dataset for Tellura.
 Creates backend/data/fixtures/merra2_reanalysis.nc with T2M (°C) and PRECTOT (mm/day)
 spanning 1980-2023 across North America with authentic GMAO climatology and trend structures.
 """
@@ -116,7 +116,7 @@ def build_merra2_netcdf():
             "spatial_coverage": "North America [-125.0, 25.0, -64.0, 55.0]",
             "temporal_range": "1980 - 2023",
             "doi": "10.5067/A7F0JNNUTWOB",
-            "created_for": "EarthSift — NASA Space Apps 2026 Trend Detective"
+            "created_for": "Tellura — NASA Space Apps 2026 Trend Detective"
         }
     )
 

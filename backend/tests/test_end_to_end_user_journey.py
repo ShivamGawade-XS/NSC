@@ -1,6 +1,6 @@
 """
 Phase E Stage 4: End-to-End User Journey & Comprehensive Integration Tests.
-Exercises the entire EarthSift scientific detection pipeline:
+Exercises the entire Tellura scientific detection pipeline:
 1. Selection of real Earth science variables from catalog.
 2. Selection of valid geographical regions and temporal ranges.
 3. Observational data ingestion with CF-1.8 contract verification.
@@ -195,7 +195,7 @@ def test_user_journey_step_8_multi_format_exports():
     dossier_resp = client.get(f"/analysis/{ana_id}/dossier")
     assert dossier_resp.status_code == 200
     dossier_text = dossier_resp.text
-    assert "NASA Earth Science Briefing" in dossier_text or "EarthSift" in dossier_text
+    assert "NASA Earth Science Briefing" in dossier_text or "Tellura" in dossier_text
     assert "Theil-Sen" in dossier_text
 
     # 4. LaTeX Export

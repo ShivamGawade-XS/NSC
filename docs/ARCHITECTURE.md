@@ -1,4 +1,4 @@
-# EarthSift — System Architecture & Design
+# Tellura — System Architecture & Design
 
 ## 1. Challenge Overview
 * **Event:** NASA Space Apps Challenge 2026
@@ -11,12 +11,12 @@
 
 ## 2. Product Mission & Philosophy
 
-EarthSift is an evidence-first Earth-system trend discovery platform.
+Tellura is an evidence-first Earth-system trend discovery platform.
 
 > **"The scientific engine is the product. The map and globe are the instruments. AI is an interpreter, not the calculator."**
 
 ### Core Investigation Inquiries
-For any analyzed variable, EarthSift deterministically answers:
+For any analyzed variable, Tellura deterministically answers:
 1. **What variable** is being analyzed? (CERES radiation, MERRA-2 thermal/wind/precip, MODIS LST)
 2. **Where** is it changing spatially? (2D interactive Leaflet Canvas grid and 3D orthographic globe)
 3. **What direction** is the change moving (increasing, decreasing, changepoint shift)?

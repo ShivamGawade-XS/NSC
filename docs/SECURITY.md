@@ -1,4 +1,4 @@
-# EarthSift — Security Architecture & Threat Model
+# Tellura — Security Architecture & Threat Model
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/SECURITY.md`  
@@ -6,13 +6,13 @@
 ---
 
 ## 1. Security Philosophy
-EarthSift is an evidence-first, open-science scientific instrument. Its security posture adheres to strict principle-of-least-privilege guidelines, zero-trust input validation, and total isolation of client-side code from sensitive credentials.
+Tellura is an evidence-first, open-science scientific instrument. Its security posture adheres to strict principle-of-least-privilege guidelines, zero-trust input validation, and total isolation of client-side code from sensitive credentials.
 
 ---
 
 ## 2. Threat Vector Mitigations
 
-| Threat Vector | Potential Impact | EarthSift Mitigation |
+| Threat Vector | Potential Impact | Tellura Mitigation |
 |---|---|---|
 | **Credential Leakage** | Exposure of NASA Earthdata or AI API keys in client JavaScript bundles | **Strict Server-Side Boundary:** No credentials exist in client bundles. Earthdata auth is managed exclusively in backend environment variables (`EARTHDATA_USERNAME`, `EARTHDATA_PASSWORD`) or local `~/.netrc`. |
 | **Arbitrary Code Execution** | Shell execution via malicious spatial or analysis parameters | **Zero Shell Execution:** No user input is ever passed to `eval()`, `exec()`, or subshell commands. All numerical execution occurs strictly via native Python/NumPy vectorized code. |

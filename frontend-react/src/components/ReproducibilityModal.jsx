@@ -1,5 +1,5 @@
 /**
- * EarthSift 2.0 — Reproducible Analysis Dossier Modal
+ * Tellura 2.0 — Reproducible Analysis Dossier Modal
  * Feature E: Cryptographic provenance manifest with SHA-256 fingerprint,
  * one-click copyable standalone Python replication script, and AGU/AMS BibTeX citations.
  */
@@ -47,7 +47,7 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
   const handleDownloadCode = () => {
     if (!data?.python_replication_code) return;
     const blob = new Blob([data.python_replication_code], { type: 'text/x-python' });
-    downloadBlob(blob, `reproduce_earthsift_${analysisId.slice(0, 8)}.py`, 'text/x-python');
+    downloadBlob(blob, `reproduce_Tellura_${analysisId.slice(0, 8)}.py`, 'text/x-python');
     toast.success('Script downloaded');
   };
 

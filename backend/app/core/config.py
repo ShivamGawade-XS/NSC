@@ -1,5 +1,5 @@
 """
-EarthSift — Runtime & NASA Earthdata Configuration
+Tellura — Runtime & NASA Earthdata Configuration
 Manages NASA Earthdata Login (EDL) credentials, netrc generation,
 cache policies, and runtime environment settings.
 """
@@ -30,7 +30,7 @@ class Settings:
     """Core application settings with NASA Earthdata integration."""
 
     # Application Info
-    APP_NAME: str = "EarthSift Scientific API"
+    APP_NAME: str = "Tellura Scientific API"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
@@ -60,8 +60,8 @@ class Settings:
     def _init_secret_key(env: str) -> str:
         explicit_key = os.getenv("SECRET_KEY")
         if env == "production":
-            if not explicit_key or len(explicit_key.strip()) < 32 or explicit_key.strip() == "earthsift-scientific-hmac-sha256-production-token-2026":
-                logging.getLogger("earthsift.config").critical(
+            if not explicit_key or len(explicit_key.strip()) < 32 or explicit_key.strip() == "Tellura-scientific-hmac-sha256-production-token-2026":
+                logging.getLogger("Tellura.config").critical(
                     "CRITICAL SECURITY CONFIGURATION: In production (ENVIRONMENT='production'), "
                     "SECRET_KEY must be explicitly set to a stable, cryptographically secure key "
                     "of at least 32 characters in the environment or .env file to ensure HMAC cache integrity."
@@ -73,7 +73,7 @@ class Settings:
             return explicit_key.strip()
         if explicit_key and len(explicit_key.strip()) >= 16:
             return explicit_key.strip()
-        return "earthsift-scientific-hmac-sha256-development-token-2026"
+        return "Tellura-scientific-hmac-sha256-development-token-2026"
 
     SECRET_KEY: str = _init_secret_key(ENVIRONMENT)
     MAX_BBOX_DEGREES: float = float(os.getenv("MAX_BBOX_DEGREES", "180.0"))
@@ -119,7 +119,7 @@ class Settings:
         # Validate that credentials do not contain newlines or whitespace characters
         # to prevent netrc command/line injection attacks
         if any(c.isspace() for c in username) or any(c.isspace() for c in password):
-            logging.getLogger("earthsift.config").error(
+            logging.getLogger("Tellura.config").error(
                 "NASA Earthdata credentials contain illegal whitespace or newline characters."
             )
             return False
@@ -157,7 +157,7 @@ class Settings:
                             timeout=5.0,
                         )
                     except Exception as exc:
-                        logging.getLogger("earthsift.config").debug("Failed setting Windows netrc DACL: %s", exc)
+                        logging.getLogger("Tellura.config").debug("Failed setting Windows netrc DACL: %s", exc)
             elif netrc_file.exists():
                 os.chmod(netrc_file, 0o600)
             return True

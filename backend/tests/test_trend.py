@@ -1,5 +1,5 @@
 """
-Unit tests for EarthSift Scientific Trend Engine.
+Unit tests for Tellura Scientific Trend Engine.
 Mathematically verifies:
 - positive trend
 - negative trend

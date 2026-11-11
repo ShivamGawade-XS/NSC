@@ -1,5 +1,5 @@
 """
-EarthSift — NASA MERRA-2 Reanalysis Adapter
+Tellura — NASA MERRA-2 Reanalysis Adapter
 Provides access to NASA Global Modeling and Assimilation Office (GMAO)
 MERRA-2 atmospheric variables:
 - T2M: 2-meter Air Temperature (Kelvin / Celsius)
@@ -23,7 +23,7 @@ import numpy as np
 
 from app.adapters.base import BaseDatasetAdapter
 
-logger = logging.getLogger("earthsift.merra2")
+logger = logging.getLogger("Tellura.merra2")
 
 try:
     import earthaccess
@@ -340,7 +340,7 @@ class MERRA2Adapter(BaseDatasetAdapter):
                 detail=(
                     f"NASA MERRA-2 atmospheric reanalysis data for variable '{variable}' ({start_year}-{end_year}) "
                     f"in coordinates {bbox} is unavailable on this server. "
-                    "Synthetic data generation has been permanently eliminated to uphold the EarthSift Zero-Synthetic Standard. "
+                    "Synthetic data generation has been permanently eliminated to uphold the Tellura Zero-Synthetic Standard. "
                     "To stream live authentic NASA observations for any global bounding box, switch dataset to 'nasa_power' (NASA POWER Global Live Streaming)."
                 )
             )

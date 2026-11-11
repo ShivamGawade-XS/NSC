@@ -1,5 +1,5 @@
 """
-EarthSift — Contrasting Trends Engine
+Tellura — Contrasting Trends Engine
 Identifies pairs of geographical regions demonstrating statistically significant
 trends in opposite directions (e.g. warming vs cooling, wetting vs drying)
 during the exact same temporal period.

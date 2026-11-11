@@ -1,8 +1,8 @@
-# EarthSift — Product Requirements Document (PRD)
+# Tellura — Product Requirements Document (PRD)
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Tagline:** *Find the changes worth investigating.*  
-**Author:** EarthSift Core Engineering Team (`nsc26cs@gmail.com`)  
+**Author:** Tellura Core Engineering Team (`nsc26cs@gmail.com`)  
 **Status:** Implemented & Verified (337/337 Automated Tests Passing)
 
 ---
@@ -13,7 +13,7 @@ Earth system observations spanning multi-decadal records are replete with comple
 2. **Serial Autocorrelation Distortion:** Classical monotonic trend tests (e.g., standard Mann-Kendall) inflate significance when red-noise persistence ($AR(1)$) is present.
 3. **AI Hallucinations & Fabricated Science:** Generative AI models frequently fabricate trend slopes, invent statistical p-values, or assert unverified causal mechanisms.
 
-EarthSift solves these challenges by enforcing an **evidence-first, mathematically immutable pipeline**: all rates, significance bounds, changepoints, and spatial regimes are computed deterministically before reaching any user interface or downstream AI synthesis layer.
+Tellura solves these challenges by enforcing an **evidence-first, mathematically immutable pipeline**: all rates, significance bounds, changepoints, and spatial regimes are computed deterministically before reaching any user interface or downstream AI synthesis layer.
 
 ---
 

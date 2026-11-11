@@ -11,7 +11,7 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('EarthSift ErrorBoundary caught an error:', error, errorInfo);
+    console.error('Tellura ErrorBoundary caught an error:', error, errorInfo);
   }
 
   handleReset = () => {

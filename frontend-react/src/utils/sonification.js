@@ -1,5 +1,5 @@
 /**
- * NASA EarthSift — Climate Sonification Engine
+ * NASA Tellura — Climate Sonification Engine
  * Maps multi-decadal atmospheric time series and non-parametric drift into
  * harmonic acoustic sweeps using high-precision Web Audio API synthesis.
  * Fully offline, Section 508 accessibility compliant, zero dependencies.

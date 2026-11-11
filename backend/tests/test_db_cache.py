@@ -1,5 +1,5 @@
 """
-Unit tests for EarthSift SQLite persistent cache and B-Tree indexing.
+Unit tests for Tellura SQLite persistent cache and B-Tree indexing.
 """
 
 import time

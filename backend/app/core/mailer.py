@@ -1,5 +1,5 @@
 """
-EarthSift — Contact Inquiry Mailer
+Tellura — Contact Inquiry Mailer
 Sends contact form submissions via SMTP.
 Falls back to writing JSON to backend/data/inbox/ when SMTP is not configured.
 Uses stdlib only: smtplib, email, json, pathlib.
@@ -14,7 +14,7 @@ from email.message import EmailMessage
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger("earthsift.mailer")
+logger = logging.getLogger("Tellura.mailer")
 
 _INBOX = Path(__file__).resolve().parents[3] / "data" / "inbox"
 
@@ -76,7 +76,7 @@ def send_contact_inquiry(
         }
 
     msg = EmailMessage()
-    msg["Subject"] = f"[EarthSift Contact] {topic} — from {name} [{receipt_id}]"
+    msg["Subject"] = f"[Tellura Contact] {topic} — from {name} [{receipt_id}]"
     msg["From"] = smtp_user
     msg["To"] = recipient
     msg["Reply-To"] = email

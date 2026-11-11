@@ -59,7 +59,7 @@ def test_export_netcdf_geojson_and_dossier():
     import xarray as xr
 
     # 2. Test GET /export/netcdf (valid binary, CF-1.8 attributes, zero temp file leaks)
-    nc_before = glob.glob(os.path.join(tempfile.gettempdir(), "earthsift_nc_*"))
+    nc_before = glob.glob(os.path.join(tempfile.gettempdir(), "tellura_nc_*"))
     for base in ["", "/api/v1"]:
         nc_res = client.get(f"{base}/analysis/{analysis_id}/export/netcdf")
         assert nc_res.status_code == 200
@@ -80,7 +80,7 @@ def test_export_netcdf_geojson_and_dossier():
         finally:
             Path(tmp_nc).unlink(missing_ok=True)
 
-    nc_after = glob.glob(os.path.join(tempfile.gettempdir(), "earthsift_nc_*"))
+    nc_after = glob.glob(os.path.join(tempfile.gettempdir(), "tellura_nc_*"))
     assert len(nc_after) <= len(nc_before), "Zero leftover .nc temp directories/files in temp directory after export completion"
 
     # 3. Test GET /export/geojson (RFC 7946 FeatureCollection)

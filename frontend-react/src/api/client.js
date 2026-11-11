@@ -1,5 +1,5 @@
 /**
- * EarthSift API Client
+ * Tellura API Client
  * Centralized service layer for all FastAPI backend communication.
  */
 
@@ -220,14 +220,14 @@ export async function getMetrics() {
 // Export downloads (return blob)
 export async function exportNetCDF(analysisId, options = {}) {
   const res = await apiFetch(`/analysis/${analysisId}/export/netcdf`, options);
-  const filename = getFilenameFromHeader(res, `earthsift_${analysisId}.nc`);
+  const filename = getFilenameFromHeader(res, `Tellura_${analysisId}.nc`);
   const blob = await res.blob();
   return { blob, filename, mime: 'application/x-netcdf' };
 }
 
 export async function exportGeoJSON(analysisId, options = {}) {
   const res = await apiFetch(`/analysis/${analysisId}/export/geojson`, options);
-  const filename = getFilenameFromHeader(res, `earthsift_trends_${analysisId}.geojson`);
+  const filename = getFilenameFromHeader(res, `Tellura_trends_${analysisId}.geojson`);
   const blob = await res.blob();
   return { blob, filename, mime: 'application/geo+json' };
 }
@@ -241,7 +241,7 @@ export async function exportDossier(analysisId, options = {}) {
 
 export async function exportNotebook(analysisId, options = {}) {
   const res = await apiFetch(`/analysis/${analysisId}/export/notebook`, options);
-  const filename = getFilenameFromHeader(res, `earthsift_${analysisId}.ipynb`);
+  const filename = getFilenameFromHeader(res, `Tellura_${analysisId}.ipynb`);
   const blob = await res.blob();
   return { blob, filename, mime: 'application/x-ipynb+json' };
 }
@@ -311,7 +311,7 @@ export function downloadBlob(blob, filename, mimeType) {
   }, 30000);
 }
 
-// EarthSift 2.0 Scientific Intelligence Client Functions
+// Tellura 2.0 Scientific Intelligence Client Functions
 export async function assessQualityGate(payload, options = {}) {
   const res = await apiFetch('/analysis/quality-gate', {
     method: 'POST',

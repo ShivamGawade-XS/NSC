@@ -1,4 +1,4 @@
-# EarthSift — Comprehensive Test Plan
+# Tellura — Comprehensive Test Plan
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/TEST_PLAN.md`  
@@ -6,7 +6,7 @@
 ---
 
 ## 1. Test Strategy Overview
-The EarthSift test suite guarantees complete verification across three decoupled tiers:
+The Tellura test suite guarantees complete verification across three decoupled tiers:
 1. **Scientific Computing Core (`backend/tests/test_trend.py`):** Mathematical fidelity of Mann-Kendall, Hamed-Rao autocorrelation correction, Sen's slope estimator, and Benjamini-Hochberg FDR multiplicity control.
 2. **Dataset Adapter Layer (`backend/tests/test_adapter.py`):** Abstract adapter contract validation, coordinate sorting, bbox slicing, physical unit normalization, and unmistakable synthetic data labeling.
 3. **Application & API Layer (`backend/tests/test_api.py` and `test_application.py`):** REST endpoint contracts, error handling, cache idempotency, out-of-bounds boundary requests, and deterministic downstream explainer fallback.

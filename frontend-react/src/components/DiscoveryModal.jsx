@@ -1,5 +1,5 @@
 /**
- * EarthSift 2.0 — Earth System Trend Discovery Modal
+ * Tellura 2.0 — Earth System Trend Discovery Modal
  * Feature B: Autonomous exploratory multi-variable scan across Earth system domains.
  * Identifies high-velocity warming, extreme hydrologic shifts, and radiation trends
  * under rigorous Benjamini-Hochberg FDR multiplicity control.

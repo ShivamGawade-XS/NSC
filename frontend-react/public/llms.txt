@@ -1,8 +1,8 @@
-# EarthSift — Earth System Trend Detective
+# Tellura — Earth System Trend Detective
 > Evidence-first scientific instrument discovering statistically defensible trends in NASA Earth-system observations.
 
 ## Overview
-EarthSift is an open-science platform developed for the NASA Space Apps Challenge 2026 under the theme "Be an Earth System Trend Detective". It processes raw satellite reanalysis data from NASA POWER and MERRA-2, applying non-parametric trend analytics, local spatial autocorrelation clustering, and compound hazard detection.
+Tellura is an open-science platform developed for the NASA Space Apps Challenge 2026 under the theme "Be an Earth System Trend Detective". It processes raw satellite reanalysis data from NASA POWER and MERRA-2, applying non-parametric trend analytics, local spatial autocorrelation clustering, and compound hazard detection.
 
 ## Core Capabilities
 - **Non-Parametric Trend Detection**: Mann-Kendall test statistic S, Theil-Sen median slope estimator, and Gilbert (1987) 95% confidence intervals resistant to extreme meteorological outliers.

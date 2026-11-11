@@ -1,5 +1,5 @@
 """
-EarthSift — Authentication & Authorization Layer (Two-Tier Model)
+Tellura — Authentication & Authorization Layer (Two-Tier Model)
 Provides constant-time static API key verification, quota tier classification,
 internal-only listener protection, and daily LLM spend/budget caps.
 """
@@ -15,7 +15,7 @@ from typing import Any
 from fastapi import HTTPException, Request
 from fastapi.security import APIKeyHeader
 
-logger = logging.getLogger("earthsift.auth")
+logger = logging.getLogger("Tellura.auth")
 
 api_key_header_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
 
@@ -35,9 +35,9 @@ def _hash_key(key: str) -> bytes:
 
 
 def reload_api_keys() -> None:
-    """Load valid API keys from EARTHSIFT_API_KEYS environment variable."""
+    """Load valid API keys from TELLURA_API_KEYS environment variable."""
     global _VALID_KEY_HASHES
-    raw_keys = os.getenv("EARTHSIFT_API_KEYS", "")
+    raw_keys = os.getenv("TELLURA_API_KEYS", "")
     new_hashes: set[bytes] = set()
     for token in raw_keys.split(","):
         cleaned = token.strip()

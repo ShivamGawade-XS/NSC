@@ -1,5 +1,5 @@
 """
-EarthSift — Scientific Extreme Event Attribution Engine (FAR)
+Tellura — Scientific Extreme Event Attribution Engine (FAR)
 Implements the Fraction of Attributable Risk (FAR) framework based on:
 - Stott, Stone & Allen (Nature, 2004): Human contribution to the European heatwave of 2003.
 - Otto et al. (2020): Toward a World Weather Attribution protocol for rapid event attribution.

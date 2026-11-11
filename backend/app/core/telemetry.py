@@ -1,5 +1,5 @@
 """
-NASA EarthSift — Production Telemetry & Prometheus Observability Module
+NASA Tellura — Production Telemetry & Prometheus Observability Module
 Provides standardized Prometheus metrics, SLO tracking, and cardinality-safe endpoint normalization.
 """
 
@@ -19,7 +19,7 @@ from prometheus_client import (
 # 1. Standard HTTP Service Metrics
 HTTP_REQUESTS_TOTAL = Counter(
     "earthsift_http_requests_total",
-    "Total HTTP requests processed by EarthSift API",
+    "Total HTTP requests processed by Tellura API",
     ["method", "endpoint", "status_code"],
 )
 

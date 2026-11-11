@@ -16,7 +16,7 @@ from app.core.db_cache import get_db_path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Restore EarthSift SQLite cache database from backup.")
+    parser = argparse.ArgumentParser(description="Restore Tellura SQLite cache database from backup.")
     parser.add_argument("--backup", type=str, required=True, help="Path to backup .db file")
     parser.add_argument("--target", type=str, default="", help="Target database path (default: active DB)")
     args = parser.parse_args()

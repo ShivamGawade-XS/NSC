@@ -1,5 +1,5 @@
 """
-EarthSift — Spatial Autocorrelation & Clustering Engine
+Tellura — Spatial Autocorrelation & Clustering Engine
 Implements:
 1. Global Moran's I with analytical variance, z-score, and p-value.
 2. Anselin Local Indicators of Spatial Association (LISA) for Local Moran's I.

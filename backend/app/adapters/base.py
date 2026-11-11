@@ -1,5 +1,5 @@
 """
-EarthSift — DataProvider Abstract Base Adapter
+Tellura — DataProvider Abstract Base Adapter
 Defines strict contract for all NASA and Earth-system dataset providers.
 Interface adheres to:
 - discover()

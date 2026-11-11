@@ -1,4 +1,4 @@
-# EarthSift — Scientific Assumptions & Model Boundaries
+# Tellura — Scientific Assumptions & Model Boundaries
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/SCIENTIFIC_ASSUMPTIONS.md`  

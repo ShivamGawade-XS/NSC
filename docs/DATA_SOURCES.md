@@ -1,4 +1,4 @@
-# EarthSift — NASA Earth System Data Sources
+# Tellura — NASA Earth System Data Sources
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/DATA_SOURCES.md`  

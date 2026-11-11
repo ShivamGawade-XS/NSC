@@ -1,4 +1,4 @@
-# EarthSift: Spatiotemporal Climate Trend Discovery System
+# Tellura: Spatiotemporal Climate Trend Discovery System
 
 ## *The Next-Generation Empirical Analytics & Physical Attribution Workstation for NASA Earth Observations*
 [![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-Global%20Nominee%202026-0B3D91?style=for-the-badge&logo=nasa)](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/)
@@ -11,7 +11,7 @@
 
 ---
 
-## 1. Executive Summary & Why EarthSift Wins
+## 1. Executive Summary & Why Tellura Wins
 
 Most climate visualization tools suffer from three fatal scientific flaws:
 
@@ -19,11 +19,11 @@ Most climate visualization tools suffer from three fatal scientific flaws:
 2. **The Red-Noise Mirage**: They fail to correct for temporal serial autocorrelation, creating hundreds of "statistically significant" trends that are merely random climate inertia.
 3. **The Multiplicity Trap**: Evaluating thousands of spatial pixels simultaneously inflates Type-I errors, resulting in false discoveries across large swathes of the globe.
 
-**EarthSift fundamentally solves all three.** Built specifically for the NASA Space Apps Challenge (*"Be An Earth System Trend Detective!"*), EarthSift is a production-grade spatiotemporal analytics workstation designed to detect, verify, spatially cluster, and physically attribute true multi-decadal monotonic climate drift across NASA Earth observation archives.
+**Tellura fundamentally solves all three.** Built specifically for the NASA Space Apps Challenge (*"Be An Earth System Trend Detective!"*), Tellura is a production-grade spatiotemporal analytics workstation designed to detect, verify, spatially cluster, and physically attribute true multi-decadal monotonic climate drift across NASA Earth observation archives.
 
 ```text
 ═════════════════════════════════════════════════════════════════════════════════════════
-                              EARTHSIFT PIPELINE OVERVIEW
+                              Tellura PIPELINE OVERVIEW
 ═════════════════════════════════════════════════════════════════════════════════════════
   NASA Earth Observations (NASA POWER LaRC / MERRA-2 GMAO / Custom User GeoJSON)
                                        │
@@ -60,7 +60,7 @@ Most climate visualization tools suffer from three fatal scientific flaws:
 
 ## 2. The 5 Championship Trump Cards
 
-EarthSift incorporates five state-of-the-art innovations designed to exceed international peer-review standards:
+Tellura incorporates five state-of-the-art innovations designed to exceed international peer-review standards:
 
 ### 🃏 Trump Card 1: NASA GIBS Live Satellite Tile Layer Overlay
 
@@ -74,7 +74,7 @@ Direct integration with the NASA Global Imagery Browse Services (GIBS) Web Map T
 
 ### 🃏 Trump Card 2: Interactive 4D Spatiotemporal Evolution Scrubber
 
-Rather than displaying static 2D summary maps, EarthSift provides a **continuous 4D time scrubber**:
+Rather than displaying static 2D summary maps, Tellura provides a **continuous 4D time scrubber**:
 
 - Drag smoothly across time ($t_0 \to t_{\text{end}}$) with instantaneous canvas interpolation.
 - **PLAY 4D** automated cadence engine showing physical heat accumulation and drought displacement year by year.
@@ -124,7 +124,7 @@ $$\text{Var}(S) = \frac{1}{18} \left[ n(n-1)(2n+5) - \sum_{m} t_m(t_m - 1)(2t_m 
 
 ### 3.2 Red-Noise Serial Autocorrelation Correction (Hamed & Rao, 1998)
 
-Persistent atmospheric memory inflates variance. EarthSift adjusts $\text{Var}(S)$ using significant lag-$k$ autocorrelation coefficients $\rho^*_k$ of the detrended rank series:
+Persistent atmospheric memory inflates variance. Tellura adjusts $\text{Var}(S)$ using significant lag-$k$ autocorrelation coefficients $\rho^*_k$ of the detrended rank series:
 
 $$\text{Var}^*(S) = \text{Var}(S) \cdot \left[ 1 + \frac{2}{n(n-1)(n-2)} \sum_{k=1}^{n-1} (n-k)(n-k-1)(n-k-2) \rho^*_k \right]$$
 
@@ -144,7 +144,7 @@ $$M_1 = \frac{N' - 1.96 \sqrt{\text{Var}^*(S)}}{2}, \quad M_2 = \frac{N' + 1.96 
 
 ### 3.4 Multiplicity Control: Benjamini-Hochberg False Discovery Rate (FDR)
 
-Evaluating thousands of spatial pixels concurrently demands rigorous multiplicity control. EarthSift sorts all grid $p$-values ascendingly $p_{(1)} \le p_{(2)} \le \dots \le p_{(M)}$ to enforce False Discovery Rate control at $q \le \alpha$:
+Evaluating thousands of spatial pixels concurrently demands rigorous multiplicity control. Tellura sorts all grid $p$-values ascendingly $p_{(1)} \le p_{(2)} \le \dots \le p_{(M)}$ to enforce False Discovery Rate control at $q \le \alpha$:
 
 $$k = \max \left\{ i : p_{(i)} \le \frac{i}{M} \alpha \right\}$$
 
@@ -152,7 +152,7 @@ Pixels satisfying $p_{(i)} \le p_{(k)}$ are declared statistically significant w
 
 ### 3.5 Spatial Autocorrelation Regimes: Anselin Local Moran's I (LISA)
 
-Using Queen-contiguity spatial weight matrices $W$ ($w_{ij} = 1$ for adjacent neighbors), EarthSift classifies spatial regimes:
+Using Queen-contiguity spatial weight matrices $W$ ($w_{ij} = 1$ for adjacent neighbors), Tellura classifies spatial regimes:
 
 $$I_i = \frac{z_i}{s^2} \sum_{j=1}^{N} w_{ij} z_j, \quad z_i = \beta_i - \bar{\beta}, \quad s^2 = \frac{1}{N} \sum_{i=1}^{N} z_i^2$$
 
@@ -193,7 +193,7 @@ $$C_{\theta}(u, v) = \exp\left( - \left[ (-\ln u)^\theta + (-\ln v)^\theta \righ
 
 ## 5. Artifacts, Reproducibility & Open Science
 
-EarthSift is built on the tenet that **an analysis is only as good as its independent reproducibility**. Every run generates cryptographically verifiable artifacts:
+Tellura is built on the tenet that **an analysis is only as good as its independent reproducibility**. Every run generates cryptographically verifiable artifacts:
 
 1. **CF-1.8 Compliant NetCDF-4 (`.nc`)**: Full dimensionality (`time`, `lat`, `lon`), CF coordinate attributes, global bounding boxes, and non-parametric analytical layers. Inspectable via NASA Panoply, QGIS, or `xarray`.
 2. **RFC 7946 GeoJSON FeatureCollection (`.geojson`)**: Seamlessly consumable by Leaflet, Mapbox, Deck.gl, and ArcGIS.
@@ -227,7 +227,7 @@ EarthSift is built on the tenet that **an analysis is only as good as its indepe
 
 ### 6.1 Cascading Multi-LLM Scientific Explainer & NLQ Copilot
 
-EarthSift integrates a multi-tier LLM fallback cascade designed for zero downtime, strict numerical fidelity, and budget protection:
+Tellura integrates a multi-tier LLM fallback cascade designed for zero downtime, strict numerical fidelity, and budget protection:
 
 1. **Tier 1 (Primary)**: **Google Gemini** (`gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-2.5-flash`) via `generativelanguage.googleapis.com` for rapid, high-fidelity scientific synthesis.
 2. **Tier 2 (Ultra-Fast Secondary Fallback)**: **Groq Cloud** (`qwen/qwen3.8-27b`, `openai/gpt-oss-120b`) via `api.groq.com` or **xAI Grok** (`grok-2-mini`, `grok-beta`) via `api.x.ai` (auto-detected via key prefix `gsk_...` vs `xai-...`).
@@ -239,7 +239,7 @@ EarthSift integrates a multi-tier LLM fallback cascade designed for zero downtim
 
 ## 7. Verification & Observability (337/337 Passing Tests)
 
-EarthSift is backed by an extensive automated test suite verifying scientific accuracy, numerical convergence, edge cases, rate limiting, and cybersecurity hardening:
+Tellura is backed by an extensive automated test suite verifying scientific accuracy, numerical convergence, edge cases, rate limiting, and cybersecurity hardening:
 
 ```bash
 cd backend
@@ -305,7 +305,7 @@ docker compose up --build -d
 
 ## 9. Exemplar Scientific Presets (Curated Transects)
 
-EarthSift includes 4 pre-configured research transects demonstrating distinct climatic phenomena:
+Tellura includes 4 pre-configured research transects demonstrating distinct climatic phenomena:
 
 1. **Texas Permian Basin** (`31°N, -102°W`): Severe thermal acceleration accompanied by rapid soil moisture depletion; exhibits Moran's $I = 0.729$ and $\text{FAR} = 79.7\%$.
 2. **Southwest US Transect** (`33°N, -112°W`): Decadal megadrought and hydrological precipitation deficit characterized by compound high-temperature/low-precipitation copula risks.
@@ -316,16 +316,16 @@ EarthSift includes 4 pre-configured research transects demonstrating distinct cl
 
 ## 10. Open Science Citations & References
 
-If you use EarthSift in academic work, please cite:
+If you use Tellura in academic work, please cite:
 
 ```bibtex
-@article{earthsift2026,
-  title = {EarthSift: Empirical Spatiotemporal Attribution and Multi-Decadal Monotonic Drift Analysis in NASA Earth Observations},
-  author = {EarthSift Planetary Intelligence Consortium and NASA Space Apps Collective},
+@article{Tellura2026,
+  title = {Tellura: Empirical Spatiotemporal Attribution and Multi-Decadal Monotonic Drift Analysis in NASA Earth Observations},
+  author = {Tellura Planetary Intelligence Consortium and NASA Space Apps Collective},
   journal = {NASA Space Apps Global Challenge 2026},
   year = {2026},
-  url = {https://earthsift.space},
-  doi = {10.5067/EARTHSIFT-SPATIAL-2026.1}
+  url = {https://Tellura.space},
+  doi = {10.5067/Tellura-SPATIAL-2026.1}
 }
 ```
 
@@ -344,5 +344,5 @@ If you use EarthSift in academic work, please cite:
 
 ## 11. License & Team Attribution
 
-EarthSift is open-source software released under the [MIT License](LICENSE).  
-Developed for the **NASA International Space Apps Challenge 2026** by the **EarthSift Team** (`nsc26cs@gmail.com`).
+Tellura is open-source software released under the [MIT License](LICENSE).  
+Developed for the **NASA International Space Apps Challenge 2026** by the **Tellura Team** (`nsc26cs@gmail.com`).

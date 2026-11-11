@@ -1,5 +1,5 @@
 """
-Test suite for EarthSift Extreme Event Attribution Engine (FAR).
+Test suite for Tellura Extreme Event Attribution Engine (FAR).
 Verifies:
 - Risk Ratio and FAR calculation for positive thermal drift (warming)
 - Risk Ratio and FAR calculation for negative precipitation drift (drought)

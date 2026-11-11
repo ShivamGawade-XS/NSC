@@ -19,7 +19,7 @@ test.describe('First-Time User Experience', () => {
     expect(response?.status()).toBe(200);
 
     // Title & Primary Heading
-    await expect(page).toHaveTitle(/EarthSift/i);
+    await expect(page).toHaveTitle(/Tellura/i);
     const h1 = page.locator('h1');
     await expect(h1).toBeVisible();
     await expect(h1).toContainText('Statistical Detection of Multi-Decadal Trends');

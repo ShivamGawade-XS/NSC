@@ -1,4 +1,4 @@
-# EarthSift — Architecture Decision Records (ADR)
+# Tellura — Architecture Decision Records (ADR)
 
 | ID | Decision | Rationale | Alternatives Considered | Status |
 | :--- | :--- | :--- | :--- | :---: |

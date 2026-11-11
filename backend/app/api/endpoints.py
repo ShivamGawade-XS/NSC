@@ -1,5 +1,5 @@
 """
-EarthSift — FastAPI Endpoints
+Tellura — FastAPI Endpoints
 Routes for datasets, variables, trend analysis, map layers,
 time series, discovery signals, contrasts, provenance, and AI explanations.
 """
@@ -146,7 +146,7 @@ async def health_check(request: Request) -> dict[str, Any]:
     """Lightweight public API health and engine status probe."""
     return {
         "status": "healthy",
-        "service": "EarthSift Scientific API",
+        "service": "Tellura Scientific API",
         "version": "1.0.0",
         "engine": "Mann-Kendall + Theil-Sen + Benjamini-Hochberg FDR",
         "adapters": list(ADAPTERS.keys()),
@@ -218,7 +218,7 @@ def assess_analysis_quality_gate(request: Request, req: QualityGateRequest) -> Q
             meets_climatological_threshold=False,
             grid_intersection_cells=0,
             sensor_continuity="unknown",
-            limitations=[f"Dataset '{req.dataset_id}' is not registered in the EarthSift adapter registry."],
+            limitations=[f"Dataset '{req.dataset_id}' is not registered in the Tellura adapter registry."],
             actionable_recommendations=["Select 'nasa_power' or 'merra2_reanalysis'."],
         )
 
@@ -1328,7 +1328,7 @@ def export_analysis_netcdf(request: Request, analysis_id: str):
         }
     }
 
-    filename = sanitize_attachment_filename("earthsift", req.variable_id, req.start_year, req.end_year, "nc")
+    filename = sanitize_attachment_filename("Tellura", req.variable_id, req.start_year, req.end_year, "nc")
     try:
         nc_payload = export_to_netcdf(analysis_record)
         nc_bytes = nc_payload if isinstance(nc_payload, bytes) else Path(nc_payload).read_bytes()
@@ -1374,7 +1374,7 @@ def export_analysis_geojson(request: Request, analysis_id: str):
         }
     }
     geojson_dict = export_to_geojson(analysis_record)
-    filename = sanitize_attachment_filename("earthsift_trends", req.variable_id, req.start_year, req.end_year, "geojson")
+    filename = sanitize_attachment_filename("tellura_trends", req.variable_id, req.start_year, req.end_year, "geojson")
     return JSONResponse(
         content=geojson_dict,
         media_type="application/geo+json",
@@ -1474,7 +1474,7 @@ def export_analysis_notebook(request: Request, analysis_id: str):
     }
     nb_dict = generate_jupyter_notebook(analysis_record)
     content = json.dumps(nb_dict, indent=2)
-    filename = sanitize_attachment_filename("earthsift_reproducible", req.variable_id, req.start_year, req.end_year, "ipynb")
+    filename = sanitize_attachment_filename("tellura_reproducible", req.variable_id, req.start_year, req.end_year, "ipynb")
     return PlainTextResponse(
         content=content,
         media_type="application/x-ipynb+json",
@@ -1681,7 +1681,7 @@ def get_climate_velocity(request: Request, analysis_id: str) -> ClimateVelocityR
 @limiter.limit("30/minute")
 async def parse_natural_language_scientific_query(request: Request, req: NLQParseRequest) -> NLQParseResponse:
     """
-    EarthSift NLQ Semantic Copilot:
+    Tellura NLQ Semantic Copilot:
     Translates free-form natural language queries into verified Pydantic AnalysisRequests.
     Non-blocking async execution.
     """
@@ -1771,7 +1771,7 @@ def export_analysis_latex(request: Request, analysis_id: str):
     # Generate HMAC signature
     import hashlib
     import hmac
-    secret = getattr(Settings, "SECRET_KEY", "earthsift-secret-key-production-salt-2026").encode("utf-8")
+    secret = getattr(Settings, "SECRET_KEY", "Tellura-secret-key-production-salt-2026").encode("utf-8")
     sig = hmac.new(secret, analysis_id.encode("utf-8"), hashlib.sha256).hexdigest()
 
     latex_code = generate_nasa_latex_memorandum(analysis_record, hmac_signature=sig[:24])
@@ -1810,7 +1810,7 @@ def get_colab_launcher_link(request: Request, analysis_id: str) -> dict[str, Any
     target_nb = var_map.get(str(req.variable_id).upper(), "T2M")
     if target_nb not in var_map.values():
         target_nb = "T2M"
-    github_colab_url = f"https://colab.research.google.com/github/ShivamGawade-XS/NSC/blob/main/notebooks/earthsift_reproducible_{target_nb}.ipynb"
+    github_colab_url = f"https://colab.research.google.com/github/ShivamGawade-XS/NSC/blob/main/notebooks/tellura_reproducible_{target_nb}.ipynb"
 
     return {
         "analysis_id": analysis_id,
@@ -1845,7 +1845,7 @@ def run_attribution_analysis(
 
 
 # ==========================================
-# EarthSift 2.0 Scientific Intelligence Endpoints
+# Tellura 2.0 Scientific Intelligence Endpoints
 # ==========================================
 
 @router.post("/analysis/{analysis_id}/robustness", response_model=RobustnessResponse)
@@ -2294,7 +2294,7 @@ def get_reproducibility_manifest(request: Request, analysis_id: str) -> Reproduc
     bbox_str = str(req.bbox) if req.bbox is not None else "[-102.0, 30.0, -94.0, 38.0]"
 
     python_code = f'''"""
-EarthSift 2.0 — Independent Scientific Reproduction Recipe
+Tellura 2.0 — Independent Scientific Reproduction Recipe
 Dataset: {req.dataset_id} | Variable: {req.variable_id}
 Generated for Analysis: {analysis_id}
 SHA-256 Fingerprint: {sha256_hash}
@@ -2331,7 +2331,7 @@ print(f"Reproducing analysis for {{VARIABLE}} over {{START_YEAR}}-{{END_YEAR}}..
         analysis_id=analysis_id,
         sha256_fingerprint=sha256_hash,
         timestamp_utc="2026-10-24T14:00:00Z",
-        software_version="EarthSift 2.0.0 (NASA Space Apps 2026 Edition)",
+        software_version="Tellura 2.0.0 (NASA Space Apps 2026 Edition)",
         dataset={
             "id": req.dataset_id,
             "provider": prov.get("provider", "NASA"),

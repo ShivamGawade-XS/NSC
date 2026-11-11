@@ -129,7 +129,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   usePageMetadata({
-    title: 'EarthSift — Earth System Trend Detective | NASA Space Apps 2026',
+    title: 'Tellura — Earth System Trend Detective | NASA Space Apps 2026',
     description: 'Autonomous spatial trend discovery instrument detecting non-parametric Mann-Kendall climate trends and Anselin LISA spatial autocorrelation across 44 years of continuous NASA Earth observations.',
     canonicalPath: '/',
   });
@@ -162,7 +162,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-2.5 text-xs font-mono tracking-wider text-[var(--color-text-muted)] uppercase mb-6 font-medium">
                 <img
                   src="/favicon.svg"
-                  alt="EarthSift NASA Space Apps 2026 challenge emblem"
+                  alt="Tellura NASA Space Apps 2026 challenge emblem"
                   className="w-5 h-5 rounded object-contain shrink-0"
                   width="20"
                   height="20"
@@ -297,7 +297,7 @@ export default function LandingPage() {
                 Deterministic Mathematical Engine
               </h2>
               <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-                EarthSift rejects ungrounded machine learning approximations for physical quantities. Every observation cell is evaluated using deterministically proven non-parametric mathematics, spatial weighting matrices, and false discovery controls.
+                Tellura rejects ungrounded machine learning approximations for physical quantities. Every observation cell is evaluated using deterministically proven non-parametric mathematics, spatial weighting matrices, and false discovery controls.
               </p>
             </div>
 

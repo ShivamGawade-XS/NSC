@@ -1,5 +1,5 @@
 """
-EarthSift — Omni-Scale Championship Test Suite
+Tellura — Omni-Scale Championship Test Suite
 Verifies:
 1. Burrows et al. (Nature 2011) Climate Velocity Vector Field Engine
 2. Archimedean Copula Multi-Hazard Risk & Joint Return Periods

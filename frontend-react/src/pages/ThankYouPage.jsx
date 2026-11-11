@@ -7,15 +7,15 @@ import { playTactileClick } from '../utils/audio';
 
 export default function ThankYouPage() {
   usePageMetadata({
-    title: 'Thank You — EarthSift Scientific Workbench',
-    description: 'Thank you for your scientific feedback and engagement with EarthSift for NASA Space Apps Challenge 2026.',
+    title: 'Thank You — Tellura Scientific Workbench',
+    description: 'Thank you for your scientific feedback and engagement with Tellura for NASA Space Apps Challenge 2026.',
     canonicalPath: '/thank-you',
   });
 
   const [copied, setCopied] = useState(false);
-  const citationText = `@software{EarthSift2026,
+  const citationText = `@software{Tellura2026,
   author = {Gawade, Shivam},
-  title = {EarthSift: Statistical Detection of Multi-Decadal Trends in NASA Earth System Data},
+  title = {Tellura: Statistical Detection of Multi-Decadal Trends in NASA Earth System Data},
   year = {2026},
   url = {https://github.com/ShivamGawade-XS/NSC},
   note = {NASA Space Apps Challenge 2026}

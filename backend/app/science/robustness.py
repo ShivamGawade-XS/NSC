@@ -1,5 +1,5 @@
 """
-EarthSift — Trend Robustness Lab Engine (Feature A)
+Tellura — Trend Robustness Lab Engine (Feature A)
 Quantifies the sensitivity of climate trends to analytical choices:
 1. Window perturbations (start/end date trims and sub-period halves)
 2. Alternative statistical estimators (Theil-Sen vs OLS vs Huber M-estimator)

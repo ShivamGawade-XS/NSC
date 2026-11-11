@@ -1,5 +1,5 @@
 """
-Integration tests for EarthSift FastAPI Endpoints.
+Integration tests for Tellura FastAPI Endpoints.
 Verifies all typed endpoints:
 - GET /health and /api/v1/health
 - GET /datasets and /datasets/{id}
@@ -29,7 +29,7 @@ def test_health_check_endpoints():
         assert res.status_code == 200
         data = res.json()
         assert data["status"] == "healthy"
-        assert "EarthSift" in data["service"]
+        assert "Tellura" in data["service"]
         assert "engine" in data
 
     # 2. GET /ready and /api/v1/ready

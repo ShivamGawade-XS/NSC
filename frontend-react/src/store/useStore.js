@@ -1,5 +1,5 @@
 /**
- * EarthSift Zustand Store
+ * Tellura Zustand Store
  * Global state management for analysis, map, and UI state.
  */
 import { create } from 'zustand';
@@ -503,7 +503,7 @@ const useStore = create((set, get) => ({
 }));
 
 if (typeof window !== 'undefined') {
-  window.__earthsift_store__ = useStore;
+  window.__Tellura_store__ = useStore;
 }
 
 export default useStore;

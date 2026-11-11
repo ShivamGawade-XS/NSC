@@ -1,5 +1,5 @@
 """
-EarthSift — Host Concurrency & Scientific Load Testing Harness
+Tellura — Host Concurrency & Scientific Load Testing Harness
 Benchmarks API endpoints, L1 RAM cache, and L2 SQLite B-Tree indexed database
 under high concurrent workloads on local host hardware.
 """
@@ -121,7 +121,7 @@ async def benchmark_endpoint(
 
 async def run_load_test(base_url: str, concurrency: int = 15):
     print("=" * 75)
-    print("  EARTHSIFT — HOST PERFORMANCE & LOAD TESTING BENCHMARK")
+    print("  Tellura — HOST PERFORMANCE & LOAD TESTING BENCHMARK")
     print(f"  Target URL:       {base_url}")
     print(f"  Concurrency:      {concurrency} concurrent workers")
     print("=" * 75)
@@ -187,7 +187,7 @@ async def run_load_test(base_url: str, concurrency: int = 15):
 
     # Generate Markdown Report
     report_path = Path(__file__).resolve().parents[1] / "LOAD_TEST_REPORT.md"
-    md_content = f"""# EarthSift Host Concurrency & Load Test Benchmark Report
+    md_content = f"""# Tellura Host Concurrency & Load Test Benchmark Report
 
 Generated at: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}
 Target Environment: Host-native Bare-Metal (127.0.0.1:8000)
@@ -233,8 +233,8 @@ Concurrency Level: {concurrency} Concurrent Workers
 
 
 def main():
-    parser = argparse.ArgumentParser(description="EarthSift Host Load Test Harness")
-    parser.add_argument("--url", default="http://127.0.0.1:8000", help="Base URL of EarthSift API")
+    parser = argparse.ArgumentParser(description="Tellura Host Load Test Harness")
+    parser.add_argument("--url", default="http://127.0.0.1:8000", help="Base URL of Tellura API")
     parser.add_argument("--concurrency", type=int, default=15, help="Number of concurrent workers (default: 15)")
     args = parser.parse_args()
 

@@ -78,13 +78,13 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
-          tags: earthsift:latest
+          tags: Tellura:latest
           load: true
 
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "earthsift:latest"
+          image-ref: "Tellura:latest"
           format: "table"
           exit-code: "0"
           ignore-unfixed: true

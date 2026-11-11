@@ -1,4 +1,4 @@
-# EarthSift — Design System & Visual Specification
+# Tellura — Design System & Visual Specification
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/DESIGN_SYSTEM.md`  
@@ -6,7 +6,7 @@
 ---
 
 ## 1. Aesthetic Vision: Human-Designed Scientific Instrument
-EarthSift is intentionally styled as a high-density, mission-critical scientific instrument rather than a generic startup marketing page or AI-generated demo.
+Tellura is intentionally styled as a high-density, mission-critical scientific instrument rather than a generic startup marketing page or AI-generated demo.
 
 ### Banned Anti-Patterns:
 - ❌ No AI-generated stock imagery or decorative astronauts.

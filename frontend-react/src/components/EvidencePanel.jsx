@@ -550,7 +550,7 @@ export default function EvidencePanel() {
         )}
       </div>
 
-      {/* EarthSift 2.0 Scientific Intelligence Actions */}
+      {/* Tellura 2.0 Scientific Intelligence Actions */}
       <div className="interface-card p-3 space-y-2">
         <div className="eyebrow-label text-zinc-400 mb-1">
           Scientific Intelligence & Robustness

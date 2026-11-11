@@ -1,5 +1,5 @@
 /**
- * EarthSift — Spatiotemporal Trend & Spatial Autocorrelation Web Worker
+ * Tellura — Spatiotemporal Trend & Spatial Autocorrelation Web Worker
  *
  * Implements client-side deterministic scientific statistics in a dedicated Web Worker:
  * 1. Exact Mann-Kendall S statistic with tie-corrected Var(S), Z, and two-tailed normal CDF p-value.

@@ -1,5 +1,5 @@
 /**
- * EarthSift 2.0 — Data Quality & Source Continuity Inspector Modal
+ * Tellura 2.0 — Data Quality & Source Continuity Inspector Modal
  * Feature D: Provides transparent audit of temporal completeness,
  * satellite sensor lineage, instrument calibration transitions, and physical outliers.
  */

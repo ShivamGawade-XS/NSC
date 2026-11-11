@@ -17,7 +17,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(earthsift_http_requests_total[1m])) by (status_code)",
+          "expr": "sum(rate(Tellura_http_requests_total[1m])) by (status_code)",
           "legendFormat": "Status {{status_code}}"
         }
       ],
@@ -36,15 +36,15 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(earthsift_http_request_duration_seconds_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(Tellura_http_request_duration_seconds_bucket[1m])) by (le))",
           "legendFormat": "p50 (Median)"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(earthsift_http_request_duration_seconds_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(Tellura_http_request_duration_seconds_bucket[1m])) by (le))",
           "legendFormat": "p95 (SLO Target < 0.5s)"
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(earthsift_http_request_duration_seconds_bucket[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(Tellura_http_request_duration_seconds_bucket[1m])) by (le))",
           "legendFormat": "p99"
         }
       ],
@@ -63,7 +63,7 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "1 - (sum(rate(earthsift_http_requests_total{status_code=~\"5..\"}[5m])) or vector(0)) / (sum(rate(earthsift_http_requests_total[5m])) or vector(1))",
+          "expr": "1 - (sum(rate(Tellura_http_requests_total{status_code=~\"5..\"}[5m])) or vector(0)) / (sum(rate(Tellura_http_requests_total[5m])) or vector(1))",
           "legendFormat": "Availability"
         }
       ],
@@ -91,7 +91,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "earthsift_active_requests",
+          "expr": "Tellura_active_requests",
           "legendFormat": "In-Flight"
         }
       ],
@@ -117,7 +117,7 @@
       "type": "gauge",
       "targets": [
         {
-          "expr": "earthsift_process_memory_rss_bytes",
+          "expr": "Tellura_process_memory_rss_bytes",
           "legendFormat": "RSS Memory"
         }
       ],
@@ -145,7 +145,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(earthsift_cache_hits_total[5m])) / (sum(rate(earthsift_cache_hits_total[5m])) + sum(rate(earthsift_cache_misses_total[5m])))",
+          "expr": "sum(rate(Tellura_cache_hits_total[5m])) / (sum(rate(Tellura_cache_hits_total[5m])) + sum(rate(Tellura_cache_misses_total[5m])))",
           "legendFormat": "Cache Hit Ratio"
         }
       ],
@@ -166,7 +166,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(earthsift_analysis_operations_total[5m])) by (dataset, status)",
+          "expr": "sum(rate(Tellura_analysis_operations_total[5m])) by (dataset, status)",
           "legendFormat": "{{dataset}} ({{status}})"
         }
       ],
@@ -180,10 +180,10 @@
   ],
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["earthsift", "nasa", "production", "sre"],
+  "tags": ["Tellura", "nasa", "production", "sre"],
   "time": { "from": "now-1h", "to": "now" },
   "timepicker": { "refresh_intervals": ["5s", "10s", "30s", "1m", "5m"] },
   "timezone": "browser",
-  "title": "NASA EarthSift — SRE Production Telemetry & SLO Dashboard",
-  "uid": "earthsift-prod-slo"
+  "title": "NASA Tellura — SRE Production Telemetry & SLO Dashboard",
+  "uid": "Tellura-prod-slo"
 }

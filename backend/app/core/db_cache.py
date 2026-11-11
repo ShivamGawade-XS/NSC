@@ -1,5 +1,5 @@
 """
-EarthSift — Persistent SQLite Cache with B-Tree Indexes
+Tellura — Persistent SQLite Cache with B-Tree Indexes
 Provides L2 persistent caching, database indexing, and query optimization
 for computed NASA Earth-system trend analyses and coordinate time series.
 """
@@ -24,12 +24,12 @@ from pydantic import BaseModel
 from app.core.config import settings
 from app.schemas.analysis import AnalysisRequest, AnalysisSummary, CustomAnalysisRequest, SpatialGridPoint
 
-logger = logging.getLogger("earthsift.db_cache")
+logger = logging.getLogger("Tellura.db_cache")
 
 # Database file location
 DEFAULT_DB_DIR = Path(__file__).resolve().parents[2] / "data"
 DEFAULT_DB_DIR.mkdir(parents=True, exist_ok=True)
-DB_PATH = Path(os.getenv("EARTHSIFT_DB_PATH", str(DEFAULT_DB_DIR / "earthdata_cache.db")))
+DB_PATH = Path(os.getenv("TELLURA_DB_PATH", str(DEFAULT_DB_DIR / "earthdata_cache.db")))
 
 _TLS = threading.local()
 _DB_LOCK = threading.Lock()
@@ -37,7 +37,7 @@ _DB_LOCK = threading.Lock()
 
 def get_db_path() -> Path:
     """Return the active database path configured via environment or module attribute."""
-    env_val = os.getenv("EARTHSIFT_DB_PATH")
+    env_val = os.getenv("TELLURA_DB_PATH")
     if env_val:
         return Path(env_val)
     return Path(DB_PATH)

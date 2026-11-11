@@ -1,6 +1,6 @@
-# EarthSift — Production Operations & Incident Runbooks
+# Tellura — Production Operations & Incident Runbooks
 
-**System:** EarthSift Scientific Spatiotemporal Climate Discovery Platform  
+**System:** Tellura Scientific Spatiotemporal Climate Discovery Platform  
 **Target Audience:** SREs, DevOps Engineers, On-Call Operators  
 **Classification:** Operational Runbooks  
 
@@ -9,8 +9,8 @@
 ## 1. High Latency & 503 Capacity Saturation Runbook
 
 ### Alert Trigger
-- `EarthSiftHighP95Latency` (p95 > 1500ms for 5m)
-- `EarthSiftComputeSaturation` (503 Service Unavailable rate > 5% for 2m)
+- `TelluraHighP95Latency` (p95 > 1500ms for 5m)
+- `TelluraComputeSaturation` (503 Service Unavailable rate > 5% for 2m)
 
 ### Symptoms
 - Endpoints `/api/v1/analysis` returning HTTP 503 with header `Retry-After: 5`.
@@ -47,7 +47,7 @@
 - SQLite query raises `sqlite3.DatabaseError: file is encrypted or is not a database`.
 
 ### Automated Disaster Recovery Procedure
-EarthSift ships with automated hot-backup and restore tooling:
+Tellura ships with automated hot-backup and restore tooling:
 
 1. **Verify Integrity of Current Database**:
    ```bash
@@ -74,19 +74,19 @@ EarthSift ships with automated hot-backup and restore tooling:
 
 ### Keys Governed
 - `SECRET_KEY` (Used for HMAC-SHA256 cache signing)
-- `EARTHSIFT_API_KEYS` (Comma-separated static keys for Keyed tier)
+- `TELLURA_API_KEYS` (Comma-separated static keys for Keyed tier)
 - `GEMINI_API_KEY` / `OPENAI_API_KEY` (External LLM API keys)
 
 ### Rotation Procedures
 
-#### Rotating `EARTHSIFT_API_KEYS` (Zero-Downtime)
+#### Rotating `TELLURA_API_KEYS` (Zero-Downtime)
 1. Generate new 32-character high-entropy secret:
    ```bash
    python -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
 2. Append new key to the existing comma-delimited environment variable:
    ```env
-   EARTHSIFT_API_KEYS=old_key_hash_abc123,new_key_hash_xyz789
+   TELLURA_API_KEYS=old_key_hash_abc123,new_key_hash_xyz789
    ```
 3. Update environment in Docker / Kubernetes deployment. The application automatically reloads hashes without downtime or restart.
 4. Notify keyed clients to migrate to `new_key_hash_xyz789`.
@@ -102,10 +102,10 @@ EarthSift ships with automated hot-backup and restore tooling:
 ## 4. External LLM Quota & Budget Depletion Runbook
 
 ### Alert Trigger
-- `EarthSiftLLMBudgetExhausted` (Daily external LLM calls >= 200)
+- `TelluraLLMBudgetExhausted` (Daily external LLM calls >= 200)
 
 ### System Behavior
-- EarthSift's `DailyLLMBudgetTracker` halts outbound calls to Gemini/OpenAI automatically.
+- Tellura's `DailyLLMBudgetTracker` halts outbound calls to Gemini/OpenAI automatically.
 - `/api/v1/explain` gracefully degrades to the deterministic, peer-reviewed scientific template. Zero 500 errors are returned to users.
 - Metric: `earthsift_llm_calls_total` plateaus at `DAILY_LLM_CALL_LIMIT`.
 

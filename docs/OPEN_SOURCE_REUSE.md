@@ -1,4 +1,4 @@
-# EarthSift — Open-Source Reuse & Attribution
+# Tellura — Open-Source Reuse & Attribution
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/OPEN_SOURCE_REUSE.md`  
@@ -6,7 +6,7 @@
 ---
 
 ## 1. Open-Source Philosophy
-EarthSift leverages battle-tested, permissive open-source packages from the scientific Python and geospatial ecosystems. Rather than reinventing low-level protocol handlers or baseline numerical primitives, EarthSift utilizes standard libraries and focuses its innovations on:
+Tellura leverages battle-tested, permissive open-source packages from the scientific Python and geospatial ecosystems. Rather than reinventing low-level protocol handlers or baseline numerical primitives, Tellura utilizes standard libraries and focuses its innovations on:
 1. Strict, inspectable evidence architecture.
 2. Vectorized 3D multi-temporal Mann-Kendall and Hamed-Rao spatial pipelines.
 3. Transparent composite discovery scoring.
@@ -34,7 +34,7 @@ EarthSift leverages battle-tested, permissive open-source packages from the scie
 
 ---
 
-## 3. Custom Implementations Built in EarthSift
+## 3. Custom Implementations Built in Tellura
 - **Vectorized Spatial Trend Engine:** Custom implementation in `backend/app/science/trend.py` combining Mann-Kendall, Sen's Slope, and Hamed-Rao autocorrelation correction.
 - **Benjamini-Hochberg FDR:** Vectorized monotonic adjusted q-value implementation handling 2D spatial fields with arbitrary NaN masking.
 - **Discovery Engine:** Transparent composite scoring formula balancing magnitude, statistical significance, coverage, and spatial coherence.

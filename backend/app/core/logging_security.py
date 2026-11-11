@@ -1,5 +1,5 @@
 """
-NASA EarthSift — Security Logging Sanitizer & Distributed Tracing Middleware
+NASA Tellura — Security Logging Sanitizer & Distributed Tracing Middleware
 Applies regex scrubbing across application logs to prevent accidental leakage
 of API keys, tokens, and credentials. Implements W3C TraceContext (traceparent)
 and X-Correlation-ID propagation with structured JSON formatting (ASVS 8.3.1 / Google SRE PRR).
@@ -139,7 +139,7 @@ class TracingAndStructuredLoggingMiddleware:
 
     def __init__(self, app: Any):
         self.app = app
-        self.logger = logging.getLogger("earthsift.access")
+        self.logger = logging.getLogger("Tellura.access")
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] != "http":
@@ -290,7 +290,7 @@ def install_security_logging(enable_json: bool | None = None) -> None:
     for handler in root_logger.handlers:
         handler.addFilter(scrubber)
 
-    for name in ["uvicorn", "uvicorn.access", "uvicorn.error", "earthsift", "fastapi"]:
+    for name in ["uvicorn", "uvicorn.access", "uvicorn.error", "Tellura", "fastapi"]:
         lg = logging.getLogger(name)
         lg.addFilter(scrubber)
         if use_json and json_formatter is not None:

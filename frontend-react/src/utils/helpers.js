@@ -1,5 +1,5 @@
 /**
- * EarthSift Utility Functions
+ * Tellura Utility Functions
  * Coordinate formatting, color scales, and statistical helpers.
  */
 

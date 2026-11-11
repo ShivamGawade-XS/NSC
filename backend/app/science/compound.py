@@ -1,5 +1,5 @@
 """
-EarthSift — Compound Climate Hazard & Decoupling Engine
+Tellura — Compound Climate Hazard & Decoupling Engine
 Cross-analyzes multi-variable climate trends (e.g. Temperature + Precipitation)
 to identify compound geophysical divergence:
 - Compound Aridification / Megadrought Regimes (Warming + Drying)

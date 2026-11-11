@@ -84,7 +84,7 @@ def test_json_log_formatter_outputs_valid_json_with_tracing_and_scrubbing():
 
     try:
         record = logging.LogRecord(
-            name="earthsift.test",
+            name="Tellura.test",
             level=logging.INFO,
             pathname="test.py",
             lineno=42,
@@ -106,7 +106,7 @@ def test_json_log_formatter_outputs_valid_json_with_tracing_and_scrubbing():
         payload = json.loads(formatted_str)
 
         assert payload["level"] == "INFO"
-        assert payload["logger"] == "earthsift.test"
+        assert payload["logger"] == "Tellura.test"
         assert payload["correlation_id"] == "test_corr_12345"
         assert payload["trace_id"] == "abcdef0123456789abcdef0123456789"
         assert payload["span_id"] == "1234567890abcdef"

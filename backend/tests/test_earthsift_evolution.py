@@ -1,5 +1,5 @@
 """
-EarthSift 2.0 — Scientific Intelligence & Core Evolution Test Suite
+Tellura 2.0 — Scientific Intelligence & Core Evolution Test Suite
 Tests for:
 1. Pre-flight Scientific Quality Gate (/analysis/quality-gate)
 2. Trend Robustness Lab (/analysis/{id}/robustness)

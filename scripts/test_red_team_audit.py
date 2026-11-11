@@ -35,7 +35,7 @@ except RuntimeError as exc:
 # 4. SEC-004 Filename traversal sanitization
 dirty_vars = ["../../etc/passwd", "..\\windows\\system32\\calc", "clean_var"]
 for v in dirty_vars:
-    fn = sanitize_attachment_filename("earthsift", v, 2000, 2023, "nc")
+    fn = sanitize_attachment_filename("Tellura", v, 2000, 2023, "nc")
     assert not any(c in fn for c in ["..", "/", "\\", ":", ";", '"', "\r", "\n"]), f"Unsafe filename: {fn}"
     print(f"4. SEC-004 Filename sanitization result for {v} -> {fn}")
 

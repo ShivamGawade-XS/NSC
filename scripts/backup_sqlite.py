@@ -17,7 +17,7 @@ from app.core.db_cache import get_db_path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Create verified SQLite backup of EarthSift cache DB.")
+    parser = argparse.ArgumentParser(description="Create verified SQLite backup of Tellura cache DB.")
     parser.add_argument("--source", type=str, default="", help="Path to source SQLite database")
     parser.add_argument("--dest", type=str, default="", help="Directory to store backups")
     parser.add_argument("--retention", type=int, default=10, help="Number of backups to retain")

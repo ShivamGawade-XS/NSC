@@ -1,5 +1,5 @@
 """
-Application and Resilience Tests for EarthSift.
+Application and Resilience Tests for Tellura.
 Verifies:
 - invalid request handling (validation errors)
 - empty result handling

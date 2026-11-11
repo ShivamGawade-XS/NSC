@@ -1,4 +1,4 @@
-# EarthSift — Scientific Methodology & Statistical Specifications
+# Tellura — Scientific Methodology & Statistical Specifications
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/METHODOLOGY.md`  
@@ -7,7 +7,7 @@
 ---
 
 ## 1. Mathematical Foundations
-EarthSift implements a robust, non-parametric statistical pipeline designed specifically for multi-decadal Earth observation data where non-normality, missingness, serial autocorrelation, and spatial multiplicity are ubiquitous.
+Tellura implements a robust, non-parametric statistical pipeline designed specifically for multi-decadal Earth observation data where non-normality, missingness, serial autocorrelation, and spatial multiplicity are ubiquitous.
 
 ---
 
@@ -27,7 +27,7 @@ $$\tau = \frac{S}{n(n-1)/2}$$
 ## 3. Autocorrelation Correction: Hamed & Rao (1998)
 Standard Mann-Kendall variance assumes independent, identically distributed (i.i.d.) observations. In geophysical and atmospheric series (such as MERRA-2 surface temperature), serial persistence ($AR(1)$ red noise) inflates the variance of $S$, causing false positive trend detections.
 
-EarthSift implements the **Hamed & Rao (1998)** modified variance:
+Tellura implements the **Hamed & Rao (1998)** modified variance:
 1. The series is first detrended using Sen's slope: $e_t = y_t - \beta \cdot t$.
 2. The empirical autocorrelation $\rho^*(k)$ of the ranks of residuals is computed for lags $k = 1, \dots, \min(n-1, 10)$.
 3. Significant autocorrelation coefficients exceeding the two-tailed 95% confidence bounds ($\pm 1.96 / \sqrt{n}$) adjust the variance:
@@ -58,7 +58,7 @@ $$\beta_{\text{decadal}} = \beta_{\text{annual}} \times 10$$
 ## 5. Multiple Hypothesis Testing: Benjamini-Hochberg FDR
 When testing $m$ spatial grid cells simultaneously across a geographical domain, traditional single-test $\alpha = 0.05$ thresholds produce numerous false discoveries.
 
-EarthSift applies the **Benjamini-Hochberg (1995)** procedure to control the False Discovery Rate (FDR) at target rate $q \le 0.05$:
+Tellura applies the **Benjamini-Hochberg (1995)** procedure to control the False Discovery Rate (FDR) at target rate $q \le 0.05$:
 1. Sort raw p-values in ascending order: $p_{(1)} \le p_{(2)} \le \dots \le p_{(m)}$.
 2. Find the largest rank $k$ such that:
 $$p_{(k)} \le \frac{k}{m} \cdot \alpha$$

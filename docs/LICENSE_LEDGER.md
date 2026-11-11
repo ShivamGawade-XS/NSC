@@ -1,14 +1,14 @@
-# EarthSift — Comprehensive License Ledger
+# Tellura — Comprehensive License Ledger
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/LICENSE_LEDGER.md`  
-**License of EarthSift:** MIT License  
+**License of Tellura:** MIT License  
 
 ---
 
 ## 1. Dependency License Audit
 
-All dependencies used in EarthSift possess permissive open-source licenses compatible with the MIT License and NASA Space Apps open-science guidelines.
+All dependencies used in Tellura possess permissive open-source licenses compatible with the MIT License and NASA Space Apps open-science guidelines.
 
 | Component / Package | Ecosystem | Version | License | License Compatibility | Usage in Project |
 |---|---|---|---|---|---|

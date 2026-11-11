@@ -12,7 +12,7 @@ let soundEnabled = true;
 export function isAudioMuted() {
   if (typeof window === 'undefined') return true;
 
-  const stored = safeStorage.getItem('earthsift_audio_muted');
+  const stored = safeStorage.getItem('Tellura_audio_muted');
   if (stored !== null) {
     return stored === 'true' || stored === '1';
   }
@@ -33,13 +33,13 @@ export function isAudioEnabled() {
 export function toggleAudio() {
   const nextMuted = !isAudioMuted();
   soundEnabled = !nextMuted;
-  safeStorage.setItem('earthsift_audio_muted', String(nextMuted));
+  safeStorage.setItem('Tellura_audio_muted', String(nextMuted));
   return !nextMuted;
 }
 
 export function setAudioMuted(muted) {
   soundEnabled = !muted;
-  safeStorage.setItem('earthsift_audio_muted', String(muted));
+  safeStorage.setItem('Tellura_audio_muted', String(muted));
 }
 
 function getAudioContext() {

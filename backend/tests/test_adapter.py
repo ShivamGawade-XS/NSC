@@ -1,5 +1,5 @@
 """
-EarthSift — Tests for Dataset Adapter & NASA Data Pipeline
+Tellura — Tests for Dataset Adapter & NASA Data Pipeline
 Tests DatasetAdapter contract:
 - discover()
 - metadata()

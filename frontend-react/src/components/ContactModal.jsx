@@ -53,7 +53,7 @@ export default function ContactModal({ isOpen, onClose }) {
 
     // Store in session storage for the thank you page
     try {
-      sessionStorage.setItem('earthsift_last_inquiry', JSON.stringify({
+      sessionStorage.setItem('tellura_last_inquiry', JSON.stringify({
         name: formData.name,
         topic: formData.topic,
         timestamp: new Date().toISOString(),

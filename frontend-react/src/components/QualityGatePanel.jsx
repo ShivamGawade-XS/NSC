@@ -1,5 +1,5 @@
 /**
- * EarthSift 2.0 — Pre-flight Scientific Quality Gate Panel
+ * Tellura 2.0 — Pre-flight Scientific Quality Gate Panel
  * Evaluates analysis parameters before execution:
  * sensor continuity, temporal sample count, spatial grid intersection.
  */

@@ -1,5 +1,5 @@
 """
-EarthSift — Analysis Request & Response Schemas
+Tellura — Analysis Request & Response Schemas
 Typed Pydantic schemas enforcing strict API contracts and evidence integrity.
 """
 
@@ -522,7 +522,7 @@ class LatexExportResponse(BaseModel):
 
 
 # ==========================================
-# EarthSift 2.0 Core Excellence & Intelligence Schemas
+# Tellura 2.0 Core Excellence & Intelligence Schemas
 # ==========================================
 
 class QualityGateRequest(BaseModel):

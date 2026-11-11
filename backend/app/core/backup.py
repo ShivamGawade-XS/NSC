@@ -1,5 +1,5 @@
 """
-EarthSift — Automated SQLite WAL Backup & Disaster Recovery System.
+Tellura — Automated SQLite WAL Backup & Disaster Recovery System.
 Provides online non-blocking SQLite backups via native sqlite3.Connection.backup(),
 cryptographic SHA-256 verification, automated PRAGMA integrity checks, and safe restoration.
 """
@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger("earthsift.backup")
+logger = logging.getLogger("Tellura.backup")
 
 
 def verify_sqlite_integrity(db_path: Path) -> dict[str, Any]:

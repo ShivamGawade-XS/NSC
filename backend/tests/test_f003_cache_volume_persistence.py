@@ -16,15 +16,15 @@ from app.core.db_cache import (
 
 
 def test_docker_compose_cache_volume_replaces_tmpfs():
-    """Verify docker-compose.yml mounts earthsift-cache volume instead of ephemeral tmpfs."""
+    """Verify docker-compose.yml mounts Tellura-cache volume instead of ephemeral tmpfs."""
     compose_path = Path(__file__).resolve().parent.parent.parent / "docker-compose.yml"
     assert compose_path.exists(), "docker-compose.yml must exist"
 
     with open(compose_path, encoding="utf-8") as f:
         compose_cfg = yaml.safe_load(f)
 
-    service = compose_cfg.get("services", {}).get("earthsift", {})
-    assert service, "earthsift service must be defined in compose"
+    service = compose_cfg.get("services", {}).get("Tellura", {})
+    assert service, "Tellura service must be defined in compose"
 
     # Verify user is non-root (10001:10001)
     assert service.get("user") == "10001:10001", "Service must run as non-root UID 10001"
@@ -42,11 +42,11 @@ def test_docker_compose_cache_volume_replaces_tmpfs():
     volumes = service.get("volumes", [])
     cache_vol = [v for v in volumes if "/app/cache" in v]
     assert len(cache_vol) == 1, f"Expected 1 persistent cache volume mount, found: {cache_vol}"
-    assert "earthsift-cache" in cache_vol[0]
+    assert "Tellura-cache" in cache_vol[0]
 
-    # Verify root level volumes define earthsift-cache
+    # Verify root level volumes define Tellura-cache
     root_volumes = compose_cfg.get("volumes", {})
-    assert "earthsift-cache" in root_volumes, "earthsift-cache must be defined in top-level volumes"
+    assert "Tellura-cache" in root_volumes, "Tellura-cache must be defined in top-level volumes"
 
 
 def test_sqlite_cache_survival_across_simulated_restart(tmp_path, monkeypatch):
@@ -58,7 +58,7 @@ def test_sqlite_cache_survival_across_simulated_restart(tmp_path, monkeypatch):
     test_db_dir.mkdir(parents=True, exist_ok=True)
     test_db = test_db_dir / "earthdata_cache.db"
 
-    monkeypatch.setenv("EARTHSIFT_DB_PATH", str(test_db))
+    monkeypatch.setenv("TELLURA_DB_PATH", str(test_db))
     # Reset existing connection to switch to test_db
     close_db_connection()
 

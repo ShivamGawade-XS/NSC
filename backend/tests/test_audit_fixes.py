@@ -1,5 +1,5 @@
 """
-Verification test suite for EarthSift Brutal Audit remediation.
+Verification test suite for Tellura Brutal Audit remediation.
 Validates:
 1. MERRA-2 authentic NetCDF loading and integer YYYYMM slicing
 2. Compound hazard endpoint calculations (CAI, hazard distributions)
@@ -164,12 +164,12 @@ def test_netcdf_export_cleanup():
     import os
     import tempfile
 
-    nc_leftovers_before = glob.glob(os.path.join(tempfile.gettempdir(), "earthsift_nc_*"))
+    nc_leftovers_before = glob.glob(os.path.join(tempfile.gettempdir(), "tellura_nc_*"))
     export_res = client.get(f"/analysis/{analysis_id}/export/netcdf")
     assert export_res.status_code == 200
     assert export_res.headers["content-type"] == "application/x-netcdf"
     assert len(export_res.content) > 500
-    nc_leftovers_after = glob.glob(os.path.join(tempfile.gettempdir(), "earthsift_nc_*"))
+    nc_leftovers_after = glob.glob(os.path.join(tempfile.gettempdir(), "tellura_nc_*"))
     assert len(nc_leftovers_after) <= len(nc_leftovers_before), "Zero leftover .nc temp directories/files in temp directory after export"
 
     # Verify CF-1.8 compliance on returned binary payload

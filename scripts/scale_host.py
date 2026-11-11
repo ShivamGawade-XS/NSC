@@ -1,6 +1,6 @@
 """
-EarthSift — Host Multi-Core Process Scaling Manager
-Scales the EarthSift scientific API directly across local host CPU cores
+Tellura — Host Multi-Core Process Scaling Manager
+Scales the Tellura Scientific API directly across local host CPU cores
 without requiring Kubernetes or container orchestrators.
 """
 
@@ -16,7 +16,7 @@ sys.path.insert(0, str(backend_dir))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Scale EarthSift API on local host hardware.")
+    parser = argparse.ArgumentParser(description="Scale Tellura API on local host hardware.")
     parser.add_argument("--host", default="127.0.0.1", help="Binding host address (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind (default: 8000)")
     parser.add_argument(
@@ -30,7 +30,7 @@ def main():
 
     cpu_total = os.cpu_count() or 1
     print("=" * 65)
-    print("  EARTHSIFT — LOCAL HOST MULTI-CORE SCALE ORCHESTRATOR")
+    print("  Tellura — LOCAL HOST MULTI-CORE SCALE ORCHESTRATOR")
     print(f"  Target Host:          {args.host}:{args.port}")
     print(f"  Available Host CPUs:  {cpu_total} Logical Cores")
     print(f"  Active Host Workers:  {args.workers} Worker Processes")

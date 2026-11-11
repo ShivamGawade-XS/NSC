@@ -1,4 +1,4 @@
-# EarthSift — Scientific Quality Assurance & Statistical Verification
+# Tellura — Scientific Quality Assurance & Statistical Verification
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/SCIENTIFIC_QA.md`  
@@ -6,7 +6,7 @@
 ---
 
 ## 1. Scientific Verification Protocol
-Scientific software must calculate, never hallucinate. To guarantee mathematical truthfulness, EarthSift underwent rigorous numerical verification comparing its outputs against peer-reviewed formulations, known synthetic baselines, and boundary edge cases.
+Scientific software must calculate, never hallucinate. To guarantee mathematical truthfulness, Tellura underwent rigorous numerical verification comparing its outputs against peer-reviewed formulations, known synthetic baselines, and boundary edge cases.
 
 ---
 
@@ -32,7 +32,7 @@ Scientific software must calculate, never hallucinate. To guarantee mathematical
 - **Ground Truth:** Linear slope $m = 0.75$, intercept $b = 10.0$ on $n=30$ points.
 - **Contamination:** Point $y_{10}$ contaminated with an extreme outlier ($y_{10} = 500.0$).
 - **Ordinary Least Squares (OLS):** Highly distorted by the single point ($m_{\text{OLS}} \approx 3.25$).
-- **EarthSift Sen's Estimator:** Calculated slope = $0.7500$, intercept = $10.0000$ (relative error $< 0.001$).
+- **Tellura Sen's Estimator:** Calculated slope = $0.7500$, intercept = $10.0000$ (relative error $< 0.001$).
 - **Verdict:** PASS — Absolute resistance to isolated sensor anomalies.
 
 ### D. Benjamini-Hochberg False Discovery Rate (FDR) Multiplicity Control

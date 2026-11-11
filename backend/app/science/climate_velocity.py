@@ -1,5 +1,5 @@
 """
-EarthSift — Spatial Climate Velocity Engine (Burrows et al., Nature 2011)
+Tellura — Spatial Climate Velocity Engine (Burrows et al., Nature 2011)
 Calculates the spatial velocity of temperature/climate isocline migration:
 Velocity = (Temporal Trend) / (Local Spatial Gradient) [km / decade]
 Along with migration trajectory bearing [degrees from North].

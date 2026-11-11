@@ -1,4 +1,4 @@
-# EarthSift — Release Readiness & Release Gate Audit
+# Tellura — Release Readiness & Release Gate Audit
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/RELEASE_READINESS.md`  
@@ -34,4 +34,4 @@
 ---
 
 ## 2. Release Gate Verdict
-EarthSift is **fully certified for release**. No unevidenced scientific claims or manufactured test passes exist in the codebase.
+Tellura is **fully certified for release**. No unevidenced scientific claims or manufactured test passes exist in the codebase.

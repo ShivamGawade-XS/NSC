@@ -35,7 +35,7 @@ def test_health_and_ready_contain_no_sensitive_info():
 def test_two_tier_auth_valid_api_key_unlocks_metrics(monkeypatch):
     """Verify that providing a valid API key unlocks /metrics and reports keyed tier."""
     test_key = "test-secret-api-key-for-forge-2026"
-    monkeypatch.setenv("EARTHSIFT_API_KEYS", test_key)
+    monkeypatch.setenv("TELLURA_API_KEYS", test_key)
     # Reload or reinitialize key hashes
     from app.core.auth import reload_api_keys
     reload_api_keys()

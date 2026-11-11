@@ -14,7 +14,7 @@ export default function Header() {
   const [contactOpen, setContactOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window === 'undefined') return true;
-    const savedTheme = safeStorage.getItem('earthsift_theme');
+    const savedTheme = safeStorage.getItem('tellura_theme');
     if (savedTheme) return savedTheme === 'dark';
     return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true;
   });
@@ -34,10 +34,10 @@ export default function Header() {
     setIsDark(nextDark);
     if (nextDark) {
       document.documentElement.classList.add('dark');
-      safeStorage.setItem('earthsift_theme', 'dark');
+      safeStorage.setItem('tellura_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      safeStorage.setItem('earthsift_theme', 'light');
+      safeStorage.setItem('tellura_theme', 'light');
     }
   };
 
@@ -93,18 +93,18 @@ export default function Header() {
           <Link
             to="/"
             className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0066ff] rounded py-1 px-1"
-            aria-label="EarthSift Home"
+            aria-label="Tellura Home"
           >
             <img
               src="/favicon.svg"
-              alt="EarthSift Earth System Trend Detective brand mark"
+              alt="Tellura Earth System Trend Detective brand mark"
               className="w-7 h-7 rounded object-contain shadow-xs shrink-0"
               width="28"
               height="28"
             />
             <div className="flex flex-col">
               <span className="font-['Space_Grotesk'] font-bold text-sm tracking-tight text-[var(--color-text-main)] group-hover:text-[var(--color-accent-blue)] transition-colors">
-                EarthSift
+                Tellura
               </span>
               <span className="text-[9px] font-mono tracking-wider text-[var(--color-text-muted)] hidden sm:inline-block">
                 Atmospheric Trend Analysis

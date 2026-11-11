@@ -1,4 +1,4 @@
-# EarthSift — Live Demonstration Script & 7-Slide Narrative
+# Tellura — Live Demonstration Script & 7-Slide Narrative
 
 **Challenge:** NASA Space Apps 2026 — *Be An Earth System Trend Detective!*  
 **Document:** `docs/DEMO_SCRIPT.md`  
@@ -14,14 +14,14 @@ This script tells one cohesive, compelling scientific story: detecting real, div
 ### Step 1: Open Application & Note Truthful Baseline (0:00 - 0:20)
 - **Action:** Open `http://localhost:8000/`.
 - **Narrative:**
-  > "Welcome to EarthSift, an evidence-first trend discovery instrument built for the NASA Space Apps 2026 Challenge. Notice the banner at the top immediately: in offline demo mode, EarthSift honestly flags that it is running on a verified physical fixture, avoiding fake claims of live satellite streaming when disconnected."
+  > "Welcome to Tellura, an evidence-first trend discovery instrument built for the NASA Space Apps 2026 Challenge. Notice the banner at the top immediately: in offline demo mode, Tellura honestly flags that it is running on a verified physical fixture, avoiding fake claims of live satellite streaming when disconnected."
 
 ---
 
 ### Step 2: Configure & Execute Trend Analysis (0:20 - 0:45)
 - **Action:** Select NASA MERRA-2, Target Variable `2-Meter Air Temperature (T2M)`, Years `2000` to `2023`, ensure `Apply Benjamini-Hochberg FDR` is checked. Click **⚡ Run Trend Detection**.
 - **Narrative:**
-  > "We execute our vectorized trend engine across 24 consecutive years of atmospheric data. In under 200 milliseconds, EarthSift computes non-parametric Mann-Kendall statistics, Sen's robust slope rates, and Benjamini-Hochberg False Discovery Rate corrections across hundreds of spatial coordinates."
+  > "We execute our vectorized trend engine across 24 consecutive years of atmospheric data. In under 200 milliseconds, Tellura computes non-parametric Mann-Kendall statistics, Sen's robust slope rates, and Benjamini-Hochberg False Discovery Rate corrections across hundreds of spatial coordinates."
 
 ---
 
@@ -42,7 +42,7 @@ This script tells one cohesive, compelling scientific story: detecting real, div
 ### Step 5: Audit the Structured Evidence Inspector (1:35 - 2:00)
 - **Action:** Point to the 7 cards on the right panel.
 - **Narrative:**
-  > "Axiom 1 of EarthSift is Inspectable Truth. Every finding generates an immutable structured record: empirical observation, robust magnitude, statistical significance with p-value and q-value, 100% data coverage, the scientific method, and explicit scientific limitations reminding us that empirical trends do not prove physical causation without attribution modeling."
+  > "Axiom 1 of Tellura is Inspectable Truth. Every finding generates an immutable structured record: empirical observation, robust magnitude, statistical significance with p-value and q-value, 100% data coverage, the scientific method, and explicit scientific limitations reminding us that empirical trends do not prove physical causation without attribution modeling."
 
 ---
 
@@ -69,7 +69,7 @@ This script tells one cohesive, compelling scientific story: detecting real, div
 
 ## 2. Seven-Slide Video Fallback Narrative
 
-1. **Slide 1 — Title & Challenge:** EarthSift: Find the changes worth investigating. NASA Space Apps 2026.
+1. **Slide 1 — Title & Challenge:** Tellura: Find the changes worth investigating. NASA Space Apps 2026.
 2. **Slide 2 — The Scientific Trap:** False positives from multiple spatial testing and serial red noise autocorrelation.
 3. **Slide 3 — The Engine:** Mann-Kendall + Hamed-Rao (1998) + Theil-Sen + Benjamini-Hochberg FDR.
 4. **Slide 4 — Discovery Engine:** Transparent composite scoring to surface candidate signals worth investigating.

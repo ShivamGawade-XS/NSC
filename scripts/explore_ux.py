@@ -1,5 +1,5 @@
 """
-EarthSift — Playwright Real-Browser Exploration & Journey Diagnostics
+Tellura — Playwright Real-Browser Exploration & Journey Diagnostics
 Executes real browser runs on Chromium, captures console messages, failed requests,
 DOM states, and verifies first-time user journey through to evidence inspection.
 """

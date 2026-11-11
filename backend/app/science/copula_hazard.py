@@ -1,5 +1,5 @@
 """
-EarthSift — Archimedean Copula Multi-Hazard Risk Engine
+Tellura — Archimedean Copula Multi-Hazard Risk Engine
 Models bivariate dependence between thermal extremes (warming) and hydrological deficits (drying)
 using Gumbel and Clayton Copulas to estimate joint empirical return periods and compound tail risk.
 """

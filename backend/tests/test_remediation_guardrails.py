@@ -1,5 +1,5 @@
 """
-EarthSift — Confirmed Defect Remediation and Scientific Guardrails Test Suite
+Tellura — Confirmed Defect Remediation and Scientific Guardrails Test Suite
 Tests for P0 and P1 fixes:
 1. Spatial Query Crash (P0): zero-cell bounding boxes return clean 422 with actionable guidance instead of 500.
 2. Solar Discontinuity Guard (P0): cross-regime trends across 2000/2001 for ALLSKY_SFC_SW_DWN are blocked with clear partition guidance.

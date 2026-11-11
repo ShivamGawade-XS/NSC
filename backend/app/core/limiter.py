@@ -1,6 +1,6 @@
 # pyright: reportMissingImports=false
 """
-EarthSift — Rate Limiting Configuration (SlowAPI)
+Tellura — Rate Limiting Configuration (SlowAPI)
 Provides enterprise rate limiting across compute-heavy and export endpoints.
 """
 
@@ -68,7 +68,7 @@ def check_is_test_env(env: str | None = None, _is_pytest: bool | None = None) ->
     return in_pytest or env_test_flags
 
 
-logger = logging.getLogger("earthsift.limiter")
+logger = logging.getLogger("Tellura.limiter")
 
 
 def get_limiter_storage_uri() -> str:

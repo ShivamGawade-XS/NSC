@@ -1,5 +1,5 @@
 """
-EarthSift — Custom User-Uploaded Dataset Analysis Test Suite
+Tellura — Custom User-Uploaded Dataset Analysis Test Suite
 Verifies:
 1. POST /analysis/custom endpoint with real time series observations
 2. Computation of Mann-Kendall p-values, Theil-Sen slopes, Gilbert 95% CIs, and Pettitt changepoints

@@ -1,5 +1,5 @@
 /**
- * EarthSift 2.0 — Side-by-Side Regional Trend Detective Modal
+ * Tellura 2.0 — Side-by-Side Regional Trend Detective Modal
  * Feature C: Compares climate trend trajectories across two geographic regions
  * with formal two-sample hypothesis testing for trend divergence.
  */
