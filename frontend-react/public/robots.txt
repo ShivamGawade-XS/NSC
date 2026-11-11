@@ -1,4 +1,4 @@
-# EarthSift — NASA Earth System Trend Detective
+# Tellura — NASA Earth System Trend Detective
 # Production Robots.txt Specification
 
 User-agent: *
@@ -29,4 +29,4 @@ Allow: /
 Allow: /llms.txt
 
 # Sitemaps
-Sitemap: https://earthsift.org/sitemap.xml
+Sitemap: https://tellura.shivamgawade.dev/sitemap.xml

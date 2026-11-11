@@ -142,7 +142,7 @@ export default function EvidencePanel() {
       setAiResult({
         ...data,
         inference_time_ms: data.inference_time_ms ?? clientElapsed,
-        model_used: data.model_used || 'Live Google Gemini 2.5 Flash',
+        model_used: data.model_used || 'Live Google Gemini',
       });
       playTelemetryChime();
     } catch {
@@ -495,7 +495,7 @@ export default function EvidencePanel() {
               <div className="flex items-center gap-1.5">
                 <span className={`inline-block w-2 h-2 rounded-full ${aiResult.model_used && !aiResult.model_used.includes('Deterministic') ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-main)]">
-                  {aiResult.model_used || 'Live Google Gemini 2.5 Flash'}
+                  {aiResult.model_used || 'Live Google Gemini'}
                 </span>
               </div>
               {aiResult.inference_time_ms !== undefined && (

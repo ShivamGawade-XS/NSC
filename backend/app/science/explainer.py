@@ -136,7 +136,7 @@ def _ground_evidence(
     arg1: Any,
     arg2: Any = None,
     req: ExplainRequest | None = None,
-    model_used: str = "Live Google Gemini 2.5 Flash",
+    model_used: str = "Live Google Gemini",
     inference_time_ms: float = 1.0,
 ) -> ExplainResponse:
     if isinstance(arg1, ExplainRequest):
@@ -284,7 +284,11 @@ async def explain_evidence_with_ai_async(req: ExplainRequest) -> ExplainResponse
                             text_resp = candidates[0]["content"]["parts"][0]["text"]
                             parsed = _clean_and_parse_json(text_resp)
                             latency_ms = round((time.perf_counter() - t0) * 1000, 1)
-                            model_label = "Live Google Gemini 2.5 Flash" if "2.5" in model else f"Live Google {model}"
+                            model_label = {
+                                "gemini-flash-lite-latest": "Live Google Gemini Flash Lite",
+                                "gemini-flash-latest": "Live Google Gemini Flash",
+                                "gemini-2.5-flash": "Live Google Gemini 2.5 Flash",
+                            }.get(model, f"Live Google Gemini ({model})")
                             return _ground_evidence(req, parsed, model_used=model_label, inference_time_ms=latency_ms)
                     elif res.status_code in (400, 401, 403):
                         logger.warning("Gemini API rejected key/request with status %d (%s); aborting model loop.", res.status_code, res.text[:200])

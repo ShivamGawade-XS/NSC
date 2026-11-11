@@ -146,7 +146,7 @@ async def health_check(request: Request) -> dict[str, Any]:
     """Lightweight public API health and engine status probe."""
     return {
         "status": "healthy",
-        "service": "EarthSift Scientific API",
+        "service": "Tellura Scientific API",
         "version": "1.0.0",
         "engine": "Mann-Kendall + Theil-Sen + Benjamini-Hochberg FDR",
         "adapters": list(ADAPTERS.keys()),

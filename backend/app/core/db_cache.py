@@ -562,7 +562,7 @@ def get_telemetry_aggregates() -> dict[str, Any]:
         cur.execute("SELECT event, COUNT(*) FROM telemetry_events GROUP BY event ORDER BY COUNT(*) DESC LIMIT 10;")
         event_breakdown = {row[0]: row[1] for row in cur.fetchall()}
 
-        cur.execute("SELECT page, COUNT(*) FROM telemetry_events WHERE page != '' GROUP BY page ORDER BY COUNT(*) DESC LIMIT 5;")
+        cur.execute("SELECT page, COUNT(*) FROM telemetry_events WHERE page != '' GROUP BY page ORDER BY COUNT(*) DESC, MAX(created_at) DESC LIMIT 10;")
         top_pages = [{"page": row[0], "count": row[1]} for row in cur.fetchall()]
 
         # Analysis metadata index aggregates
