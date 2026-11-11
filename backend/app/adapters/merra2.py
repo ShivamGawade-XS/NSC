@@ -338,9 +338,10 @@ class MERRA2Adapter(BaseDatasetAdapter):
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    f"NASA MERRA-2 atmospheric reanalysis data for variable '{variable}' "
-                    f"({start_year}-{end_year}) is unavailable on this server. "
-                    "Synthetic data generation has been permanently eliminated to uphold the EarthSift Zero-Synthetic Standard."
+                    f"NASA MERRA-2 atmospheric reanalysis data for variable '{variable}' ({start_year}-{end_year}) "
+                    f"in coordinates {bbox} is unavailable on this server. "
+                    "Synthetic data generation has been permanently eliminated to uphold the EarthSift Zero-Synthetic Standard. "
+                    "To stream live authentic NASA observations for any global bounding box, switch dataset to 'nasa_power' (NASA POWER Global Live Streaming)."
                 )
             )
 

@@ -206,16 +206,57 @@ Rules:
 Query: """
 
 
-def _gemini_upgrade(query: str, fallback: NLQParseResponse) -> NLQParseResponse:
-    """
-    Call Gemini to semantically parse the query.
-    Returns upgraded NLQParseResponse on success; original fallback on any error.
-    """
+def _build_upgraded_response(query: str, parsed: dict[str, Any]) -> NLQParseResponse:
+    var_id = parsed.get("variable_id", "T2M")
+    if var_id not in VALID_VARS:
+        var_id = "T2M"
+    bbox = parsed.get("bbox")
+    if bbox and (not isinstance(bbox, list) or len(bbox) != 4):
+        bbox = None
+    start_year = max(1980, min(2026, int(parsed.get("start_year", 2000))))
+    end_year = max(1980, min(2026, int(parsed.get("end_year", 2023))))
+    if start_year >= end_year:
+        start_year = max(1980, end_year - 15)
+    alpha = float(parsed.get("alpha", 0.05))
+    if alpha not in (0.01, 0.05, 0.10):
+        alpha = 0.05
+    dataset_id = parsed.get("dataset_id", "merra2_reanalysis")
+    if dataset_id not in ("nasa_power", "merra2_reanalysis"):
+        dataset_id = "merra2_reanalysis"
+    region_name = parsed.get("region_name") or ""
+    matched_regions = [region_name] if region_name else []
+
+    analysis_req = AnalysisRequest(
+        dataset_id=dataset_id,
+        variable_id=var_id,
+        start_year=start_year,
+        end_year=end_year,
+        bbox=bbox,
+        alpha=alpha,
+        prefer_live=True,
+        use_fdr=True,
+    )
+    region_desc = f"in {region_name}" if region_name else "across global domain"
+    intent_desc = (
+        f"[Gemini-parsed] {var_id} trends {region_desc} "
+        f"from {start_year} to {end_year}, alpha={alpha}."
+    )
+    return NLQParseResponse(
+        raw_query=query,
+        interpreted_intent=intent_desc,
+        analysis_request=analysis_req,
+        confidence=0.92,
+        matched_regions=matched_regions,
+    )
+
+
+async def _gemini_upgrade_async(query: str, fallback: NLQParseResponse) -> NLQParseResponse:
+    """Asynchronous Gemini semantic parser with non-blocking network calls."""
     gemini_key = os.environ.get("GEMINI_API_KEY", "")
     if not gemini_key:
         return fallback
 
-    models = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]
+    models = ["gemini-flash-lite-latest", "gemini-2.5-flash"]
     for model in models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
         body: dict[str, Any] = {
@@ -223,59 +264,48 @@ def _gemini_upgrade(query: str, fallback: NLQParseResponse) -> NLQParseResponse:
             "generationConfig": {"temperature": 0.0, "maxOutputTokens": 256},
         }
         try:
-            with httpx.Client(timeout=httpx.Timeout(8.0, connect=3.0)) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(4.0, connect=2.0)) as client:
+                resp = await client.post(url, json=body)
+            if resp.status_code != 200:
+                logger.debug("Gemini NLQ %s returned %s", model, resp.status_code)
+                continue
+            text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+            text = re.sub(r"^```(?:json)?\s*", "", text)
+            text = re.sub(r"\s*```$", "", text)
+            parsed: dict[str, Any] = json.loads(text)
+            logger.info("NLQ upgraded asynchronously by Gemini model %s", model)
+            return _build_upgraded_response(query, parsed)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Gemini async NLQ upgrade failed on %s: %s", model, exc)
+
+    return fallback
+
+
+def _gemini_upgrade(query: str, fallback: NLQParseResponse) -> NLQParseResponse:
+    """Synchronous Gemini semantic parser fallback."""
+    gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    if not gemini_key:
+        return fallback
+
+    models = ["gemini-flash-lite-latest", "gemini-2.5-flash"]
+    for model in models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+        body: dict[str, Any] = {
+            "contents": [{"parts": [{"text": _GEMINI_NLQ_PROMPT + query}]}],
+            "generationConfig": {"temperature": 0.0, "maxOutputTokens": 256},
+        }
+        try:
+            with httpx.Client(timeout=httpx.Timeout(4.0, connect=2.0)) as client:
                 resp = client.post(url, json=body)
             if resp.status_code != 200:
                 logger.debug("Gemini NLQ %s returned %s", model, resp.status_code)
                 continue
             text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-            # Strip ```json fences if present
             text = re.sub(r"^```(?:json)?\s*", "", text)
             text = re.sub(r"\s*```$", "", text)
             parsed: dict[str, Any] = json.loads(text)
-
-            var_id = parsed.get("variable_id", "T2M")
-            if var_id not in VALID_VARS:
-                var_id = "T2M"
-            bbox = parsed.get("bbox")
-            if bbox and (not isinstance(bbox, list) or len(bbox) != 4):
-                bbox = None
-            start_year = max(1980, min(2026, int(parsed.get("start_year", 2000))))
-            end_year = max(1980, min(2026, int(parsed.get("end_year", 2023))))
-            if start_year >= end_year:
-                start_year = max(1980, end_year - 15)
-            alpha = float(parsed.get("alpha", 0.05))
-            if alpha not in (0.01, 0.05, 0.10):
-                alpha = 0.05
-            dataset_id = parsed.get("dataset_id", "merra2_reanalysis")
-            if dataset_id not in ("nasa_power", "merra2_reanalysis"):
-                dataset_id = "merra2_reanalysis"
-            region_name = parsed.get("region_name") or ""
-            matched_regions = [region_name] if region_name else []
-
-            analysis_req = AnalysisRequest(
-                dataset_id=dataset_id,
-                variable_id=var_id,
-                start_year=start_year,
-                end_year=end_year,
-                bbox=bbox,
-                alpha=alpha,
-                prefer_live=True,
-                use_fdr=True,
-            )
-            region_desc = f"in {region_name}" if region_name else "across global domain"
-            intent_desc = (
-                f"[Gemini-parsed] {var_id} trends {region_desc} "
-                f"from {start_year} to {end_year}, alpha={alpha}."
-            )
-            logger.info("NLQ upgraded by Gemini model %s", model)
-            return NLQParseResponse(
-                raw_query=query,
-                interpreted_intent=intent_desc,
-                analysis_request=analysis_req,
-                confidence=0.92,
-                matched_regions=matched_regions,
-            )
+            logger.info("NLQ upgraded synchronously by Gemini model %s", model)
+            return _build_upgraded_response(query, parsed)
         except Exception as exc:  # noqa: BLE001
             logger.debug("Gemini NLQ upgrade failed on %s: %s", model, exc)
 
@@ -285,6 +315,14 @@ def _gemini_upgrade(query: str, fallback: NLQParseResponse) -> NLQParseResponse:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
+async def parse_natural_language_query_async(query: str) -> NLQParseResponse:
+    """Non-blocking asynchronous NLQ parser."""
+    result, confidence = _deterministic_parse(query)
+    if confidence < 0.70:
+        result = await _gemini_upgrade_async(query, result)
+    return result
+
 
 def parse_natural_language_query(query: str) -> NLQParseResponse:
     """

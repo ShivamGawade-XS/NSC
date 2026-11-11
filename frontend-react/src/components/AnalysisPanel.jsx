@@ -155,13 +155,13 @@ export default function AnalysisPanel() {
             }}
             className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none transition-colors"
           >
-            <option value="nasa_power">NASA POWER (LaRC Synoptic)</option>
-            <option value="merra2_reanalysis">MERRA-2 Reanalysis (GMAO)</option>
+            <option value="nasa_power">NASA POWER (Global Live Streaming)</option>
+            <option value="merra2_reanalysis">MERRA-2 Reanalysis (North America Continental)</option>
           </select>
           <p className="text-[9px] text-[var(--color-text-muted)] mt-1 font-mono">
             {dataset === 'nasa_power'
-              ? 'NASA Langley Research Center • CF-1.8 • DOI: 10.5067/POWER/10.0.0'
-              : 'NASA GMAO Atmospheric • CF-1.6 • DOI: 10.5067/A7F0JNNUTWOB'}
+              ? 'NASA Langley Research Center • Global Live Stream • DOI: 10.5067/POWER/10.0.0'
+              : 'NASA GMAO Atmospheric • Pre-cached North America • DOI: 10.5067/A7F0JNNUTWOB'}
           </p>
         </div>
 

@@ -79,7 +79,7 @@ from app.science.export import (
     generate_nasa_latex_memorandum,
     generate_scientific_dossier,
 )
-from app.science.nlq_parser import parse_natural_language_query
+from app.science.nlq_parser import parse_natural_language_query, parse_natural_language_query_async
 from app.science.robustness import evaluate_trend_robustness
 from app.science.spatial import compute_global_morans_i, compute_lisa_clusters
 from app.science.trend import (
@@ -1679,12 +1679,13 @@ def get_climate_velocity(request: Request, analysis_id: str) -> ClimateVelocityR
 
 @router.post("/copilot/parse-query", response_model=NLQParseResponse)
 @limiter.limit("30/minute")
-def parse_natural_language_scientific_query(request: Request, req: NLQParseRequest) -> NLQParseResponse:
+async def parse_natural_language_scientific_query(request: Request, req: NLQParseRequest) -> NLQParseResponse:
     """
     EarthSift NLQ Semantic Copilot:
     Translates free-form natural language queries into verified Pydantic AnalysisRequests.
+    Non-blocking async execution.
     """
-    return parse_natural_language_query(req.query)
+    return await parse_natural_language_query_async(req.query)
 
 
 @router.post("/analysis/compare", response_model=CompareLocationsResponse)
@@ -1796,7 +1797,20 @@ def get_colab_launcher_link(request: Request, analysis_id: str) -> dict[str, Any
 
     req = cached["req"]
     colab_badge_url = "https://colab.research.google.com/assets/colab-badge.svg"
-    github_colab_url = f"https://colab.research.google.com/github/ShivamGawade-XS/NSC/blob/main/notebooks/earthsift_reproducible_{req.variable_id}.ipynb"
+    var_map = {
+        "PRECTOT": "PRECTOTCORR",
+        "PRECTOTCORR": "PRECTOTCORR",
+        "T2M": "T2M",
+        "ALLSKY_SFC_SW_DWN": "ALLSKY_SFC_SW_DWN",
+        "WS10M": "WS10M",
+        "RH2M": "RH2M",
+        "compound": "compound",
+        "compound_hazard": "compound",
+    }
+    target_nb = var_map.get(str(req.variable_id).upper(), "T2M")
+    if target_nb not in var_map.values():
+        target_nb = "T2M"
+    github_colab_url = f"https://colab.research.google.com/github/ShivamGawade-XS/NSC/blob/main/notebooks/earthsift_reproducible_{target_nb}.ipynb"
 
     return {
         "analysis_id": analysis_id,

@@ -102,7 +102,7 @@ export default function TermsPage() {
             </p>
             <div className="bg-[var(--color-bg-elevated)] p-4 rounded border border-[var(--color-border-subtle)] font-mono text-xs space-y-1.5">
               <div><strong>Lead Researcher:</strong> Shivam Gawade</div>
-              <div><strong>Email:</strong> <a href="mailto:shivamgawade.dev@gmail.com" className="text-[var(--color-accent-blue)] hover:underline">shivamgawade.dev@gmail.com</a> / <a href="mailto:contact@Tellura.org" className="text-[var(--color-accent-blue)] hover:underline">contact@Tellura.org</a></div>
+              <div><strong>Email:</strong> <a href="mailto:shivamgawade.dev@gmail.com" className="text-[var(--color-accent-blue)] hover:underline">shivamgawade.dev@gmail.com</a></div>
               <div><strong>Repository Issues:</strong> <a href="https://github.com/ShivamGawade-XS/NSC/issues" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-blue)] hover:underline">github.com/ShivamGawade-XS/NSC/issues</a></div>
               <div><strong>Event:</strong> NASA Space Apps Challenge 2026 (Global Event)</div>
             </div>

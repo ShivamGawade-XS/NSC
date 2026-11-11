@@ -116,7 +116,7 @@ export default function PrivacyPolicyPage() {
             <div className="bg-[var(--color-bg-elevated)] p-4 rounded border border-[var(--color-border-subtle)] font-mono text-xs space-y-1.5">
               <div><strong>Project Maintainer:</strong> Shivam Gawade</div>
               <div><strong>Lead Engineering Contact:</strong> <a href="mailto:shivamgawade.dev@gmail.com" className="text-[var(--color-accent-blue)] hover:underline">shivamgawade.dev@gmail.com</a></div>
-              <div><strong>Institutional Inquiries:</strong> <a href="mailto:contact@Tellura.org" className="text-[var(--color-accent-blue)] hover:underline">contact@Tellura.org</a></div>
+              <div><strong>Open Source Repository:</strong> <a href="https://github.com/ShivamGawade-XS/NSC" target="_blank" rel="noopener noreferrer" className="text-[var(--color-accent-blue)] hover:underline">github.com/ShivamGawade-XS/NSC</a></div>
               <div><strong>Challenge Team:</strong> NASA Space Apps Challenge 2026 Global Participant</div>
             </div>
           </section>

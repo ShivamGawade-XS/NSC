@@ -17,7 +17,7 @@ export default function ThankYouPage() {
   author = {Gawade, Shivam},
   title = {Tellura: Statistical Detection of Multi-Decadal Trends in NASA Earth System Data},
   year = {2026},
-  url = {https://Tellura.org},
+  url = {https://github.com/ShivamGawade-XS/NSC},
   note = {NASA Space Apps Challenge 2026}
 }`;
 
