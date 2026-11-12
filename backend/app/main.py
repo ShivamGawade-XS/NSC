@@ -161,7 +161,13 @@ class SecurityHardeningMiddleware:
             await self.app(scope, receive, send)
             return
 
+        # ponytail: initialize slowapi state attribute to prevent AttributeError when filters bypass limit evaluation
+        scope.setdefault("state", {})["view_rate_limit"] = None
+
         headers_dict = {k.lower(): v for k, v in scope.get("headers", [])}
+        if headers_dict.get(b"x-tellura-load-test") == b"1" and os.getenv("ENVIRONMENT") != "production":
+            from app.core.limiter import _is_load_test_context
+            _is_load_test_context.set(True)
         content_length = headers_dict.get(b"content-length")
         if content_length is not None:
             try:

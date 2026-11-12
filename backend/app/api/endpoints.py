@@ -1386,6 +1386,7 @@ def export_analysis_geojson(request: Request, analysis_id: str):
 
 
 @router.get("/analysis/{analysis_id}/dossier")
+@router.get("/analysis/{analysis_id}/export/dossier")
 @limiter.limit("10/minute")
 def get_scientific_dossier(request: Request, analysis_id: str):
     """Generate a publication-quality NASA Climate Science Dossier in Markdown."""

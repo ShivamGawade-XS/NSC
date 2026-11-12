@@ -18,6 +18,8 @@ from typing import Any
 
 from starlette.types import Message, Receive, Scope, Send
 
+from app.core.telemetry import ACTIVE_REQUESTS, record_http_request
+
 # Distributed tracing & request correlation context variables
 CORRELATION_ID_CTX: ContextVar[str] = ContextVar("correlation_id", default="")
 TRACE_ID_CTX: ContextVar[str] = ContextVar("trace_id", default="")
@@ -200,7 +202,6 @@ class TracingAndStructuredLoggingMiddleware:
         path = scope.get("path", "")
         method = scope.get("method", "")
 
-        from app.core.telemetry import ACTIVE_REQUESTS, record_http_request
         ACTIVE_REQUESTS.inc()
 
         async def send_wrapper(message: Message):

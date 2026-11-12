@@ -5,6 +5,7 @@ Provides enterprise rate limiting across compute-heavy and export endpoints.
 """
 
 import contextlib
+import contextvars
 import logging
 import os
 import sys
@@ -13,6 +14,11 @@ from typing import Any
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.requests import Request
+
+# ponytail: dynamic request-scoped flag for load-testing exemption in non-production
+_is_load_test_context: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "_is_load_test_context", default=False
+)
 
 
 def get_client_ip(request: Request) -> str:
@@ -60,6 +66,7 @@ def check_is_test_env(env: str | None = None, _is_pytest: bool | None = None) ->
         os.getenv("TESTING", "").lower() in ("true", "1", "yes")
         or os.getenv("DISABLE_RATE_LIMIT", "").lower() in ("true", "1", "yes")
         or os.getenv("LOAD_TESTING", "").lower() in ("true", "1", "yes")
+        or _is_load_test_context.get(False)
     )
 
     if is_production:
@@ -123,6 +130,7 @@ limiter = Limiter(
     headers_enabled=True,
     enabled=not is_test_env,
 )
+limiter._request_filters.append(check_is_test_env)
 
 # Guard against slowapi crashing when endpoints do not take response: Response as an explicit argument
 _orig_inject_headers = limiter._inject_headers
