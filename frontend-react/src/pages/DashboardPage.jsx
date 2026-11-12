@@ -506,22 +506,22 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* 3-Column Architecture */}
-          <div className="grid grid-cols-1 lg:grid-cols-[330px_1fr_360px] gap-4 items-start">
+          {/* 3-Column Architecture — Balanced 1-Screen Viewport */}
+          <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_360px] xl:grid-cols-[340px_1fr_380px] gap-5 items-start">
             {/* Left Column: Data Controls & Signals */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <AnalysisPanel />
               <SignalsList />
               <ExportButtons />
             </div>
 
             {/* Center Column: GIS Map & Analytical Chart */}
-            <div id="map-section" className="space-y-4 min-w-0">
-              <div className="h-[52vh] min-h-[420px]">
+            <div id="map-section" className="space-y-3 min-w-0">
+              <div className="h-[46vh] min-h-[380px]">
                 <TrendMap />
               </div>
-              <div className="interface-card p-4">
-                <div className="flex items-center justify-between mb-2">
+              <div className="interface-card p-3.5">
+                <div className="flex items-center justify-between mb-1.5">
                   <h2 className="instrument-heading">
                     Temporal Trajectory & Theil-Sen Estimator
                   </h2>
@@ -531,14 +531,14 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <div className="h-[270px]">
+                <div className="h-[220px]">
                   <TimeSeriesChart />
                 </div>
               </div>
             </div>
 
             {/* Right Column: Evidence & Verification */}
-            <div id="evidence-section" className="space-y-4">
+            <div id="evidence-section" className="space-y-3">
               <EvidencePanel />
             </div>
           </div>

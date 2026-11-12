@@ -170,11 +170,11 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
 
 const styles = {
   container: {
-    borderRadius: 8,
-    padding: '8px 12px',
+    borderRadius: 6,
+    padding: '6px 10px',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    marginBottom: 8,
+    marginBottom: 0,
     fontFamily: 'inherit',
   },
   loadingRow: {

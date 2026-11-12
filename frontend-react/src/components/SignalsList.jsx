@@ -12,7 +12,7 @@ export default function SignalsList() {
 
   const isCompound = Boolean(analysisData?.isCompound);
   const compoundHotspots = isCompound && analysisData?.cells
-    ? [...analysisData.cells].sort((a, b) => (b.cai || 0) - (a.cai || 0)).slice(0, 5)
+    ? [...analysisData.cells].sort((a, b) => (b.cai || 0) - (a.cai || 0)).slice(0, 3)
     : [];
 
   const hasData = isCompound ? compoundHotspots.length > 0 : candidateSignals.length > 0;
@@ -112,9 +112,9 @@ export default function SignalsList() {
 
   // Standard Monovariate Candidate Signals List
   return (
-    <div className="interface-card p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="instrument-heading">
+    <div className="interface-card p-3">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="instrument-heading !text-xs">
           Top Discovery Signals
         </h3>
         <span className="text-[9px] font-mono text-[var(--color-text-muted)]">
@@ -124,7 +124,7 @@ export default function SignalsList() {
 
       <div className="space-y-1.5">
         <AnimatePresence>
-          {candidateSignals.slice(0, 5).map((sig, idx) => {
+          {candidateSignals.slice(0, 3).map((sig, idx) => {
             const isActive = selectedCell?.lat === sig.lat && selectedCell?.lon === sig.lon;
             return (
               <motion.button
@@ -136,36 +136,36 @@ export default function SignalsList() {
                   playTactileClick(650);
                   selectCell(sig.lat, sig.lon);
                 }}
-                className={`w-full flex items-center justify-between p-2.5 rounded border transition-all text-left ${
+                className={`w-full flex items-center justify-between p-2 rounded border transition-all text-left cursor-pointer ${
                   isActive
                     ? 'border-[var(--color-accent-blue)] bg-[var(--color-accent-blue)]/10 text-[var(--color-text-main)] font-semibold'
                     : 'border-[var(--color-border-subtle)] hover:border-[var(--color-border-strong)] bg-[var(--color-bg-elevated)] text-[var(--color-text-main)]'
                 }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className={`text-xs font-mono font-bold w-5 shrink-0 ${
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`text-[11px] font-mono font-bold w-4 shrink-0 ${
                     isActive ? 'text-[var(--color-accent-blue)]' : 'text-[var(--color-text-muted)]'
                   }`}>
                     #{idx + 1}
                   </span>
                   <div className="min-w-0">
-                    <div className="text-xs font-medium text-[var(--color-text-main)] truncate font-['Space_Grotesk']">
+                    <div className="text-[11px] font-medium text-[var(--color-text-main)] truncate font-['Space_Grotesk']">
                       {formatCoords1(sig.lat, sig.lon)}
                     </div>
-                    <div className="text-[10px] text-[var(--color-text-secondary)] font-mono flex items-center gap-1.5 mt-0.5">
+                    <div className="text-[9px] text-[var(--color-text-secondary)] font-mono flex items-center gap-1 mt-0.5">
                       <span className={sig.slope > 0 ? 'text-amber-500 font-semibold' : 'text-cyan-500 font-semibold'}>
                         {sig.slope > 0 ? '+' : ''}{sig.slope.toFixed(3)}/dec
                       </span>
-                      <span className="text-[var(--color-border-strong)]">|</span>
+                      <span className="text-[var(--color-border-strong)]">•</span>
                       <span>τ = {sig.tau !== undefined ? (sig.tau > 0 ? '+' : '') + sig.tau.toFixed(2) : (sig.direction === 'increasing' ? '+τ' : '-τ')}</span>
                     </div>
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-xs font-mono font-semibold text-emerald-500 tabular-nums">
+                  <div className="text-[11px] font-mono font-semibold text-emerald-500 tabular-nums">
                     {sig.p_value !== undefined ? (sig.p_value < 0.001 ? 'p < 0.001' : `p = ${sig.p_value.toFixed(3)}`) : 'FDR Sig'}
                   </div>
-                  <div className="text-[9px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">
+                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">
                     {sig.q_value !== undefined ? (sig.q_value < 0.001 ? 'q < 0.001' : `q = ${sig.q_value.toFixed(3)}`) : 'FDR Sig'}
                   </div>
                 </div>
