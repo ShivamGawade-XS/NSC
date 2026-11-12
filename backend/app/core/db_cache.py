@@ -277,16 +277,15 @@ def save_to_db_cache(analysis_id: str, payload: dict[str, Any]) -> None:
                     "Deterministic LRU prune triggered: %d records, %d bytes (limit: %d rec, %d bytes). Evicting %d oldest records.",
                     rec_count, total_bytes, settings.CACHE_MAX_SIZE, max_bytes, prune_count
                 )
+                # PRAGMA foreign_keys = ON cascades deletions to spatial_cell_cache
                 cur.execute("""
-                    SELECT analysis_id FROM analysis_metadata_index
-                    ORDER BY last_accessed ASC
-                    LIMIT ?;
+                    DELETE FROM analysis_metadata_index
+                    WHERE analysis_id IN (
+                        SELECT analysis_id FROM analysis_metadata_index
+                        ORDER BY last_accessed ASC
+                        LIMIT ?
+                    );
                 """, (prune_count,))
-                evict_ids = [r[0] for r in cur.fetchall()]
-                if evict_ids:
-                    placeholders = ",".join("?" for _ in evict_ids)
-                    # PRAGMA foreign_keys = ON cascades deletions to spatial_cell_cache
-                    cur.execute(f"DELETE FROM analysis_metadata_index WHERE analysis_id IN ({placeholders});", evict_ids)  # noqa: S608
                 pruned = True
 
             conn.execute("""

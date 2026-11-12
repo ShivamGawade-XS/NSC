@@ -360,7 +360,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                     url,
                     headers={"User-Agent": "Tellura-NASASpaceApps/2.0 (Scientific Research Instrument)"}
                 )
-                with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # noqa: S310
+                with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # nosec B310 # noqa: S310
                     if response.status == 200:
                         content = response.read()
                         if len(content) > 1024 and self._is_valid_netcdf_bytes(content):
@@ -431,7 +431,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                 url,
                 headers={"User-Agent": "Tellura-NASASpaceApps/2.0 (Scientific Research Instrument)"}
             )
-            with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # noqa: S310
+            with urllib.request.urlopen(req, timeout=timeout_seconds) as response:  # nosec B310 # noqa: S310
                 if response.status != 200:
                     return None
                 raw = response.read()

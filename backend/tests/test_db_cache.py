@@ -574,6 +574,48 @@ def test_telemetry_events_persistence_and_aggregates():
             conn.execute("DELETE FROM telemetry_events WHERE page LIKE '/test-page-%';")
 
 
+def test_atomic_subquery_lru_pruning_sql_injection_defense(tmp_path, monkeypatch):
+    """SEC-007: Verify atomic subquery LRU pruning safely executes with parameterized queries even with adversarial IDs."""
+    from app.core import db_cache
+    from app.core.config import settings
+
+    test_db = tmp_path / "test_sql_injection_defense.db"
+    monkeypatch.setattr(db_cache, "DB_PATH", test_db)
+    monkeypatch.setattr(settings, "CACHE_MAX_SIZE", 3)
+
+    db_cache._TLS.conn = None
+    try:
+        db_cache.init_db()
+        conn = db_cache.get_db_connection()
+
+        # Insert records, including an adversarial analysis_id designed to break naive f-string SQL
+        adversarial_id = "ana_lru_'); DROP TABLE analysis_metadata_index; --"
+        req = AnalysisRequest(
+            dataset_id="merra2_reanalysis",
+            variable_id="T2M",
+            start_year=2000,
+            end_year=2020,
+            bbox=[-100.0, 30.0, -90.0, 40.0],
+            alpha=0.05,
+            use_fdr=True
+        )
+        save_to_db_cache(adversarial_id, {"req": req, "adversarial": True})
+        save_to_db_cache("ana_lru_02", {"req": req, "idx": 2})
+        save_to_db_cache("ana_lru_03", {"req": req, "idx": 3})
+
+        # Insert 4th record to trigger LRU eviction with CACHE_MAX_SIZE=3
+        save_to_db_cache("ana_lru_04", {"req": req, "idx": 4})
+
+        # Table must still exist and be intact (no SQL injection / DROP TABLE execution)
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM analysis_metadata_index;")
+        count = cur.fetchone()[0]
+        assert count <= 3
+    finally:
+        db_cache._TLS.conn = None
+
+
+
 
 
 
