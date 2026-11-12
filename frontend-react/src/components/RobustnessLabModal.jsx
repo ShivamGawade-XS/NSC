@@ -1,27 +1,53 @@
 /**
  * Tellura 2.0 — Trend Robustness Lab Modal
- * Feature A: Quantifies sensitivity of climate trends to analytical choices.
- * Shows window perturbation, estimator comparison, autocorrelation sensitivity,
+ * Quantifies sensitivity of climate trends to analytical choices:
+ * window perturbation, estimator comparison, autocorrelation sensitivity,
  * and jackknife stability.
  */
 import { useState, useEffect } from 'react';
 import { getRobustnessLab } from '../api/client';
+import { playTactileClick } from '../utils/audio';
 
 const STABILITY_CONFIG = {
-  ROBUST: { color: '#10b981', bg: 'rgba(16,185,129,0.1)', label: 'ROBUST' },
-  MODERATELY_SENSITIVE: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', label: 'MODERATELY SENSITIVE' },
-  HIGHLY_SENSITIVE: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'HIGHLY SENSITIVE' },
-  INSUFFICIENT_DATA: { color: '#6b7280', bg: 'rgba(107,114,128,0.1)', label: 'INSUFFICIENT DATA' },
+  ROBUST: {
+    textColor: 'text-emerald-400',
+    bgColor: 'bg-emerald-950/20',
+    borderColor: 'border-emerald-500/35',
+    label: 'ROBUST',
+  },
+  MODERATELY_SENSITIVE: {
+    textColor: 'text-amber-400',
+    bgColor: 'bg-amber-950/20',
+    borderColor: 'border-amber-500/35',
+    label: 'MODERATELY SENSITIVE',
+  },
+  HIGHLY_SENSITIVE: {
+    textColor: 'text-red-400',
+    bgColor: 'bg-red-950/20',
+    borderColor: 'border-red-500/35',
+    label: 'HIGHLY SENSITIVE',
+  },
+  INSUFFICIENT_DATA: {
+    textColor: 'text-[var(--color-text-muted)]',
+    bgColor: 'bg-[var(--color-bg-elevated)]',
+    borderColor: 'border-[var(--color-border-subtle)]',
+    label: 'INSUFFICIENT DATA',
+  },
 };
 
-function MiniBarChart({ value, max = 100, color }) {
+function MiniBarChart({ value, max = 100, barColorClass = 'bg-emerald-500' }) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-      <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)' }}>
-        <div style={{ width: `${pct}%`, height: '100%', borderRadius: 3, background: color, transition: 'width 0.4s ease' }} />
+    <div className="flex items-center gap-1.5 flex-1">
+      <div className="flex-1 h-1.5 rounded-full bg-[var(--color-border-subtle)] overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-300 ${barColorClass}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
-      <span style={{ fontSize: 11, color: '#d1d5db', fontFamily: 'monospace', minWidth: 36 }}>{value.toFixed(1)}%</span>
+      <span className="text-[11px] font-mono text-[var(--color-text-secondary)] min-w-[32px] text-right tabular-nums">
+        {value.toFixed(1)}%
+      </span>
     </div>
   );
 }
@@ -29,28 +55,36 @@ function MiniBarChart({ value, max = 100, color }) {
 function WindowTable({ windows }) {
   if (!windows?.length) return null;
   return (
-    <div style={styles.tableWrapper}>
-      <table style={styles.table}>
+    <div className="overflow-x-auto rounded border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
+      <table className="w-full border-collapse text-xs font-mono">
         <thead>
-          <tr>
+          <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
             {['Window', 'Years', 'Slope', 'p-val', 'Sign.', 'Dir'].map((h) => (
-              <th key={h} style={styles.th}>{h}</th>
+              <th key={h} className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold">
+                {h}
+              </th>
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-[var(--color-border-subtle)]">
           {windows.map((w, i) => (
-            <tr key={i} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent' }}>
-              <td style={{ ...styles.td, color: '#e5e7eb', maxWidth: 140, whiteSpace: 'normal', lineHeight: 1.3 }}>{w.window}</td>
-              <td style={styles.td}>{w.n_years}</td>
-              <td style={{ ...styles.td, color: w.slope > 0 ? '#f87171' : '#60a5fa', fontFamily: 'monospace' }}>
+            <tr key={i} className="hover:bg-[var(--color-bg-elevated)] transition-colors">
+              <td className="px-3 py-2 text-[var(--color-text-main)] max-w-[140px] truncate">{w.window}</td>
+              <td className="px-3 py-2 text-[var(--color-text-secondary)] tabular-nums">{w.n_years}</td>
+              <td className={`px-3 py-2 font-semibold tabular-nums ${w.slope > 0 ? 'text-red-400' : 'text-blue-400'}`}>
                 {w.slope > 0 ? '+' : ''}{w.slope}
               </td>
-              <td style={{ ...styles.td, color: w.p_value < 0.05 ? '#10b981' : '#9ca3af', fontFamily: 'monospace' }}>
+              <td className={`px-3 py-2 tabular-nums ${w.p_value < 0.05 ? 'text-emerald-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
                 {w.p_value.toFixed(3)}
               </td>
-              <td style={styles.td}>{w.significant ? <span style={{ color: '#10b981' }}>✓</span> : <span style={{ color: '#ef4444' }}>✗</span>}</td>
-              <td style={{ ...styles.td, color: w.direction === 'increasing' ? '#f87171' : '#60a5fa', fontSize: 10 }}>
+              <td className="px-3 py-2">
+                {w.significant ? (
+                  <span className="text-emerald-400 font-bold">✓</span>
+                ) : (
+                  <span className="text-red-400 font-bold">✗</span>
+                )}
+              </td>
+              <td className={`px-3 py-2 text-[10px] ${w.direction === 'increasing' ? 'text-red-400' : 'text-blue-400'}`}>
                 {w.direction === 'increasing' ? '▲' : '▼'}
               </td>
             </tr>
@@ -64,27 +98,31 @@ function WindowTable({ windows }) {
 function EstimatorTable({ estimators }) {
   if (!estimators?.length) return null;
   return (
-    <div style={styles.tableWrapper}>
-      <table style={styles.table}>
+    <div className="overflow-x-auto rounded border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
+      <table className="w-full border-collapse text-xs font-mono">
         <thead>
-          <tr>
-            {['Estimator', 'Slope', 'SE', 'p-val'].map((h) => <th key={h} style={styles.th}>{h}</th>)}
+          <tr className="border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
+            {['Estimator', 'Slope', 'SE', 'p-val'].map((h) => (
+              <th key={h} className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold">
+                {h}
+              </th>
+            ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-[var(--color-border-subtle)]">
           {estimators.map((e, i) => (
-            <tr key={i} style={{ background: i === 0 ? 'rgba(16,185,129,0.06)' : i % 2 === 1 ? 'rgba(255,255,255,0.03)' : 'transparent' }}>
-              <td style={{ ...styles.td, color: '#e5e7eb', maxWidth: 180, whiteSpace: 'normal', lineHeight: 1.3, fontSize: 10 }}>
-                {i === 0 && <span style={{ marginRight: 4, color: '#10b981' }}>★</span>}
+            <tr key={i} className={`hover:bg-[var(--color-bg-elevated)] transition-colors ${i === 0 ? 'bg-emerald-500/5' : ''}`}>
+              <td className="px-3 py-2 text-[var(--color-text-main)] max-w-[180px]">
+                {i === 0 && <span className="mr-1.5 text-emerald-400 font-bold">★</span>}
                 {e.estimator}
               </td>
-              <td style={{ ...styles.td, color: (e.slope || 0) > 0 ? '#f87171' : '#60a5fa', fontFamily: 'monospace' }}>
+              <td className={`px-3 py-2 font-semibold tabular-nums ${(e.slope || 0) > 0 ? 'text-red-400' : 'text-blue-400'}`}>
                 {(e.slope || 0) > 0 ? '+' : ''}{(e.slope || 0).toFixed(4)}
               </td>
-              <td style={{ ...styles.td, fontFamily: 'monospace', color: '#9ca3af' }}>
+              <td className="px-3 py-2 text-[var(--color-text-muted)] tabular-nums">
                 {e.se != null ? `±${e.se.toFixed(4)}` : '—'}
               </td>
-              <td style={{ ...styles.td, color: (e.p_value || 1) < 0.05 ? '#10b981' : '#9ca3af', fontFamily: 'monospace' }}>
+              <td className={`px-3 py-2 tabular-nums ${(e.p_value || 1) < 0.05 ? 'text-emerald-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
                 {e.p_value != null ? e.p_value.toFixed(3) : '—'}
               </td>
             </tr>
@@ -119,7 +157,6 @@ export default function RobustnessLabModal({ analysisId, onClose }) {
     };
   }, [analysisId]);
 
-  // Keyboard close
   useEffect(() => {
     const handler = (e) => e.key === 'Escape' && onClose?.();
     window.addEventListener('keydown', handler);
@@ -129,222 +166,171 @@ export default function RobustnessLabModal({ analysisId, onClose }) {
   const stab = data ? (STABILITY_CONFIG[data.stability_rating] || STABILITY_CONFIG.MODERATELY_SENSITIVE) : null;
 
   return (
-    <div style={styles.overlay} role="dialog" aria-modal="true" aria-label="Trend Robustness Lab">
-      <div style={styles.modal}>
+    <div
+      className="fixed inset-0 z-[9000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Trend Robustness Lab"
+    >
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden text-[var(--color-text-main)] shadow-2xl animate-in fade-in duration-150">
         {/* Header */}
-        <div style={styles.header}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
           <div>
-            <div style={styles.title}>Trend Robustness Lab</div>
-            <div style={styles.subtitle}>Sensitivity audit of analytical choices</div>
+            <h2 className="font-['Space_Grotesk'] text-lg font-bold tracking-tight text-[var(--color-text-main)]">
+              Trend Robustness Lab
+            </h2>
+            <p className="text-xs text-[var(--color-text-muted)] font-mono mt-0.5">
+              Quantitative sensitivity audit of analytical choices and model assumptions
+            </p>
           </div>
-          <button onClick={onClose} style={styles.closeBtn} aria-label="Close">✕</button>
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(500);
+              onClose?.();
+            }}
+            className="w-7 h-7 rounded border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] flex items-center justify-center text-xs font-mono transition-colors cursor-pointer"
+            aria-label="Close modal"
+          >
+            ✕
+          </button>
         </div>
 
-        {loading && (
-          <div style={styles.centered}>
-            <div style={styles.spinnerLg}>⟳</div>
-            <div style={styles.loadingText}>Running sensitivity audit…</div>
-          </div>
-        )}
-
-        {error && (
-          <div style={styles.errorBox}>{error}</div>
-        )}
-
-        {data && stab && (
-          <>
-            {/* Stability Banner */}
-            <div style={{ ...styles.stabilityBanner, background: stab.bg, border: `1px solid ${stab.color}44` }}>
-              <div style={styles.stabilityContent}>
-                <div style={{ ...styles.stabilityRating, color: stab.color }}>● {stab.label}</div>
-                <div style={styles.summaryText}>{data.summary_narrative}</div>
-              </div>
+        {/* Body */}
+        <div className="p-6 overflow-y-auto space-y-4">
+          {loading && (
+            <div className="py-16 flex flex-col items-center justify-center gap-3 text-xs font-mono text-[var(--color-text-muted)]">
+              <span className="loading-spinner !w-6 !h-6 !border-2" />
+              <span>Running sensitivity audit across sliding windows and estimators…</span>
             </div>
+          )}
 
-            {/* KPI Row */}
-            <div style={styles.kpiRow}>
-              <div style={styles.kpiCard}>
-                <div style={styles.kpiLabel}>Sign Agreement</div>
-                <MiniBarChart value={data.sign_agreement_pct} color="#10b981" />
-              </div>
-              <div style={styles.kpiCard}>
-                <div style={styles.kpiLabel}>Sig. Retention</div>
-                <MiniBarChart value={data.significance_retention_pct} color="#3b82f6" />
-              </div>
-              <div style={styles.kpiCard}>
-                <div style={styles.kpiLabel}>Base Slope</div>
-                <span style={{ fontSize: 13, fontFamily: 'monospace', color: data.base_slope > 0 ? '#ef4444' : '#3b82f6', fontWeight: 700 }}>
-                  {data.base_slope > 0 ? '+' : ''}{data.base_slope}
-                </span>
-              </div>
-              <div style={styles.kpiCard}>
-                <div style={styles.kpiLabel}>Jackknife SE</div>
-                <span style={{ fontSize: 13, fontFamily: 'monospace', color: 'var(--color-text-secondary)' }}>±{data.jackknife_slope_se}</span>
-              </div>
+          {error && (
+            <div className="p-3 rounded bg-red-950/20 border border-red-500/40 text-red-300 text-xs font-mono">
+              {error}
             </div>
+          )}
 
-            {/* Tab Bar */}
-            <div style={styles.tabBar}>
-              {[
-                { id: 'window', label: 'Window Sensitivity' },
-                { id: 'estimator', label: 'Slope Estimators' },
-                { id: 'autocorr', label: 'Autocorrelation' },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  style={{ ...styles.tabBtn, ...(tab === t.id ? styles.tabBtnActive : {}) }}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab Content */}
-            {tab === 'window' && (
-              <div style={styles.tabContent}>
-                <p style={styles.tabDesc}>
-                  Each row trims the analysis window or splits into half-regimes, then re-evaluates the Mann-Kendall + Theil-Sen estimator independently.
-                </p>
-                <WindowTable windows={data.window_sensitivity} />
-              </div>
-            )}
-
-            {tab === 'estimator' && (
-              <div style={styles.tabContent}>
-                <p style={styles.tabDesc}>
-                  Comparison of three slope estimators on the same data. ★ Theil-Sen is the project default (29% breakdown point).
-                </p>
-                <EstimatorTable estimators={data.estimator_comparison} />
-              </div>
-            )}
-
-            {tab === 'autocorr' && data.autocorrelation_sensitivity && (
-              <div style={styles.tabContent}>
-                <p style={styles.tabDesc}>
-                  Impact of applying Hamed & Rao (1998) serial autocorrelation correction to the Mann-Kendall variance estimate.
-                </p>
-                <div style={styles.acGrid}>
-                  {[
-                    { label: 'Lag-1 Autocorrelation', val: data.autocorrelation_sensitivity.lag1_autocorrelation, mono: true },
-                    { label: 'Variance Inflation Factor', val: `${data.autocorrelation_sensitivity.variance_inflation_factor}×`, mono: true },
-                    { label: 'i.i.d. p-value', val: data.autocorrelation_sensitivity.iid_p_value?.toFixed(4), mono: true },
-                    { label: 'Corrected p-value', val: data.autocorrelation_sensitivity.autocorrelation_corrected_p_value?.toFixed(4), mono: true },
-                    {
-                      label: 'Significance Shifted?',
-                      val: data.autocorrelation_sensitivity.significance_shifted_by_autocorrelation ? 'YES — correction changed conclusion' : 'No — robust to autocorr.',
-                      color: data.autocorrelation_sensitivity.significance_shifted_by_autocorrelation ? '#f59e0b' : '#10b981',
-                    },
-                  ].map((row, i) => (
-                    <div key={i} style={styles.acRow}>
-                      <span style={styles.acLabel}>{row.label}</span>
-                      <span style={{ ...styles.acVal, fontFamily: row.mono ? 'monospace' : 'inherit', color: row.color || '#d1d5db' }}>
-                        {String(row.val)}
-                      </span>
-                    </div>
-                  ))}
+          {data && stab && (
+            <>
+              {/* Stability Banner */}
+              <div className={`p-4 rounded-lg border ${stab.bgColor} ${stab.borderColor} space-y-1.5`}>
+                <div className={`font-mono text-xs font-bold tracking-wider uppercase flex items-center gap-2 ${stab.textColor}`}>
+                  <span>●</span>
+                  <span>{stab.label}</span>
+                </div>
+                <div className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                  {data.summary_narrative}
                 </div>
               </div>
-            )}
-          </>
-        )}
+
+              {/* KPI Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3 space-y-1.5">
+                  <span className="text-[9px] uppercase tracking-wider font-mono font-bold text-[var(--color-text-muted)] block">
+                    Sign Agreement
+                  </span>
+                  <MiniBarChart value={data.sign_agreement_pct} barColorClass="bg-emerald-500" />
+                </div>
+                <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3 space-y-1.5">
+                  <span className="text-[9px] uppercase tracking-wider font-mono font-bold text-[var(--color-text-muted)] block">
+                    Sig. Retention
+                  </span>
+                  <MiniBarChart value={data.significance_retention_pct} barColorClass="bg-[var(--color-accent-blue)]" />
+                </div>
+                <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3 space-y-1">
+                  <span className="text-[9px] uppercase tracking-wider font-mono font-bold text-[var(--color-text-muted)] block">
+                    Base Slope
+                  </span>
+                  <span className={`text-sm font-mono font-bold tabular-nums ${data.base_slope > 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                    {data.base_slope > 0 ? '+' : ''}{data.base_slope}
+                  </span>
+                </div>
+                <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3 space-y-1">
+                  <span className="text-[9px] uppercase tracking-wider font-mono font-bold text-[var(--color-text-muted)] block">
+                    Jackknife SE
+                  </span>
+                  <span className="text-sm font-mono font-semibold text-[var(--color-text-secondary)] tabular-nums">
+                    ±{data.jackknife_slope_se}
+                  </span>
+                </div>
+              </div>
+
+              {/* Tab Navigation */}
+              <div className="flex border-b border-[var(--color-border-subtle)] pt-1">
+                {[
+                  { id: 'window', label: 'Window Sensitivity' },
+                  { id: 'estimator', label: 'Slope Estimators' },
+                  { id: 'autocorr', label: 'Autocorrelation' },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(600);
+                      setTab(t.id);
+                    }}
+                    className={`px-3.5 py-2 text-xs font-mono font-semibold border-b-2 transition-colors cursor-pointer ${
+                      tab === t.id
+                        ? 'border-[var(--color-accent-blue)] text-[var(--color-accent-blue)] bg-[var(--color-bg-elevated)] rounded-t'
+                        : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Content */}
+              {tab === 'window' && (
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-xs text-[var(--color-text-muted)] font-mono leading-relaxed">
+                    Each row trims the analysis window or splits into half-regimes, then re-evaluates the Mann-Kendall + Theil-Sen estimator independently.
+                  </p>
+                  <WindowTable windows={data.window_sensitivity} />
+                </div>
+              )}
+
+              {tab === 'estimator' && (
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-xs text-[var(--color-text-muted)] font-mono leading-relaxed">
+                    Comparison of three slope estimators on the same data. ★ Theil-Sen is the project default (29% breakdown point).
+                  </p>
+                  <EstimatorTable estimators={data.estimator_comparison} />
+                </div>
+              )}
+
+              {tab === 'autocorr' && data.autocorrelation_sensitivity && (
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-xs text-[var(--color-text-muted)] font-mono leading-relaxed">
+                    Impact of applying Hamed & Rao (1998) serial autocorrelation correction to the Mann-Kendall variance estimate.
+                  </p>
+                  <div className="space-y-2">
+                    {[
+                      { label: 'Lag-1 Autocorrelation', val: data.autocorrelation_sensitivity.lag1_autocorrelation, mono: true },
+                      { label: 'Variance Inflation Factor', val: `${data.autocorrelation_sensitivity.variance_inflation_factor}×`, mono: true },
+                      { label: 'i.i.d. p-value', val: data.autocorrelation_sensitivity.iid_p_value?.toFixed(4), mono: true },
+                      { label: 'Corrected p-value', val: data.autocorrelation_sensitivity.autocorrelation_corrected_p_value?.toFixed(4), mono: true },
+                      {
+                        label: 'Significance Shifted?',
+                        val: data.autocorrelation_sensitivity.significance_shifted_by_autocorrelation ? 'YES — correction changed conclusion' : 'No — robust to autocorr.',
+                        colorClass: data.autocorrelation_sensitivity.significance_shifted_by_autocorrelation ? 'text-amber-400' : 'text-emerald-400',
+                      },
+                    ].map((row, i) => (
+                      <div key={i} className="flex justify-between items-center bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg px-3.5 py-2.5 text-xs">
+                        <span className="text-[var(--color-text-secondary)] font-mono">{row.label}</span>
+                        <span className={`font-semibold tabular-nums ${row.colorClass || 'text-[var(--color-text-main)]'} ${row.mono ? 'font-mono' : ''}`}>
+                          {String(row.val)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  overlay: {
-    position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.75)',
-    backdropFilter: 'blur(6px)',
-    zIndex: 9000,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: 16,
-  },
-  modal: {
-    background: 'var(--color-bg-surface)',
-    border: '1px solid var(--color-border-strong)',
-    borderRadius: 12,
-    width: '100%', maxWidth: 680,
-    maxHeight: '88vh', overflow: 'auto',
-    display: 'flex', flexDirection: 'column', gap: 0,
-    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
-    color: 'var(--color-text-main)',
-  },
-  header: {
-    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-    padding: '20px 24px 16px',
-    borderBottom: '1px solid var(--color-border-subtle)',
-    background: 'var(--color-bg-elevated)',
-  },
-  title: { fontSize: 18, fontWeight: 700, color: 'var(--color-text-main)', letterSpacing: '-0.02em', fontFamily: 'Space Grotesk, sans-serif' },
-  subtitle: { fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 },
-  closeBtn: {
-    background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)',
-    color: 'var(--color-text-muted)', borderRadius: 6, width: 28, height: 28,
-    cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'all 0.15s',
-    flexShrink: 0,
-  },
-  centered: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', gap: 12, padding: 60, color: 'var(--color-text-muted)',
-  },
-  spinnerLg: { fontSize: 32, animation: 'spin 1s linear infinite' },
-  loadingText: { fontSize: 13, color: 'var(--color-text-muted)' },
-  errorBox: {
-    margin: '16px 24px', padding: '12px 16px',
-    background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
-    borderRadius: 8, color: '#fca5a5', fontSize: 13,
-  },
-  stabilityBanner: {
-    margin: '16px 24px',
-    borderRadius: 8,
-    padding: '14px 16px',
-    display: 'flex', gap: 12, alignItems: 'flex-start',
-  },
-  stabilityContent: { display: 'flex', flexDirection: 'column', gap: 4 },
-  stabilityRating: { fontSize: 12, fontWeight: 800, letterSpacing: '0.06em', fontFamily: 'monospace' },
-  summaryText: { fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 },
-  kpiRow: {
-    display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8,
-    padding: '0 24px', marginBottom: 4,
-  },
-  kpiCard: {
-    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
-    borderRadius: 6, padding: '10px 12px',
-    display: 'flex', flexDirection: 'column', gap: 6,
-  },
-  kpiLabel: { fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontFamily: 'monospace' },
-  tabBar: {
-    display: 'flex', gap: 2, padding: '8px 24px 0',
-    borderBottom: '1px solid var(--color-border-subtle)',
-  },
-  tabBtn: {
-    padding: '8px 14px', fontSize: 12, fontWeight: 600,
-    background: 'transparent', border: 'none', borderBottom: '2px solid transparent',
-    color: 'var(--color-text-muted)', cursor: 'pointer', transition: 'all 0.15s', borderRadius: '6px 6px 0 0',
-  },
-  tabBtnActive: {
-    color: 'var(--color-accent-blue)', borderBottomColor: 'var(--color-accent-blue)', background: 'var(--color-bg-elevated)',
-  },
-  tabContent: { padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 },
-  tabDesc: { fontSize: 11, color: 'var(--color-text-muted)', lineHeight: 1.6, margin: 0 },
-  tableWrapper: { overflowX: 'auto' },
-  table: { width: '100%', borderCollapse: 'collapse', fontSize: 11 },
-  th: {
-    padding: '6px 10px', textAlign: 'left',
-    color: 'var(--color-text-muted)', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
-    borderBottom: '1px solid var(--color-border-subtle)', fontFamily: 'monospace',
-  },
-  td: { padding: '7px 10px', color: 'var(--color-text-secondary)', verticalAlign: 'middle' },
-  acGrid: { display: 'flex', flexDirection: 'column', gap: 8 },
-  acRow: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '8px 12px', borderRadius: 6, background: 'var(--color-bg-elevated)',
-    border: '1px solid var(--color-border-subtle)',
-  },
-  acLabel: { fontSize: 12, color: 'var(--color-text-secondary)' },
-  acVal: { fontSize: 12, fontWeight: 600, color: 'var(--color-text-main)' },
-};

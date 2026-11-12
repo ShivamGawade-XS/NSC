@@ -5,33 +5,34 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { assessQualityGate } from '../api/client';
+import { playTactileClick } from '../utils/audio';
 
 const STATUS_CONFIG = {
   SUPPORTED: {
-    color: '#10b981',
-    bg: 'rgba(16,185,129,0.12)',
-    border: 'rgba(16,185,129,0.35)',
+    textColor: 'text-emerald-400',
+    bgColor: 'bg-emerald-950/20',
+    borderColor: 'border-emerald-500/35',
     icon: '✓',
     label: 'Optimal',
   },
   SUPPORTED_WITH_LIMITATIONS: {
-    color: '#f59e0b',
-    bg: 'rgba(245,158,11,0.12)',
-    border: 'rgba(245,158,11,0.35)',
+    textColor: 'text-amber-400',
+    bgColor: 'bg-amber-950/20',
+    borderColor: 'border-amber-500/35',
     icon: '!',
     label: 'Caveats',
   },
   INSUFFICIENT_DATA: {
-    color: '#ef4444',
-    bg: 'rgba(239,68,68,0.12)',
-    border: 'rgba(239,68,68,0.35)',
+    textColor: 'text-red-400',
+    bgColor: 'bg-red-950/20',
+    borderColor: 'border-red-500/35',
     icon: '✗',
     label: 'Blocked',
   },
   UNSUPPORTED_FOR_THIS_METHOD: {
-    color: '#ef4444',
-    bg: 'rgba(239,68,68,0.12)',
-    border: 'rgba(239,68,68,0.35)',
+    textColor: 'text-red-400',
+    bgColor: 'bg-red-950/20',
+    borderColor: 'border-red-500/35',
     icon: '✗',
     label: 'Blocked',
   },
@@ -81,11 +82,9 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
 
   if (loading) {
     return (
-      <div style={styles.container}>
-        <div style={styles.loadingRow}>
-          <span style={styles.spinner}>⟳</span>
-          <span style={styles.loadingText}>Evaluating scientific feasibility…</span>
-        </div>
+      <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] px-2.5 py-1.5 flex items-center gap-2 text-xs font-mono text-[var(--color-text-muted)]">
+        <span className="inline-block animate-spin text-xs">⟳</span>
+        <span>Evaluating scientific feasibility…</span>
       </div>
     );
   }
@@ -94,33 +93,68 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
 
   const cfg = STATUS_CONFIG[gate.status] || STATUS_CONFIG.SUPPORTED_WITH_LIMITATIONS;
 
+  const toggleExpand = () => {
+    playTactileClick(600);
+    setExpanded((prev) => !prev);
+  };
+
   return (
-    <div style={{ ...styles.container, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+    <div className={`rounded border px-2.5 py-1.5 transition-colors cursor-pointer select-none ${cfg.bgColor} ${cfg.borderColor}`}>
       {/* Header row */}
-      <div style={styles.headerRow} onClick={() => setExpanded((e) => !e)} role="button" tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && setExpanded((p) => !p)}>
-        <div style={styles.statusBadge}>
-          <span style={{ ...styles.statusIcon, color: cfg.color }}>{cfg.icon}</span>
-          <span style={{ ...styles.statusLabel, color: cfg.color }}>{gate.status_label}</span>
+      <div
+        className="flex items-center gap-2 outline-none"
+        onClick={toggleExpand}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpand()}
+      >
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className={`font-mono font-bold text-xs ${cfg.textColor}`}>{cfg.icon}</span>
+          <span className={`font-mono text-[11px] font-bold tracking-wider uppercase ${cfg.textColor}`}>
+            {gate.status_label}
+          </span>
         </div>
-        <div style={styles.metaRow}>
-          <span style={styles.metaChip} title="Years of data">⏱ {gate.observation_count}yr</span>
+
+        <div className="flex items-center gap-1.5 flex-1 flex-wrap">
+          <span
+            className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono"
+            title="Years of continuous observation"
+          >
+            ⏱ {gate.observation_count}yr
+          </span>
           {gate.grid_intersection_cells > 0 && (
-            <span style={styles.metaChip} title="Grid cells">⊞ {gate.grid_intersection_cells} cells</span>
+            <span
+              className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono"
+              title="Grid cells intersecting bounding box"
+            >
+              ⊞ {gate.grid_intersection_cells} cells
+            </span>
           )}
           {gate.meets_climatological_threshold && (
-            <span style={{ ...styles.metaChip, color: '#10b981' }} title="Meets 20yr climatological threshold">✓ WMO</span>
+            <span
+              className="text-[10px] bg-[var(--color-bg-surface)] border border-emerald-500/30 rounded px-1.5 py-0.5 text-emerald-400 font-mono font-semibold"
+              title="Meets 20yr climatological threshold"
+            >
+              ✓ WMO
+            </span>
           )}
         </div>
-        <span style={{ ...styles.chevron, transform: expanded ? 'rotate(180deg)' : 'none' }}>▾</span>
+
+        <span
+          className={`text-[10px] text-[var(--color-text-muted)] transition-transform duration-200 ml-auto ${
+            expanded ? 'rotate-180' : ''
+          }`}
+        >
+          ▾
+        </span>
       </div>
 
       {/* Limitations (always show if blocking) */}
-      {!gate.can_execute && gate.limitations.length > 0 && (
-        <div style={styles.limitationsBlock}>
+      {!gate.can_execute && gate.limitations?.length > 0 && (
+        <div className="mt-2 space-y-1 text-xs">
           {gate.limitations.map((lim, i) => (
-            <div key={i} style={styles.limitationItem}>
-              <span style={{ color: cfg.color, flexShrink: 0 }}>▸</span>
+            <div key={i} className="flex items-start gap-1.5 text-red-300 font-mono text-[11px] leading-tight">
+              <span className="shrink-0 text-red-400">▸</span>
               <span>{lim}</span>
             </div>
           ))}
@@ -129,174 +163,52 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
 
       {/* Expanded details */}
       {expanded && (
-        <div style={styles.expandedBody}>
-          {gate.limitations.length > 0 && gate.can_execute && (
-            <div style={styles.section}>
-              <div style={styles.sectionLabel}>Scientific Caveats</div>
+        <div className="mt-2 pt-2 border-t border-[var(--color-border-subtle)] space-y-2 text-xs font-mono animate-in fade-in duration-150">
+          {gate.limitations?.length > 0 && gate.can_execute && (
+            <div className="space-y-1">
+              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold">
+                Scientific Caveats
+              </div>
               {gate.limitations.map((lim, i) => (
-                <div key={i} style={styles.limitationItem}>
-                  <span style={{ color: cfg.color, flexShrink: 0 }}>▸</span>
+                <div key={i} className="flex items-start gap-1.5 text-[var(--color-text-secondary)] text-[11px] leading-tight">
+                  <span className={`${cfg.textColor} shrink-0`}>▸</span>
                   <span>{lim}</span>
                 </div>
               ))}
             </div>
           )}
+
           {gate.actionable_recommendations?.length > 0 && (
-            <div style={styles.section}>
-              <div style={styles.sectionLabel}>Recommendations</div>
+            <div className="space-y-1">
+              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold">
+                Recommendations
+              </div>
               {gate.actionable_recommendations.map((rec, i) => (
-                <div key={i} style={styles.recItem}>
-                  <span style={{ color: '#60a5fa', flexShrink: 0 }}>→</span>
+                <div key={i} className="flex items-start gap-1.5 text-[var(--color-text-secondary)] text-[11px] leading-tight">
+                  <span className="text-[var(--color-accent-blue)] shrink-0">→</span>
                   <span>{rec}</span>
                 </div>
               ))}
             </div>
           )}
+
           {gate.recommended_window && (
-            <div style={styles.section}>
-              <div style={styles.sectionLabel}>Recommended Window</div>
-              <span style={styles.windowChip}>{gate.recommended_window[0]} – {gate.recommended_window[1]}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold">
+                Recommended Window:
+              </span>
+              <span className="text-xs text-[var(--color-accent-blue)] font-bold">
+                {gate.recommended_window[0]} – {gate.recommended_window[1]}
+              </span>
             </div>
           )}
-          <div style={styles.sensorRow}>
-            <span style={styles.sensorLabel}>Sensor regime:</span>
-            <span style={styles.sensorValue}>{gate.sensor_continuity?.replace(/_/g, ' ')}</span>
+
+          <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
+            <span className="uppercase tracking-wider font-bold">Sensor regime:</span>
+            <span className="text-[var(--color-text-secondary)]">{gate.sensor_continuity?.replace(/_/g, ' ')}</span>
           </div>
         </div>
       )}
     </div>
   );
 }
-
-const styles = {
-  container: {
-    borderRadius: 6,
-    padding: '6px 10px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    marginBottom: 0,
-    fontFamily: 'inherit',
-  },
-  loadingRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    opacity: 0.6,
-  },
-  spinner: {
-    display: 'inline-block',
-    animation: 'spin 1s linear infinite',
-    fontSize: 14,
-    color: 'var(--color-text-muted)',
-  },
-  loadingText: {
-    fontSize: 11,
-    color: 'var(--color-text-muted)',
-  },
-  headerRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    outline: 'none',
-  },
-  statusBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 5,
-  },
-  statusIcon: {
-    fontSize: 13,
-    fontWeight: 700,
-  },
-  statusLabel: {
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase',
-  },
-  metaRow: {
-    display: 'flex',
-    gap: 5,
-    flex: 1,
-    flexWrap: 'wrap',
-  },
-  metaChip: {
-    fontSize: 10,
-    background: 'var(--color-bg-elevated)',
-    border: '1px solid var(--color-border-subtle)',
-    borderRadius: 4,
-    padding: '1px 5px',
-    color: 'var(--color-text-secondary)',
-    fontFamily: 'monospace',
-  },
-  chevron: {
-    fontSize: 12,
-    color: 'var(--color-text-muted)',
-    transition: 'transform 0.2s',
-    marginLeft: 'auto',
-  },
-  limitationsBlock: {
-    marginTop: 8,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-  },
-  limitationItem: {
-    display: 'flex',
-    gap: 6,
-    fontSize: 11,
-    color: 'var(--color-text-main)',
-    lineHeight: 1.45,
-  },
-  expandedBody: {
-    marginTop: 8,
-    borderTop: '1px solid var(--color-border-subtle)',
-    paddingTop: 8,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
-  },
-  section: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-  },
-  sectionLabel: {
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: '0.1em',
-    textTransform: 'uppercase',
-    color: 'var(--color-text-muted)',
-    marginBottom: 2,
-    fontFamily: 'monospace',
-  },
-  recItem: {
-    display: 'flex',
-    gap: 6,
-    fontSize: 11,
-    color: 'var(--color-text-secondary)',
-    lineHeight: 1.45,
-  },
-  windowChip: {
-    fontSize: 12,
-    color: 'var(--color-accent-blue)',
-    fontWeight: 600,
-    fontFamily: 'monospace',
-  },
-  sensorRow: {
-    display: 'flex',
-    gap: 6,
-    fontSize: 10,
-    color: 'var(--color-text-muted)',
-  },
-  sensorLabel: {
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    fontFamily: 'monospace',
-  },
-  sensorValue: {
-    color: 'var(--color-text-secondary)',
-    fontFamily: 'monospace',
-  },
-};

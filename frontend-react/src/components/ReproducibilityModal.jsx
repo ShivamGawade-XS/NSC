@@ -1,11 +1,12 @@
 /**
  * Tellura 2.0 — Reproducible Analysis Dossier Modal
- * Feature E: Cryptographic provenance manifest with SHA-256 fingerprint,
+ * Cryptographic provenance manifest with SHA-256 fingerprint,
  * one-click copyable standalone Python replication script, and AGU/AMS BibTeX citations.
  */
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { getReproducibilityManifest, downloadBlob } from '../api/client';
+import { playTactileClick } from '../utils/audio';
 
 export default function ReproducibilityModal({ analysisId, onClose }) {
   const [data, setData] = useState(null);
@@ -38,6 +39,7 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
   }, [onClose]);
 
   const handleCopyCode = () => {
+    playTactileClick(700);
     if (!data?.python_replication_code) return;
     navigator.clipboard?.writeText(data.python_replication_code)
       .then(() => toast.success('Python replication script copied'))
@@ -45,6 +47,7 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
   };
 
   const handleDownloadCode = () => {
+    playTactileClick(750);
     if (!data?.python_replication_code) return;
     const blob = new Blob([data.python_replication_code], { type: 'text/x-python' });
     downloadBlob(blob, `reproduce_Tellura_${analysisId.slice(0, 8)}.py`, 'text/x-python');
@@ -52,6 +55,7 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
   };
 
   const handleCopyBibtex = () => {
+    playTactileClick(700);
     if (!data?.bibtex_citations?.length) return;
     const text = data.bibtex_citations.join('\n\n');
     navigator.clipboard?.writeText(text)
@@ -60,40 +64,70 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
   };
 
   return (
-    <div style={styles.overlay} role="dialog" aria-modal="true" aria-label="Reproducible Analysis Dossier">
-      <div style={styles.modal}>
+    <div
+      className="fixed inset-0 z-[9000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Reproducible Analysis Dossier"
+    >
+      <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden text-[var(--color-text-main)] shadow-2xl animate-in fade-in duration-150">
         {/* Header */}
-        <div style={styles.header}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)]">
           <div>
-            <div style={styles.title}>Reproducible Analysis Dossier</div>
-            <div style={styles.subtitle}>Full cryptographic manifest & executable Python replication recipe</div>
+            <h2 className="font-['Space_Grotesk'] text-lg font-bold tracking-tight text-[var(--color-text-main)]">
+              Reproducible Analysis Dossier
+            </h2>
+            <p className="text-xs text-[var(--color-text-muted)] font-mono mt-0.5">
+              Full cryptographic manifest & executable Python replication recipe
+            </p>
           </div>
-          <button onClick={onClose} style={styles.closeBtn} aria-label="Close modal">✕</button>
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(500);
+              onClose?.();
+            }}
+            className="w-7 h-7 rounded border border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] flex items-center justify-center text-xs font-mono transition-colors cursor-pointer"
+            aria-label="Close modal"
+          >
+            ✕
+          </button>
         </div>
 
-        <div style={styles.body}>
+        {/* Body */}
+        <div className="p-6 overflow-y-auto space-y-4">
           {loading && (
-            <div style={styles.centered}>
-              <div style={styles.spinner}>⟳</div>
-              <span style={styles.loadingText}>Generating cryptographic manifest & Python recipe…</span>
+            <div className="py-16 flex flex-col items-center justify-center gap-3 text-xs font-mono text-[var(--color-text-muted)]">
+              <span className="loading-spinner !w-6 !h-6 !border-2" />
+              <span>Generating cryptographic manifest & Python recipe…</span>
             </div>
           )}
 
-          {error && <div style={styles.errorBox}>{error}</div>}
+          {error && (
+            <div className="p-3 rounded bg-red-950/20 border border-red-500/40 text-red-300 text-xs font-mono">
+              {error}
+            </div>
+          )}
 
           {data && (
             <>
               {/* SHA-256 Fingerprint Bar */}
-              <div style={styles.fingerprintBar}>
-                <div style={styles.fpHeader}>
-                  <span style={styles.fpLabel}>SHA-256 Analysis Fingerprint</span>
-                  <span style={styles.timestampText}>{data.timestamp_utc}</span>
+              <div className="p-3.5 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] space-y-1.5 font-mono">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold">
+                    SHA-256 Analysis Fingerprint
+                  </span>
+                  <span className="text-[10px] text-[var(--color-text-muted)]">
+                    {data.timestamp_utc}
+                  </span>
                 </div>
-                <div style={styles.fpCode}>{data.sha256_fingerprint}</div>
+                <div className="text-xs text-[var(--color-accent-blue)] break-all select-all font-mono bg-[var(--color-bg-surface)] p-2 rounded border border-[var(--color-border-subtle)]">
+                  {data.sha256_fingerprint}
+                </div>
               </div>
 
               {/* Tab Navigation */}
-              <div style={styles.tabBar}>
+              <div className="flex border-b border-[var(--color-border-subtle)] pt-1">
                 {[
                   { id: 'script', label: 'Python Replication Code' },
                   { id: 'parameters', label: 'Parameters & Environment' },
@@ -101,77 +135,100 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
                 ].map((t) => (
                   <button
                     key={t.id}
-                    onClick={() => setActiveTab(t.id)}
-                    style={{
-                      ...styles.tabBtn,
-                      ...(activeTab === t.id ? styles.tabBtnActive : {}),
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(600);
+                      setActiveTab(t.id);
                     }}
+                    className={`px-3.5 py-2 text-xs font-mono font-semibold border-b-2 transition-colors cursor-pointer ${
+                      activeTab === t.id
+                        ? 'border-[var(--color-accent-blue)] text-[var(--color-accent-blue)] bg-[var(--color-bg-elevated)] rounded-t'
+                        : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                    }`}
                   >
                     {t.label}
                   </button>
                 ))}
               </div>
 
-              {/* Tab: Script */}
+              {/* Tab 1: Script */}
               {activeTab === 'script' && (
-                <div style={styles.tabContent}>
-                  <div style={styles.scriptActions}>
-                    <span style={styles.scriptHint}>Standalone runnable script using Scipy, NumPy & Requests</span>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={handleCopyCode} style={styles.actionBtn}>Copy Code</button>
-                      <button onClick={handleDownloadCode} style={{ ...styles.actionBtn, background: 'var(--color-accent-blue)', color: '#fff', border: 'none' }}>
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs text-[var(--color-text-muted)] font-mono">
+                      Standalone runnable script using Scipy, NumPy & Requests
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className="interface-btn-secondary !text-xs !py-1.5 !px-3 font-mono"
+                      >
+                        Copy Code
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadCode}
+                        className="interface-btn-primary !text-xs !py-1.5 !px-3 font-mono"
+                      >
                         Download .py
                       </button>
                     </div>
                   </div>
-                  <pre style={styles.codeBlock}>
+                  <pre className="p-4 rounded-lg bg-[var(--color-bg-deep)] border border-[var(--color-border-subtle)] overflow-x-auto text-xs font-mono text-[var(--color-text-secondary)] leading-relaxed max-h-[360px] select-all">
                     <code>{data.python_replication_code}</code>
                   </pre>
                 </div>
               )}
 
-              {/* Tab: Parameters */}
+              {/* Tab 2: Parameters */}
               {activeTab === 'parameters' && (
-                <div style={styles.tabContent}>
-                  <div style={styles.metaGrid}>
-                    <div style={styles.metaCard}>
-                      <span style={styles.metaLabel}>Analysis ID</span>
-                      <span style={styles.metaVal}>{data.analysis_id}</span>
+                <div className="space-y-3 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono">
+                    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3 space-y-1">
+                      <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold block">Analysis ID</span>
+                      <span className="text-xs text-[var(--color-text-main)] block truncate">{data.analysis_id}</span>
                     </div>
-                    <div style={styles.metaCard}>
-                      <span style={styles.metaLabel}>Software Version</span>
-                      <span style={styles.metaVal}>{data.software_version}</span>
+                    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3 space-y-1">
+                      <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold block">Version</span>
+                      <span className="text-xs text-[var(--color-text-main)] block">{data.software_version}</span>
                     </div>
-                    <div style={styles.metaCard}>
-                      <span style={styles.metaLabel}>Dataset</span>
-                      <span style={styles.metaVal}>{data.dataset?.name || data.dataset?.id}</span>
+                    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3 space-y-1">
+                      <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold block">Dataset</span>
+                      <span className="text-xs text-[var(--color-text-main)] block truncate">{data.dataset?.name || data.dataset?.id}</span>
                     </div>
-                    <div style={styles.metaCard}>
-                      <span style={styles.metaLabel}>Dataset DOI</span>
-                      <span style={styles.metaVal}>{data.dataset?.doi || 'NASA EarthData'}</span>
+                    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3 space-y-1">
+                      <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold block">Dataset DOI</span>
+                      <span className="text-xs text-[var(--color-text-main)] block truncate">{data.dataset?.doi || 'NASA EarthData'}</span>
                     </div>
                   </div>
 
-                  <div style={styles.card}>
-                    <div style={styles.cardTitle}>Execution Parameters</div>
-                    <div style={styles.paramList}>
+                  <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-4 space-y-2">
+                    <div className="font-['Space_Grotesk'] text-xs font-bold text-[var(--color-text-main)]">
+                      Execution Parameters
+                    </div>
+                    <div className="space-y-1 font-mono text-xs">
                       {Object.entries(data.analysis_parameters || {}).map(([k, v]) => (
-                        <div key={k} style={styles.paramRow}>
-                          <span style={styles.paramKey}>{k}</span>
-                          <span style={styles.paramVal}>{JSON.stringify(v)}</span>
+                        <div key={k} className="flex justify-between items-center py-1 border-b border-[var(--color-border-subtle)]/50 last:border-b-0">
+                          <span className="text-[var(--color-text-muted)]">{k}:</span>
+                          <span className="text-[var(--color-text-main)] tabular-nums">{JSON.stringify(v)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {data.scientific_summary && (
-                    <div style={styles.card}>
-                      <div style={styles.cardTitle}>Calculated Summary Results</div>
-                      <div style={styles.paramList}>
+                    <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-4 space-y-2">
+                      <div className="font-['Space_Grotesk'] text-xs font-bold text-[var(--color-text-main)]">
+                        Calculated Summary Results
+                      </div>
+                      <div className="space-y-1 font-mono text-xs">
                         {Object.entries(data.scientific_summary).map(([k, v]) => (
-                          <div key={k} style={styles.paramRow}>
-                            <span style={styles.paramKey}>{k}</span>
-                            <span style={styles.paramVal}>{typeof v === 'number' ? v.toFixed(4) : String(v)}</span>
+                          <div key={k} className="flex justify-between items-center py-1 border-b border-[var(--color-border-subtle)]/50 last:border-b-0">
+                            <span className="text-[var(--color-text-muted)]">{k}:</span>
+                            <span className="text-[var(--color-text-main)] font-semibold tabular-nums">
+                              {typeof v === 'number' ? v.toFixed(4) : String(v)}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -180,16 +237,24 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
                 </div>
               )}
 
-              {/* Tab: BibTeX */}
+              {/* Tab 3: BibTeX */}
               {activeTab === 'bibtex' && (
-                <div style={styles.tabContent}>
-                  <div style={styles.scriptActions}>
-                    <span style={styles.scriptHint}>Citations for algorithms (Mann-Kendall, Theil-Sen, Benjamini-Hochberg) and datasets</span>
-                    <button onClick={handleCopyBibtex} style={styles.actionBtn}>Copy All BibTeX</button>
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs text-[var(--color-text-muted)] font-mono">
+                      Citations for algorithms (Mann-Kendall, Theil-Sen, Benjamini-Hochberg) and NASA datasets
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyBibtex}
+                      className="interface-btn-secondary !text-xs !py-1.5 !px-3 font-mono"
+                    >
+                      Copy All BibTeX
+                    </button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div className="space-y-2.5">
                     {data.bibtex_citations?.map((c, i) => (
-                      <pre key={i} style={styles.bibtexBlock}>
+                      <pre key={i} className="p-3 rounded-lg bg-[var(--color-bg-deep)] border border-[var(--color-border-subtle)] overflow-x-auto text-xs font-mono text-[var(--color-text-secondary)] leading-relaxed select-all">
                         <code>{c}</code>
                       </pre>
                     ))}
@@ -203,108 +268,3 @@ export default function ReproducibilityModal({ analysisId, onClose }) {
     </div>
   );
 }
-
-const styles = {
-  overlay: {
-    position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.75)',
-    backdropFilter: 'blur(6px)',
-    zIndex: 9000,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: 16,
-  },
-  modal: {
-    background: 'var(--color-bg-surface)',
-    border: '1px solid var(--color-border-strong)',
-    borderRadius: 12,
-    width: '100%', maxWidth: 760,
-    maxHeight: '90vh', overflow: 'auto',
-    display: 'flex', flexDirection: 'column',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
-    color: 'var(--color-text-main)',
-  },
-  header: {
-    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-    padding: '20px 24px 16px',
-    borderBottom: '1px solid var(--color-border-subtle)',
-    background: 'var(--color-bg-elevated)',
-  },
-  title: { fontSize: 18, fontWeight: 700, color: 'var(--color-text-main)', letterSpacing: '-0.02em', fontFamily: 'Space Grotesk, sans-serif' },
-  subtitle: { fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 },
-  closeBtn: {
-    background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)',
-    color: 'var(--color-text-muted)', borderRadius: 6, width: 28, height: 28,
-    cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
-  },
-  body: { padding: '20px 24px 28px', display: 'flex', flexDirection: 'column', gap: 16 },
-  centered: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', gap: 12, padding: 60, color: 'var(--color-text-muted)',
-  },
-  spinner: { fontSize: 32, animation: 'spin 1s linear infinite' },
-  loadingText: { fontSize: 13, color: 'var(--color-text-muted)' },
-  errorBox: {
-    padding: '12px 16px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)',
-    borderRadius: 8, color: '#fca5a5', fontSize: 13,
-  },
-  fingerprintBar: {
-    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
-    borderRadius: 8, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 6,
-  },
-  fpHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  fpLabel: { fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 700, fontFamily: 'monospace' },
-  timestampText: { fontSize: 10.5, color: 'var(--color-text-muted)', fontFamily: 'monospace' },
-  fpCode: {
-    fontFamily: 'monospace', fontSize: 11.5, color: '#10b981', wordBreak: 'break-all',
-    background: 'rgba(16,185,129,0.06)', padding: '6px 8px', borderRadius: 4,
-  },
-  tabBar: {
-    display: 'flex', gap: 4, borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: 2,
-  },
-  tabBtn: {
-    padding: '8px 14px', fontSize: 11.5, fontWeight: 600,
-    background: 'transparent', border: 'none', borderBottom: '2px solid transparent',
-    color: 'var(--color-text-muted)', cursor: 'pointer', transition: 'all 0.15s',
-  },
-  tabBtnActive: {
-    color: 'var(--color-accent-blue)', borderBottomColor: 'var(--color-accent-blue)', background: 'var(--color-bg-elevated)',
-  },
-  tabContent: { display: 'flex', flexDirection: 'column', gap: 12 },
-  scriptActions: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  scriptHint: { fontSize: 11, color: 'var(--color-text-muted)' },
-  actionBtn: {
-    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
-    color: 'var(--color-text-main)', borderRadius: 6, padding: '5px 10px', fontSize: 11, cursor: 'pointer',
-    fontWeight: 600,
-  },
-  codeBlock: {
-    background: 'var(--color-bg-deep)', border: '1px solid var(--color-border-subtle)',
-    borderRadius: 8, padding: 14, overflowX: 'auto', maxHeight: 380,
-    fontSize: 11, color: 'var(--color-text-secondary)', fontFamily: 'monospace', lineHeight: 1.5,
-  },
-  metaGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 },
-  metaCard: {
-    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
-    borderRadius: 8, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 4,
-  },
-  metaLabel: { fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', fontWeight: 700, fontFamily: 'monospace' },
-  metaVal: { fontSize: 11.5, fontWeight: 600, color: 'var(--color-text-main)', fontFamily: 'monospace' },
-  card: {
-    background: 'var(--color-bg-elevated)', border: '1px solid var(--color-border-subtle)',
-    borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 8,
-  },
-  cardTitle: { fontSize: 11.5, fontWeight: 700, color: 'var(--color-text-main)', fontFamily: 'Space Grotesk, sans-serif' },
-  paramList: { display: 'flex', flexDirection: 'column', gap: 6 },
-  paramRow: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    fontSize: 11, padding: '4px 0', borderBottom: '1px solid var(--color-border-subtle)',
-  },
-  paramKey: { color: 'var(--color-text-muted)', fontFamily: 'monospace' },
-  paramVal: { color: 'var(--color-text-main)', fontFamily: 'monospace', fontWeight: 600 },
-  bibtexBlock: {
-    background: 'var(--color-bg-deep)', border: '1px solid var(--color-border-subtle)',
-    borderRadius: 6, padding: 12, overflowX: 'auto', fontSize: 10.5, color: 'var(--color-accent-blue)',
-    fontFamily: 'monospace', lineHeight: 1.4, margin: 0,
-  },
-};
