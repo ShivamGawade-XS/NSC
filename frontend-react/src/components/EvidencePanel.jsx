@@ -16,7 +16,7 @@ function ProvenanceBadge({ provenance }) {
           role="alert"
           className="p-3 rounded bg-amber-500/15 border border-amber-500/50 text-amber-300 font-mono text-xs flex items-center gap-2.5 shadow-sm"
         >
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
           <span className="font-bold tracking-wide">
             Synthetic test data — not NASA observations.
           </span>
@@ -51,7 +51,7 @@ function ProvenanceBadge({ provenance }) {
           role="alert"
           className="p-2.5 rounded bg-amber-950/30 border border-amber-500/40 text-amber-300 font-mono text-[11px] flex items-start gap-2"
         >
-          <svg className="w-4 h-4 text-[#f59e0b] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
           <span>{provenance.warning || provenance.discontinuity_warning}</span>
@@ -98,13 +98,32 @@ export default function EvidencePanel() {
     return (
       <div className="space-y-3">
         <ProvenanceBadge provenance={analysisData?.provenance} />
-        <div className="interface-card p-4">
-          <h3 className="eyebrow-label mb-2">
-            Evidence Record
-          </h3>
-          <p className="text-xs text-[var(--color-text-muted)] font-mono">
-            Select any observation cell on the map or pick from the signal rankings to inspect its evidence record.
+        <div className="interface-card p-4 space-y-3">
+          <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2.5">
+            <h3 className="instrument-heading">
+              Evidence & Diagnostic Record
+            </h3>
+            <span className="text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] px-2 py-0.5 rounded border border-[var(--color-border-subtle)]">
+              Standby
+            </span>
+          </div>
+          <p className="text-xs text-[var(--color-text-secondary)] font-mono leading-relaxed">
+            Select any observation cell on the GIS map or pick from the signal rankings to inspect localized empirical evidence, statistical significance, and physical literature drivers.
           </p>
+          <div className="pt-1 border-t border-[var(--color-border-subtle)] text-[10px] font-mono text-[var(--color-text-muted)] space-y-1">
+            <div className="flex justify-between">
+              <span>Grid Navigation:</span>
+              <span className="text-[var(--color-text-main)] font-semibold">Arrow Keys (↑↓←→)</span>
+            </div>
+            <div className="flex justify-between">
+              <span>FDR Significance Mask:</span>
+              <span className="text-[var(--color-text-main)] font-semibold">Key [F]</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Anselin LISA Regimes:</span>
+              <span className="text-[var(--color-text-main)] font-semibold">Key [L]</span>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -348,7 +367,7 @@ export default function EvidencePanel() {
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#38bdf8] animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#38bdf8] shrink-0" />
             <span className="text-xs font-bold text-[#38bdf8] uppercase tracking-wider">
               Probabilistic Event Attribution (FAR)
             </span>
@@ -397,7 +416,7 @@ export default function EvidencePanel() {
 
       {/* Evidence Details */}
       <div className="interface-card p-4">
-        <h3 className="eyebrow-label mb-3">
+        <h3 className="instrument-heading mb-3">
           Scientific Evidence Record
         </h3>
         <div className="space-y-2 text-xs text-[var(--color-text-secondary)]">
@@ -493,7 +512,7 @@ export default function EvidencePanel() {
             {/* Model Provenance & Latency Badge (Task 3.3) */}
             <div className="flex items-center justify-between pb-2 border-b border-[var(--color-border-subtle)]">
               <div className="flex items-center gap-1.5">
-                <span className={`inline-block w-2 h-2 rounded-full ${aiResult.model_used && !aiResult.model_used.includes('Deterministic') ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                <span className={`inline-block w-2 h-2 rounded-full ${aiResult.model_used && !aiResult.model_used.includes('Deterministic') ? 'bg-emerald-400' : 'bg-amber-400'}`} />
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-main)]">
                   {aiResult.model_used || 'Live Google Gemini'}
                 </span>
@@ -507,12 +526,12 @@ export default function EvidencePanel() {
 
             {aiResult.summary && <p><strong className="text-[var(--color-text-main)] font-semibold">Summary:</strong> {aiResult.summary}</p>}
             {aiResult.statistical_assessment && <p><strong className="text-[var(--color-text-main)] font-semibold">Assessment:</strong> {aiResult.statistical_assessment}</p>}
-            {aiResult.limitations && <p className="text-[#f59e0b]"><strong>Caveats:</strong> {aiResult.limitations}</p>}
+            {aiResult.limitations && <p className="text-amber-400"><strong>Caveats:</strong> {aiResult.limitations}</p>}
 
             {/* Candidate Physical Drivers */}
             {aiResult.physical_hypotheses && aiResult.physical_hypotheses.length > 0 && (
               <div className="border-t border-[var(--color-border-subtle)] pt-2.5 mt-2">
-                <div className="eyebrow-label text-[var(--color-accent-blue)] mb-1.5">
+                <div className="instrument-heading !text-xs text-[var(--color-accent-blue)] mb-1.5">
                   Candidate Physical Drivers (Peer-Reviewed)
                 </div>
                 <div className="space-y-1.5">
@@ -552,7 +571,7 @@ export default function EvidencePanel() {
 
       {/* Tellura 2.0 Scientific Intelligence Actions */}
       <div className="interface-card p-3 space-y-2">
-        <div className="eyebrow-label text-[var(--color-text-muted)] mb-1">
+        <div className="instrument-heading !text-xs text-[var(--color-text-muted)] mb-1">
           Scientific Intelligence & Robustness
         </div>
         <div className="grid grid-cols-2 gap-2">

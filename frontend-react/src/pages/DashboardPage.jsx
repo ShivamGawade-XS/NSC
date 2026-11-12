@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const regionalCompareModalOpen = useStore((s) => s.regionalCompareModalOpen);
   const discoveryModalOpen = useStore((s) => s.discoveryModalOpen);
   const hasInitialized = useRef(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   usePageMetadata({
     title: 'Analysis Workspace — Tellura Scientific Workbench',
@@ -332,39 +333,91 @@ export default function DashboardPage() {
           }}
         />
 
-        {/* Minimal Loading Overlay */}
-        {isLoading && (
-          <div className="loading-overlay" role="status" aria-live="polite">
-            <div className="text-center p-6 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] shadow-2xl">
-              <div className="loading-spinner mx-auto mb-3" />
-              <p className="font-['Space_Grotesk'] text-sm font-semibold text-[var(--color-text-main)] mb-1">
-                Computing Statistical Analysis
-              </p>
-              <p className="text-[11px] text-[var(--color-text-secondary)] font-mono">
-                Mann-Kendall τ • Benjamini-Hochberg FDR • Anselin LISA
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Main Dashboard Container */}
         <main className="pt-16 px-4 sm:px-6 max-w-[1920px] mx-auto pb-12">
+          {/* Scientific Computing Status Bar (Non-blocking, In-situ) */}
+          {isLoading && (
+            <div
+              className="mb-4 p-3 rounded-md border border-[var(--color-border-active)] bg-[var(--color-bg-elevated)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex items-center gap-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent-blue)] shrink-0" />
+                <div>
+                  <p className="font-['Space_Grotesk'] text-xs font-semibold text-[var(--color-text-main)]">
+                    Computing Statistical Analysis
+                  </p>
+                  <p className="text-[10px] text-[var(--color-text-secondary)] font-mono">
+                    Evaluating Theil-Sen Slope • Mann-Kendall τ • Benjamini-Hochberg FDR • Anselin LISA Regimes
+                  </p>
+                </div>
+              </div>
+              <div className="w-full sm:w-44 h-1.5 rounded-full bg-[var(--color-border-subtle)] overflow-hidden">
+                <div className="h-full bg-[var(--color-accent-blue)] skeleton-box w-full" />
+              </div>
+            </div>
+          )}
+
           {/* Page Intro Banner / Telemetry Status Strip */}
-          <section className="mb-4 pt-2">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[var(--color-border-subtle)]">
+          <section className="mb-4 pt-1">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--color-border-subtle)]">
               <div>
-                <h1 className="font-['Space_Grotesk'] text-xl sm:text-2xl font-bold tracking-tight text-[var(--color-text-main)]">
-                  Spatiotemporal Trend Workspace
+                <h1 className="font-['Space_Grotesk'] text-lg sm:text-xl font-bold tracking-tight text-[var(--color-text-main)] flex items-center gap-2">
+                  <span>Analysis Workspace</span>
+                  <span className="text-[11px] font-mono font-normal text-[var(--color-text-muted)] border-l border-[var(--color-border-subtle)] pl-2">
+                    Spatiotemporal Trend Discovery System
+                  </span>
                 </h1>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {/* Subtle Keyboard Shortcut Hint Pill */}
-                <div
-                  className="flex items-center gap-1.5 text-[11px] font-mono bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] px-3 py-1.5 rounded border border-[var(--color-border-subtle)] shadow-xs select-none"
-                  title="Mission-control keyboard navigation active"
-                >
-                  <span>↑↓←→ Navigate Grid • F Sig Mask • L LISA • ⌘K Query</span>
+                {/* Keyboard Shortcut Popover Toggle */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowShortcuts(!showShortcuts)}
+                    className={`flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1.5 rounded border transition-colors cursor-pointer select-none ${
+                      showShortcuts
+                        ? 'bg-[var(--color-accent-blue-subtle)] text-[var(--color-accent-blue)] border-[var(--color-accent-blue)]'
+                        : 'bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border-[var(--color-border-subtle)]'
+                    }`}
+                    title="Toggle keyboard navigation shortcuts"
+                    aria-expanded={showShortcuts}
+                  >
+                    <span>⌨</span>
+                    <span>Shortcuts</span>
+                  </button>
+
+                  {showShortcuts && (
+                    <div className="absolute right-0 top-full mt-1.5 z-50 w-72 bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-md shadow-lg p-3 text-xs font-mono animate-in fade-in duration-150">
+                      <div className="text-[10px] uppercase font-bold text-[var(--color-text-muted)] tracking-wider mb-2 border-b border-[var(--color-border-subtle)] pb-1">
+                        Workstation Keyboard Controls
+                      </div>
+                      <div className="space-y-1.5 text-[11px]">
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">Navigate Grid Cells</span>
+                          <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">↑ ↓ ← →</kbd>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">Toggle Significance Mask</span>
+                          <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">F</kbd>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">Toggle LISA Cluster Regimes</span>
+                          <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">L</kbd>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">Command Query Palette</span>
+                          <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">⌘K / Ctrl+K</kbd>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">Close Modals / HUDs</span>
+                          <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">Esc</kbd>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Provenance Alert / Verification Badge */}
@@ -373,23 +426,23 @@ export default function DashboardPage() {
                     {analysisData.provenance.is_synthetic === true && (
                       <div
                         role="alert"
-                        className="flex items-center gap-1.5 text-xs font-mono bg-amber-500/20 text-amber-300 px-3 py-1.5 rounded border border-amber-500/50 font-bold animate-pulse"
+                        className="flex items-center gap-1.5 text-xs font-mono bg-amber-500/15 text-amber-300 px-3 py-1.5 rounded border border-amber-500/40 font-semibold"
                       >
-                        <span className="w-2 h-2 rounded-full bg-amber-400" />
+                        <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
                         <span>Synthetic test data — not NASA observations.</span>
                       </div>
                     )}
 
                     {analysisData.provenance.is_synthetic === false && (
-                      <div className="flex items-center gap-1.5 text-xs font-mono bg-emerald-950/40 text-emerald-400 px-3 py-1.5 rounded border border-emerald-500/40 font-semibold">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <div className="flex items-center gap-1.5 text-xs font-mono bg-emerald-950/30 text-emerald-400 px-3 py-1.5 rounded border border-emerald-500/35 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
                         <span>Verified NASA CF-1.8 Observations</span>
                         {analysisData.provenance.doi && (
                           <a
                             href={`https://doi.org/${analysisData.provenance.doi.replace(/^https?:\/\/doi\.org\//, '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[10px] text-emerald-300 hover:text-emerald-100 underline decoration-emerald-500/50 ml-0.5"
+                            className="text-[10px] text-emerald-300 hover:text-emerald-100 underline decoration-emerald-500/50 ml-0.5 font-bold"
                             title={`View dataset DOI: ${analysisData.provenance.doi}`}
                           >
                             DOI ↗
@@ -402,17 +455,17 @@ export default function DashboardPage() {
 
                 {/* Live Run Metadata Pill */}
                 {analysisData && !analysisData.isCompound && (
-                  <div className="flex flex-wrap items-center gap-3 text-xs font-mono bg-[var(--color-bg-surface)] px-3.5 py-1.5 rounded border border-[var(--color-border-subtle)]">
+                  <div className="flex flex-wrap items-center gap-2.5 text-xs font-mono bg-[var(--color-bg-surface)] px-3 py-1.5 rounded border border-[var(--color-border-subtle)]">
                     <span className="text-[var(--color-text-secondary)]">
                       <strong className="text-[var(--color-text-main)]">{analysisData.variable_name}</strong> ({analysisData.time_span})
                     </span>
-                    <span className="text-[var(--color-text-muted)] hidden sm:inline">•</span>
-                    <span className="text-[var(--color-accent-blue)]">
-                      {analysisData.summary?.significant_cells_fdr ?? 0} / {analysisData.summary?.total_cells ?? 0} FDR Significant (q ≤ 0.05)
+                    <span className="text-[var(--color-border-default)] hidden sm:inline">•</span>
+                    <span className="text-[var(--color-accent-blue)] font-medium">
+                      {analysisData.summary?.significant_cells_fdr ?? 0} / {analysisData.summary?.total_cells ?? 0} FDR Sig (q ≤ 0.05)
                     </span>
                     {analysisData.summary?.spatial_autocorrelation && (
                       <>
-                        <span className="text-[var(--color-text-muted)] hidden sm:inline">•</span>
+                        <span className="text-[var(--color-border-default)] hidden sm:inline">•</span>
                         <span className="text-[var(--color-text-secondary)]">
                           Moran’s I: <strong className="text-emerald-500 font-semibold">{analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'}</strong> ({analysisData.summary.spatial_autocorrelation.interpretation})
                         </span>
@@ -422,7 +475,7 @@ export default function DashboardPage() {
                 )}
 
                 {analysisData && analysisData.isCompound && (
-                  <div className="flex items-center gap-2 text-xs font-mono bg-[#f59e0b]/10 text-[#f59e0b] px-3.5 py-1.5 rounded border border-[#f59e0b]/30">
+                  <div className="flex items-center gap-2 text-xs font-mono bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded border border-amber-500/25">
                     <span>Compound Hazard Analysis (T & P) • CAI Index Active ({analysisData.cells?.length || 0} Cells Evaluated)</span>
                   </div>
                 )}
@@ -433,9 +486,9 @@ export default function DashboardPage() {
             {analysisData?.provenance?.bbox_clamped === true && analysisData?.provenance?.warning && (
               <div
                 role="alert"
-                className="mt-2.5 p-2.5 rounded bg-amber-950/30 border border-amber-500/40 text-amber-300 font-mono text-xs flex items-center gap-2"
+                className="mt-2.5 p-2.5 rounded bg-amber-950/20 border border-amber-500/35 text-amber-300 font-mono text-xs flex items-center gap-2"
               >
-                <svg className="w-4 h-4 text-[#f59e0b] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <span>{analysisData.provenance.warning}</span>
@@ -469,16 +522,16 @@ export default function DashboardPage() {
               </div>
               <div className="interface-card p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="eyebrow-label">
-                    Annual Time Series & Sen's Slope
-                  </h3>
+                  <h2 className="instrument-heading">
+                    Temporal Trajectory & Theil-Sen Estimator
+                  </h2>
                   {selectedCell && (
-                    <span className="text-[11px] text-[#f59e0b] font-mono tabular-nums font-semibold">
+                    <span className="text-[11px] text-[var(--color-accent-anomaly)] font-mono tabular-nums font-semibold">
                       Sen's Slope: {selectedCell.slope > 0 ? '+' : ''}{selectedCell.slope?.toFixed(4)} {selectedCell.slope_units}
                     </span>
                   )}
                 </div>
-                <div className="h-[250px]">
+                <div className="h-[270px]">
                   <TimeSeriesChart />
                 </div>
               </div>

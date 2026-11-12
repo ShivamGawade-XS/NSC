@@ -723,7 +723,7 @@ function inferGridStep(grid) {
           }`}
           title="Toggle NASA GIBS real-time satellite imagery overlay underneath trend grid"
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${showGibs ? 'bg-white animate-pulse' : 'bg-emerald-400'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${showGibs ? 'bg-white' : 'bg-emerald-400'}`} />
           NASA GIBS Satellite
         </button>
 
@@ -798,7 +798,7 @@ function inferGridStep(grid) {
           }`}
           title="Toggle 3D Planetary Orthographic Globe View"
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-black' : 'bg-cyan-400 animate-pulse'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-black' : 'bg-cyan-400'}`} />
           <span>{showGlobe3D ? '2D GIS Map' : '3D Globe'}</span>
         </button>
       </div>
@@ -806,7 +806,7 @@ function inferGridStep(grid) {
       {/* Prominent Compare Mode HUD Banner */}
       {compareMode && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] bg-[var(--color-bg-surface)]/95 border-2 border-amber-400 text-[var(--color-text-main)] text-xs px-4 py-2 rounded-lg backdrop-blur-md font-mono flex items-center gap-3 shadow-2xl animate-in fade-in slide-in-from-top duration-200">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
           <div className="font-semibold tracking-wide">
             {!comparePinA ? (
               <span>COMPARISON MODE ACTIVE: Click Pin A on map</span>
@@ -840,7 +840,7 @@ function inferGridStep(grid) {
         <div className="absolute top-14 right-3 z-[1000] w-72 bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 rounded shadow-2xl backdrop-blur-md p-3 font-mono text-xs animate-in fade-in duration-200">
           <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2 mb-2.5">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="font-semibold text-[var(--color-text-main)] tracking-wider">NASA EOSDIS GIBS</span>
             </div>
             <span className="text-[10px] bg-[var(--color-accent-blue)]/15 text-[var(--color-accent-blue)] px-1.5 py-0.5 rounded border border-[var(--color-accent-blue)]/30 font-bold">

@@ -586,7 +586,7 @@ export default function TimeSeriesChart() {
       ) : selectedCell?.changepoint_year && selectedCell?.changepoint_p_value !== undefined && selectedCell?.changepoint_p_value !== null && Number(selectedCell?.changepoint_p_value) <= 0.05 ? (
         <div className="flex items-center justify-between px-2 py-1 mb-1 bg-red-950/20 border border-red-500/30 rounded text-[10px] font-mono text-red-400">
           <span className="flex items-center gap-1.5 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
             Pettitt (1979) Regime Shift: Year {selectedCell.changepoint_year} (p = {Number(selectedCell.changepoint_p_value) < 0.001 ? '<0.001' : Number(selectedCell.changepoint_p_value).toFixed(4)})
           </span>
           <span className="text-[9px] text-[var(--color-text-secondary)]">Abrupt Changepoint</span>
@@ -627,7 +627,7 @@ export default function TimeSeriesChart() {
               <span>•</span>
               <span>{audioTelemetry.freq} Hz</span>
               {audioTelemetry.isChangepoint && (
-                <span className="px-1 py-0.2 rounded bg-red-500/20 text-red-400 font-bold border border-red-500/30 animate-pulse">
+                <span className="px-1 py-0.2 rounded bg-red-500/20 text-red-400 font-bold border border-red-500/30">
                   Regime Shift
                 </span>
               )}

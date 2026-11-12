@@ -20,7 +20,7 @@ export default function SignalsList() {
   if (!hasData) {
     return (
       <div className="interface-card p-4 space-y-2.5">
-        <h3 className="eyebrow-label mb-1">
+        <h3 className="instrument-heading mb-1">
           Discovery Signals
         </h3>
         <p className="text-xs text-[var(--color-text-muted)] font-mono">
@@ -32,7 +32,7 @@ export default function SignalsList() {
             playTactileClick(700);
             useStore.getState().setDiscoveryModalOpen(true);
           }}
-          className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center w-full hover:border-[#0066ff]/40 flex items-center gap-1.5"
+          className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center w-full hover:border-[var(--color-accent-blue)]/50 flex items-center gap-1.5"
         >
           <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
@@ -48,8 +48,8 @@ export default function SignalsList() {
     return (
       <div className="interface-card p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="eyebrow-label text-[#f59e0b]">
-            Top Compound Hotspots
+          <h3 className="instrument-heading text-amber-400">
+            Compound Hazard Hotspots
           </h3>
           <span className="text-[9px] font-mono text-[var(--color-text-muted)]">
             Ranked by CAI Index
@@ -114,7 +114,7 @@ export default function SignalsList() {
   return (
     <div className="interface-card p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="eyebrow-label">
+        <h3 className="instrument-heading">
           Top Discovery Signals
         </h3>
         <span className="text-[9px] font-mono text-[var(--color-text-muted)]">

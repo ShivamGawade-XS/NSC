@@ -100,7 +100,7 @@ export default function AnalysisPanel() {
     <div className="interface-card p-4 space-y-4">
       {/* Quick Preset Ribbon */}
       <div>
-        <div className="eyebrow-label mb-2">
+        <div className="instrument-heading !text-xs mb-2">
           Exemplar Transect Presets
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -130,7 +130,7 @@ export default function AnalysisPanel() {
       <div className="space-y-3.5">
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="eyebrow-label" htmlFor="data-stream-select">
+            <label className="form-label" htmlFor="data-stream-select">
               Data Stream
             </label>
             <button
@@ -166,7 +166,7 @@ export default function AnalysisPanel() {
         </div>
 
         <div>
-          <label className="eyebrow-label block mb-1.5" htmlFor="variable-select">
+          <label className="form-label block mb-1.5" htmlFor="variable-select">
             Variable
           </label>
           <select
@@ -184,7 +184,7 @@ export default function AnalysisPanel() {
         {/* Time Range */}
         <div className="grid grid-cols-2 gap-2.5">
           <div>
-            <label className="eyebrow-label block mb-1" htmlFor="start-year-input">Start Year</label>
+            <label className="form-label block mb-1" htmlFor="start-year-input">Start Year</label>
             <input
               id="start-year-input"
               type="number"
@@ -199,7 +199,7 @@ export default function AnalysisPanel() {
             />
           </div>
           <div>
-            <label className="eyebrow-label block mb-1" htmlFor="end-year-input">End Year</label>
+            <label className="form-label block mb-1" htmlFor="end-year-input">End Year</label>
             <input
               id="end-year-input"
               type="number"
@@ -221,7 +221,7 @@ export default function AnalysisPanel() {
         {/* BBox */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <span className="eyebrow-label">
+            <span className="form-label">
               Spatial Bounding Box
             </span>
             <button
@@ -327,9 +327,9 @@ export default function AnalysisPanel() {
           type="button"
           onClick={() => handleExecute(true)}
           disabled={isLoading || isCooldown || gateResult?.can_execute === false}
-          className="w-full interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-[#f59e0b]/40 hover:text-[#f59e0b] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-amber-500/40 hover:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <svg className="w-3.5 h-3.5 shrink-0 text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <svg className="w-3.5 h-3.5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
           </svg>
           <span>Compound Hazard Analysis (T & P)</span>
@@ -343,7 +343,7 @@ export default function AnalysisPanel() {
               playTactileClick(700);
               setDiscoveryModalOpen(true);
             }}
-            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[#0066ff]/40 flex items-center gap-1.5"
+            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[var(--color-accent-blue)]/50 flex items-center gap-1.5"
             title="Launch autonomous multi-variable trend discovery scan"
           >
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -357,7 +357,7 @@ export default function AnalysisPanel() {
               playTactileClick(700);
               setRegionalCompareModalOpen(true);
             }}
-            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[#f59e0b]/40 flex items-center gap-1.5"
+            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-amber-500/40 flex items-center gap-1.5"
             title="Side-by-side regional trend detective with hypothesis test"
           >
             <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

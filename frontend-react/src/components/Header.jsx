@@ -83,7 +83,7 @@ export default function Header() {
           aria-live="polite"
           className="bg-amber-500/90 text-amber-950 px-4 py-1 text-center font-mono text-xs font-bold flex items-center justify-center gap-2 shadow-inner"
         >
-          <span className="w-2 h-2 rounded-full bg-amber-900 animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-amber-900" />
           <span>Scientific Engine API Offline — Operating in cached / browser standalone mode. Real-time compute suspended.</span>
         </div>
       )}
@@ -228,7 +228,7 @@ export default function Header() {
               {analysisData.provenance.is_synthetic === true ? (
                 <div
                   role="alert"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[11px] font-mono font-bold animate-pulse"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[11px] font-mono font-bold"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                   <span>Synthetic test data — not NASA observations.</span>

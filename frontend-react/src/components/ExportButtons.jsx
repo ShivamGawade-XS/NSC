@@ -36,7 +36,7 @@ export default function ExportButtons() {
 
   return (
     <div className="interface-card p-4">
-      <h3 className="eyebrow-label mb-3">
+      <h3 className="instrument-heading mb-3">
         Artifacts & Reproducibility
       </h3>
       <div className="grid grid-cols-2 gap-2">
