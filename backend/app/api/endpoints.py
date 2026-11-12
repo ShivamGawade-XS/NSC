@@ -23,7 +23,7 @@ from scipy import stats
 from app.adapters.merra2 import MERRA2Adapter
 from app.adapters.nasa_power import NASAPowerAdapter
 from app.core.auth import AuthTier, get_auth_tier, llm_budget_tracker
-from app.core.config import Settings
+from app.core.config import Settings, settings
 from app.core.db_cache import load_from_db_cache, normalize_cache_params, save_to_db_cache
 from app.core.limiter import limiter
 from app.core.mailer import send_contact_inquiry
@@ -1772,7 +1772,7 @@ def export_analysis_latex(request: Request, analysis_id: str):
     # Generate HMAC signature
     import hashlib
     import hmac
-    secret = getattr(Settings, "SECRET_KEY", "Tellura-secret-key-production-salt-2026").encode("utf-8")
+    secret = settings.SECRET_KEY.encode("utf-8")
     sig = hmac.new(secret, analysis_id.encode("utf-8"), hashlib.sha256).hexdigest()
 
     latex_code = generate_nasa_latex_memorandum(analysis_record, hmac_signature=sig[:24])

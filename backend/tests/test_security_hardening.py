@@ -91,6 +91,14 @@ def test_csp_dev_docs_vs_api_routes(monkeypatch):
         assert "https://cdn.jsdelivr.net" in csp_docs
         assert "'unsafe-inline'" in csp_docs
 
+    # Production mode: verify localhost is strictly excluded from CSP connect-src
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    res_prod = client.get("/health")
+    csp_prod = res_prod.headers.get("content-security-policy", "")
+    assert "localhost" not in csp_prod
+    assert "127.0.0.1" not in csp_prod
+    assert "connect-src 'self'" in csp_prod
+
 
 # --- Rate Limiting & DoS Mitigation ---
 

@@ -123,7 +123,7 @@ DEV_CSP = (
     b"form-action 'self';"
 )
 
-PROD_CSP = (
+DEV_API_CSP = (
     b"default-src 'self'; "
     b"script-src 'self'; "
     b"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
@@ -132,6 +132,20 @@ PROD_CSP = (
     b"https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
     b"connect-src 'self' http://localhost:8000 http://localhost:3000 "
     b"http://127.0.0.1:8000 http://127.0.0.1:3000 "
+    b"https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
+    b"frame-ancestors 'none'; "
+    b"base-uri 'self'; "
+    b"form-action 'self';"
+)
+
+PROD_CSP = (
+    b"default-src 'self'; "
+    b"script-src 'self'; "
+    b"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    b"font-src 'self' https://fonts.gstatic.com data:; "
+    b"img-src 'self' data: blob: https://*.arcgisonline.com https://server.arcgisonline.com "
+    b"https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
+    b"connect-src 'self' "
     b"https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
     b"frame-ancestors 'none'; "
     b"base-uri 'self'; "
@@ -216,11 +230,17 @@ class SecurityHardeningMiddleware:
                         h.append((k, v))
                 path = scope.get("path", "")
                 if b"content-security-policy" not in existing_keys:
+                    is_prod = os.getenv("ENVIRONMENT") == "production"
                     is_dev_docs = (
                         path in ("/docs", "/redoc", "/openapi.json")
-                        and os.getenv("ENVIRONMENT") != "production"
+                        and not is_prod
                     )
-                    csp = DEV_CSP if is_dev_docs else PROD_CSP
+                    if is_dev_docs:
+                        csp = DEV_CSP
+                    elif is_prod:
+                        csp = PROD_CSP
+                    else:
+                        csp = DEV_API_CSP
                     h.append((b"content-security-policy", csp))
                 if b"cache-control" not in existing_keys:
                     if path.startswith("/api/") or path in ("/analysis", "/variables", "/metrics", "/ready", "/auth/status") or "/export" in path:
