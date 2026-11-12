@@ -197,6 +197,14 @@ def test_full_analysis_workflow_and_sub_endpoints():
     assert top_sig["tau"] is not None
     assert top_sig["discovery_score"] >= signals_data["signals"][-1]["discovery_score"]
 
+    # 5b. Verify pagination limit and offset on signals
+    res_paginated = client.get(f"/analysis/{analysis_id}/signals?limit=2&offset=1")
+    assert res_paginated.status_code == 200
+    p_data = res_paginated.json()
+    assert len(p_data["signals"]) <= 2
+    if len(signals_data["signals"]) > 1:
+        assert (p_data["signals"][0]["lat"], p_data["signals"][0]["lon"]) == (signals_data["signals"][1]["lat"], signals_data["signals"][1]["lon"])
+
     # 6. GET /analysis/{id}/contrasts (Contrast Engine)
     res_contrasts = client.get(f"/analysis/{analysis_id}/contrasts")
     assert res_contrasts.status_code == 200

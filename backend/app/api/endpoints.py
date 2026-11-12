@@ -1202,13 +1202,19 @@ def get_cell_timeseries(
 
 @router.get("/analysis/{analysis_id}/signals", response_model=SignalsResponse)
 @limiter.limit("60/minute")
-def get_candidate_signals(request: Request, analysis_id: str) -> SignalsResponse:
-    """Discovery Engine: Return candidate signals worth investigating."""
+def get_candidate_signals(
+    request: Request,
+    analysis_id: str,
+    limit: int = Query(default=50, ge=1, le=500, description="Maximum candidate signals to return (1-500)"),
+    offset: int = Query(default=0, ge=0, description="Offset for pagination"),
+) -> SignalsResponse:
+    """Discovery Engine: Return candidate signals worth investigating with pagination support."""
     cached = get_cached_analysis(analysis_id)
     if not cached:
         raise HTTPException(status_code=404, detail=f"Analysis '{analysis_id}' not found.")
     raw = cached["raw_slice"]
-    signals = [CandidateSignal(**s) for s in cached["signals"]]
+    all_signals = [CandidateSignal(**s) for s in cached["signals"]]
+    paginated_signals = all_signals[offset : offset + limit]
 
     return SignalsResponse(
         analysis_id=analysis_id,
@@ -1220,7 +1226,7 @@ def get_candidate_signals(request: Request, analysis_id: str) -> SignalsResponse
             "Temporal data completeness fraction",
             "Spatial neighborhood coherence (8-neighbor cluster consistency)"
         ],
-        signals=signals
+        signals=paginated_signals
     )
 
 
