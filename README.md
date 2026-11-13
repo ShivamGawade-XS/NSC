@@ -1,10 +1,10 @@
 # Tellura: Spatiotemporal Climate Trend Discovery System
 
 ## *The Next-Generation Empirical Analytics & Physical Attribution Workstation for NASA Earth Observations*
-[![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-Global%20Nominee%202026-0B3D91?style=for-the-badge&logo=nasa)](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/)
+[![NASA Space Apps Challenge 2026](https://img.shields.io/badge/NASA%20Space%20Apps-Challenge%202026-0B3D91?style=for-the-badge&logo=nasa)](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/)
 [![Tests: 337 Passing](https://img.shields.io/badge/Tests-337%20Passing%20(100%25)-success?style=for-the-badge)](backend/tests/)
 [![Conventions: CF-1.8](https://img.shields.io/badge/Conventions-CF--1.8%20NetCDF--4-blue?style=for-the-badge)](https://cfconventions.org/)
-[![Standards: NASA Open Science](https://img.shields.io/badge/Standards-NASA%20Open%20Science-blue?style=for-the-badge)](https://science.nasa.gov/open-science/)
+[![Standards: NASA Earthdata & POWER](https://img.shields.io/badge/Data-NASA%20POWER%20%26%20MERRA--2-blue?style=for-the-badge)](https://power.larc.nasa.gov/)
 [![Reproducibility: Google Colab Ready](https://img.shields.io/badge/Reproducibility-Google%20Colab%20Ready-F9AB00?style=for-the-badge&logo=googlecolab)](notebooks/)
 [![Code Quality: Oxlint Clean](https://img.shields.io/badge/Code%20Quality-0%20Warnings%20%2F%200%20Errors-brightgreen?style=for-the-badge)](#7-verification--observability-337337-passing-tests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
@@ -80,15 +80,16 @@ Rather than displaying static 2D summary maps, Tellura provides a **continuous 4
 - **PLAY 4D** automated cadence engine showing physical heat accumulation and drought displacement year by year.
 - Instant milestone jumps (`Start Year`, `Mid-Point`, `End Year`) with dynamic decadal accumulation readouts $\Delta = \beta \cdot \frac{t - t_0}{10}$.
 
-### 🃏 Trump Card 3: Extreme Event Attribution Engine (FAR)
+### 🃏 Trump Card 3: Empirical Event Probability Shift (FAR Heuristic)
 
-Implements the peer-reviewed methodology of Stott et al. (*Nature*, 2004) and Otto et al. (2020) for Probabilistic Climate Event Attribution:
+Adapts the Fraction of Attributable Risk (FAR) probabilistic formulation established by Stott et al. (*Nature*, 2004) and Otto et al. (2020) to empirical observational series:
 
 - Calculates the **Fraction of Attributable Risk**:
   $$\text{FAR} = 1 - \frac{P_0}{P_1}$$
   and the corresponding **Risk Ratio** ($\text{RR} = \frac{P_1}{P_0}$).
-- Computes empirical shift $\Delta\mu = \beta \cdot \frac{\Delta t}{10}$ and shifts observational anomalies against a synthetic counterfactual pre-industrial climate baseline.
-- Produces **90% Confidence Intervals** via 1,000-iteration parametric Monte Carlo bootstrap resamples.
+- Models the change in exceedance probability between the factual observed period ($P_1$) and an empirical counterfactual baseline ($P_0$) shifted by the fitted multi-decadal monotonic trend ($\Delta\mu = \beta \cdot \frac{\Delta t}{10}$).
+- Produces **90% Confidence Intervals** via parametric Monte Carlo bootstrap resamples.
+- **Scientific Caveat (Trend $\neq$ Causation)**: This is an empirical trend-shift heuristic evaluating how observed monotonic drift alters extreme tail probabilities. Attributing observed trends specifically to anthropogenic greenhouse gas forcing versus natural internal decadal modes (ENSO, PDO, AMO) strictly requires coupled general circulation model (GCM) ensembles.
 
 ### 🃏 Trump Card 4: Client-Side Drag-and-Drop Ingestion Wizard (Zero-Cloud WASM)
 
@@ -99,12 +100,12 @@ True open science requires bringing your own data without vendor lock-in or priv
 - Instant client-side validation, coordinate extent derivation, and Theil-Sen drift calculation.
 - Built-in one-click verified synthetic benchmarks: *Pacific Marine Heatwave (SST Anomaly)* and *Amazon Basin Drought Deficit*.
 
-### 🃏 Trump Card 5: 1-Click AGU / Nature Camera-Ready Preprint PDF Generator
+### 🃏 Trump Card 5: 1-Click AGU-Style Scientific Preprint PDF Generator
 
-Bridging the gap between data exploration and international scientific publication:
+Bridging the gap between data exploration and peer documentation:
 
-- Instantly compiles the active workspace investigation into a camera-ready, **2-column AGU *Geophysical Research Letters* preprint**.
-- Includes executive abstract, 3 Key Scientific Points (AGU standard format), formal mathematical formulations, domain-wide parametric metrics table, Moran's $I$, Pettitt changepoints, FAR attribution scores, and complete BibTeX citations.
+- Instantly compiles the active workspace investigation into a formatted, **2-column AGU *Geophysical Research Letters* style preprint**.
+- Includes executive abstract, 3 Key Scientific Points, formal mathematical formulations, domain-wide parametric metrics table, Moran's $I$, Pettitt changepoints, FAR attribution scores, and software citations.
 - High-fidelity `@media print` CSS engine allowing researchers to print or save a publication-grade PDF in 1 click.
 - Includes standalone offline HTML preprint export for distribution.
 
@@ -198,8 +199,8 @@ Tellura is built on the tenet that **an analysis is only as good as its independ
 1. **CF-1.8 Compliant NetCDF-4 (`.nc`)**: Full dimensionality (`time`, `lat`, `lon`), CF coordinate attributes, global bounding boxes, and non-parametric analytical layers. Inspectable via NASA Panoply, QGIS, or `xarray`.
 2. **RFC 7946 GeoJSON FeatureCollection (`.geojson`)**: Seamlessly consumable by Leaflet, Mapbox, Deck.gl, and ArcGIS.
 3. **Executable Reproducibility Jupyter Notebook (`.ipynb`)**: Embedded data with pure NumPy/SciPy implementations of all statistical routines for 100% reproducible execution in Google Colab or JupyterLab.
-4. **NASA Technical Memorandum (`.tex`)**: Automated AGU/IEEE LaTeX specification ready for Overleaf cloud compilation.
-5. **AGU Preprint PDF Document (`.html` / `.pdf`)**: Publication-grade 2-column preprint document with executive abstract, formulas, summary metrics table, and BibTeX citation.
+4. **Tellura Open Science Technical Memorandum (`.tex`)**: Automated AGU/IEEE LaTeX specification ready for Overleaf cloud compilation.
+5. **AGU-Style Preprint PDF Document (`.html` / `.pdf`)**: Publication-grade 2-column preprint document with executive abstract, formulas, summary metrics table, and software citations.
 6. **Immutable Permalinks**: Cryptographic workspace state serialization enabling colleagues to share exact visual and parametric configurations.
 
 ---
@@ -242,8 +243,11 @@ Tellura integrates a multi-tier LLM fallback cascade designed for zero downtime,
 Tellura is backed by an extensive automated test suite verifying scientific accuracy, numerical convergence, edge cases, rate limiting, and cybersecurity hardening:
 
 ```bash
-cd backend
-python -m pytest backend/tests -v
+# From repository root:
+pytest backend/tests -v
+
+# Or from backend directory:
+cd backend && pytest tests -v
 ```
 
 ```text
@@ -278,7 +282,7 @@ python -m venv venv
 source venv/bin/activate
 
 pip install -r requirements.txt
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 #### 2. Frontend Workstation (React + Vite)
@@ -291,15 +295,14 @@ npm run dev
 
 Open **`http://localhost:3000`** in any modern web browser.
 
-### Option B: Docker Compose Full Stack
+### Option B: Docker Compose Full Stack (Production Ready)
 
 ```bash
 docker compose up --build -d
 ```
 
-- Workspace Frontend: `http://localhost:3000`
-- API Scientific Server: `http://localhost:8000`
-- Interactive OpenAPI / Swagger Documentation: `http://localhost:8000/docs`
+- **Unified Workstation & REST API**: `http://localhost:8000` (FastAPI serves both the built React SPA and the science API)
+- **Interactive OpenAPI / Swagger Documentation**: `http://localhost:8000/docs` (enabled when `ENVIRONMENT=development`)
 
 ---
 
@@ -307,7 +310,7 @@ docker compose up --build -d
 
 Tellura includes 4 pre-configured research transects demonstrating distinct climatic phenomena:
 
-1. **Texas Permian Basin** (`31°N, -102°W`): Severe thermal acceleration accompanied by rapid soil moisture depletion; exhibits Moran's $I = 0.729$ and $\text{FAR} = 79.7\%$.
+1. **Texas Permian Basin** (`31°N, -102°W`): Severe thermal acceleration accompanied by rapid soil moisture depletion; exhibits spatial clustering (Moran's $I \approx 0.73$) and elevated empirical trend-shift exceedance probability ($\text{FAR} \approx 80\%$).
 2. **Southwest US Transect** (`33°N, -112°W`): Decadal megadrought and hydrological precipitation deficit characterized by compound high-temperature/low-precipitation copula risks.
 3. **CONUS Continental Transect** (`38°N, -95°W`): Cross-continental transect demonstrating longitudinal temperature gradients and divergent climate velocity directions.
 4. **Midwest Agricultural Belt** (`41°N, -89°W`): High-amplitude interannual precipitation volatility and Pettitt regime shifts impacting crop yield vulnerability.
@@ -316,16 +319,15 @@ Tellura includes 4 pre-configured research transects demonstrating distinct clim
 
 ## 10. Open Science Citations & References
 
-If you use Tellura in academic work, please cite:
+If you use Tellura in research or benchmarking, please cite:
 
 ```bibtex
-@article{Tellura2026,
-  title = {Tellura: Empirical Spatiotemporal Attribution and Multi-Decadal Monotonic Drift Analysis in NASA Earth Observations},
-  author = {Tellura Planetary Intelligence Consortium and NASA Space Apps Collective},
-  journal = {NASA Space Apps Global Challenge 2026},
+@software{Tellura2026,
+  title = {Tellura: Spatiotemporal Climate Trend Discovery System for NASA Earth Observations},
+  author = {Gawade, Shivam and NSC Team},
   year = {2026},
-  url = {https://Tellura.space},
-  doi = {10.5067/Tellura-SPATIAL-2026.1}
+  url = {https://github.com/ShivamGawade-XS/NSC},
+  note = {NASA Space Apps Challenge 2026: Be an Earth System Trend Detective}
 }
 ```
 

@@ -34,9 +34,9 @@ def test_prometheus_endpoint_internal_listener_success():
     assert response.status_code == 200
     assert "text/plain" in response.headers.get("content-type", "")
     content = response.text
-    assert "earthsift_http_requests_total" in content
-    assert "earthsift_http_request_duration_seconds" in content
-    assert "earthsift_process_memory_rss_bytes" in content
+    assert "tellura_http_requests_total" in content
+    assert "tellura_http_request_duration_seconds" in content
+    assert "tellura_process_memory_rss_bytes" in content
 
 
 def test_prometheus_endpoint_anonymous_external_rejected():
@@ -64,4 +64,4 @@ def test_prometheus_endpoint_keyed_external_allowed(monkeypatch):
             },
         )
         assert response.status_code == 200
-        assert "earthsift_http_requests_total" in response.text
+        assert "tellura_http_requests_total" in response.text

@@ -99,11 +99,12 @@ def discover_candidate_signals(
     valid_mask = ~np.isnan(slopes)
     abs_slopes = np.where(valid_mask, np.abs(slopes), 0.0)
 
-    # Vectorized significance weight: FDR q <= alpha (1.0), raw p <= alpha (0.5), non-sig (0.1)
+    # Vectorized significance weight: FDR q <= alpha (1.0), raw p <= alpha (0.2), non-sig (0.01)
+    # Strongly prioritizes FDR-controlled discoveries to prevent noisy Type-I anomalies from dominating
     sig_weight = np.select(
         [is_significant_fdr & valid_mask, is_significant_raw & valid_mask],
-        [1.0, 0.5],
-        default=0.1
+        [1.0, 0.2],
+        default=0.01
     )
 
     # Vectorized data completeness

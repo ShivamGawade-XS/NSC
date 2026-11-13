@@ -137,9 +137,9 @@ def compute_event_attribution(
     ci_upper = float(np.percentile(boot_fars, 95.0))
 
     if far > 0.5:
-        verdict = f"Likelihood increased by {risk_ratio:.1f}x due to persistent multi-decadal drift (FAR = {far:.2f}, 90% CI: [{ci_lower:.2f}, {ci_upper:.2f}])."
+        verdict = f"Likelihood increased by {risk_ratio:.1f}x under observed multi-decadal trend shift (FAR = {far:.2f}, 90% CI: [{ci_lower:.2f}, {ci_upper:.2f}]). Note: Empirical trend-shift heuristic; climate model ensembles required to isolate greenhouse forcing."
     elif far > 0.1:
-        verdict = f"Moderate anthropogenic signal detected; event {risk_ratio:.1f}x more likely than unperturbed baseline."
+        verdict = f"Moderate empirical trend shift detected; event {risk_ratio:.1f}x more likely than baseline (FAR = {far:.2f}). Note: Climate model ensembles required to isolate greenhouse forcing."
     else:
         verdict = "Dominantly natural internal climate variability; trend attribution inconclusive at selected alpha."
 
@@ -151,8 +151,10 @@ def compute_event_attribution(
         "far_ci_upper": round(ci_upper, 3),
         "p1_factual_probability": round(p1_safe, 4),
         "p0_counterfactual_probability": round(p0_safe, 4),
+        "trend_shift_delta": round(anthropogenic_delta, 4),
         "anthropogenic_cumulative_shift": round(anthropogenic_delta, 4),
         "threshold_value": round(threshold, 3),
         "summary": verdict,
-        "methodology": f"Stott et al. (Nature 2004) & Otto et al. (WWA 2020) Fraction of Attributable Risk (FAR) {model_desc}"
+        "methodology": f"Stott et al. (Nature 2004) & Otto et al. (WWA 2020) Fraction of Attributable Risk (FAR) {model_desc}",
+        "scientific_caveat": "Evaluates change in event probability attributable to the observed decadal trend. Isolating anthropogenic greenhouse forcing from internal modes (ENSO/PDO) requires GCM ensembles."
     }

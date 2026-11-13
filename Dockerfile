@@ -55,7 +55,7 @@ COPY backend /app/backend
 COPY --from=frontend-builder /frontend/dist /app/frontend-react/dist
 
 # Create designated cache directory with 0700 permissions owned by 10001:10001
-RUN mkdir -p /app/cache /app/backend/data /app/data && \
+RUN mkdir -p /app/cache /app/cache/inbox /app/cache/nasa_power /app/backend/data /app/data && \
     chmod 0700 /app/cache && \
     chown -R appuser:appgroup /app
 
@@ -67,8 +67,9 @@ ENV PYTHONPATH=/app/backend \
     HOME=/app/cache \
     NETRC_DIR=/app/cache \
     NASA_POWER_CACHE_DIR=/app/cache/nasa_power \
+    TELLURA_INBOX_DIR=/app/cache/inbox \
     MERRA2_DATA_DIR=/app/backend/data/fixtures \
-    EARTHSIFT_DB_PATH=/app/cache/earthdata_cache.db
+    TELLURA_DB_PATH=/app/cache/earthdata_cache.db
 
 EXPOSE 8000
 
@@ -80,4 +81,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 USER appuser:appgroup
 
 WORKDIR /app/backend
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--forwarded-allow-ips", "*"]

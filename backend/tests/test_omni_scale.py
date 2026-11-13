@@ -205,7 +205,7 @@ def test_climate_velocity_and_colab_and_latex_endpoints():
     assert latex_res.status_code == 200
     assert "\\documentclass" in latex_res.text
     assert "\\begin{document}" in latex_res.text
-    assert "NASA Technical Memorandum" in latex_res.text
+    assert "Tellura Climate Analytics Technical Memorandum" in latex_res.text
 
 
 def test_compare_locations_endpoint():

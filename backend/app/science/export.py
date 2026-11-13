@@ -277,7 +277,9 @@ def generate_scientific_dossier(analysis_record: dict[str, Any]) -> str:
     min_slope = np.min(slopes) if slopes else 0.0
     max_slope = np.max(slopes) if slopes else 0.0
 
-    dossier = f"""# NASA Earth Science Briefing & Empirical Dossier
+    dossier = f"""# Tellura Earth Science Briefing & Empirical Dossier
+*Empirical Spatiotemporal Analysis Using NASA Earth Observations*
+
 **Project:** Tellura — Autonomous Spatial Trend Discovery Instrument  
 **Dataset:** {prov.get('source', 'NASA MERRA-2 / POWER Reanalysis')}  
 **DOI:** `{prov.get('doi', '10.5067/POWER/10.0.0')}`  
@@ -729,14 +731,14 @@ def generate_nasa_latex_memorandum(analysis_record: dict[str, Any], hmac_signatu
 \usepackage{{hyperref}}
 \usepackage{{cite}}
 
-\title{{NASA Technical Memorandum: Spatiotemporal Trend Discovery and Regime Transition Analysis for {var}}}
-\author{{Tellura Automated Scientific Intelligence Engine \\ NASA Space Apps Challenge 2026}}
+\title{{Tellura Climate Analytics Technical Memorandum: Spatiotemporal Trend Discovery and Regime Transition Analysis for {var}}}
+\author{{Tellura Spatiotemporal Discovery Engine \\ NASA Space Apps Challenge 2026: Be an Earth System Trend Detective}}
 
 \begin{{document}}
 \maketitle
 
 \begin{{abstract}}
-This Technical Memorandum documents the empirical spatiotemporal evaluation of \textbf{{{var}}} using {source} telemetry (Dataset: \texttt{{{dataset_id}}}, DOI: \texttt{{{doi}}}). Employing non-parametric Theil-Sen median-of-slopes estimators, Hamed-Rao autocorrelation-corrected Mann-Kendall significance testing, Benjamini-Hochberg False Discovery Rate (FDR) multiplicity control, and Pettitt regime changepoint detection, we identify significant coherent multi-decadal divergence across the target spatial domain.
+This Technical Memorandum documents the empirical spatiotemporal evaluation of \textbf{{{var}}} using {source} observations (Dataset: \texttt{{{dataset_id}}}, DOI: \texttt{{{doi}}}). Employing non-parametric Theil-Sen median-of-slopes estimators, Hamed-Rao autocorrelation-corrected Mann-Kendall significance testing, Benjamini-Hochberg False Discovery Rate (FDR) multiplicity control, and Pettitt regime changepoint detection, we identify significant coherent multi-decadal divergence across the target spatial domain.
 \end{{abstract}}
 
 \section{{Executive Scientific Summary}}

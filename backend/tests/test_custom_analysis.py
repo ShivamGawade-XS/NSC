@@ -159,7 +159,7 @@ def test_custom_analysis_downstream_endpoints():
     # 7. GET /analysis/{id}/dossier
     dos_res = client.get(f"/api/v1/analysis/{ana_id}/dossier")
     assert dos_res.status_code == 200
-    assert "NASA Earth Science Briefing" in dos_res.text
+    assert "Tellura Earth Science Briefing" in dos_res.text
 
     # 8. GET /analysis/{id}/export/notebook
     nb_res = client.get(f"/api/v1/analysis/{ana_id}/export/notebook")

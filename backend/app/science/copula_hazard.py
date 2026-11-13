@@ -144,6 +144,11 @@ def compute_compound_copula_return_periods(
         "max_return_period_years": round(float(np.max(ret_flat)), 1),
         "mean_return_period_years": round(float(np.mean(ret_flat)), 1),
         "compound_extreme_cells": hotspot_count,
+        "scientific_caveat": (
+            "Empirical bivariate Archimedean copula parameterization across the observed baseline; "
+            "joint return periods exceeding the observation record length represent parametric tail "
+            "extrapolations subject to sampling variance."
+        ),
         "summary": (
             f"Copula-derived joint compound extremes: fitted Gumbel theta={theta} "
             f"(Kendall tau={copula_info['tau']}). Identified {hotspot_count} cells with "

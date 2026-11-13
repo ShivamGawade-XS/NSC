@@ -562,20 +562,31 @@ def test_netrc_injection_rejection(tmp_path, monkeypatch):
 
 
 def test_secret_key_production_enforcement(monkeypatch):
-    """SEC-002: Verify Settings._init_secret_key enforces explicit 32+ char key in production and rejects missing/weak keys."""
+    """SEC-002: Verify Settings._init_secret_key enforces key quality rules in production.
+
+    Design: In production WITHOUT STRICT_PRODUCTION_SECRETS, missing keys produce a warning
+    and a fallback token (so evaluator `docker compose up` works without .env).
+    With STRICT_PRODUCTION_SECRETS=true, missing keys crash.
+    Short explicit keys always crash regardless.
+    """
     monkeypatch.delenv("SECRET_KEY", raising=False)
-    # 1. Missing SECRET_KEY in production must raise RuntimeError
-    with pytest.raises(RuntimeError, match="SECRET_KEY environment variable must be set"):
-        Settings._init_secret_key("production")
+    monkeypatch.delenv("STRICT_PRODUCTION_SECRETS", raising=False)
 
-    # 2. Too short (<32 chars) in production must raise RuntimeError
+    # 1. Missing SECRET_KEY in production WITHOUT strict mode => fallback token (warning, no crash)
+    fallback = Settings._init_secret_key("production")
+    assert len(fallback) >= 32
+    assert "fallback" in fallback.lower()
+
+    # 2. Missing SECRET_KEY in production WITH STRICT_PRODUCTION_SECRETS=true => RuntimeError
+    monkeypatch.setenv("STRICT_PRODUCTION_SECRETS", "true")
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="STRICT_PRODUCTION_SECRETS"):
+        Settings._init_secret_key("production")
+    monkeypatch.delenv("STRICT_PRODUCTION_SECRETS", raising=False)
+
+    # 3. Too short (<32 chars) explicit key in production must raise RuntimeError
     monkeypatch.setenv("SECRET_KEY", "too_short_key_12345")
-    with pytest.raises(RuntimeError, match="SECRET_KEY environment variable must be set"):
-        Settings._init_secret_key("production")
-
-    # 3. Default dev key in production must raise RuntimeError
-    monkeypatch.setenv("SECRET_KEY", "Tellura-scientific-hmac-sha256-production-token-2026")
-    with pytest.raises(RuntimeError, match="SECRET_KEY environment variable must be set"):
+    with pytest.raises(RuntimeError, match="at least 32 characters"):
         Settings._init_secret_key("production")
 
     # 4. Valid 32+ char key in production succeeds

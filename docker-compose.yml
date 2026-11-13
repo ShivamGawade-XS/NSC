@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   Tellura:
     build:
@@ -14,16 +12,29 @@ services:
       - ALL
     ports:
       - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
     environment:
       - PYTHONUNBUFFERED=1
       - ENVIRONMENT=production
-      - HOST=0.0.0.0
       - MERRA2_DATA_DIR=/app/backend/data/fixtures
       - TELLURA_DB_PATH=/app/cache/earthdata_cache.db
       - NASA_POWER_CACHE_DIR=/app/cache/nasa_power
+      - TELLURA_INBOX_DIR=/app/cache/inbox
       - SECRET_KEY=${SECRET_KEY:-}
-      # Optional: Add GEMINI_API_KEY or OPENAI_API_KEY for live AI explanation
-      # - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Optional external credentials (passed through if set in .env or host)
+      - EARTHDATA_USERNAME=${EARTHDATA_USERNAME:-}
+      - EARTHDATA_PASSWORD=${EARTHDATA_PASSWORD:-}
+      - EARTHDATA_TOKEN=${EARTHDATA_TOKEN:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - XAI_API_KEY=${XAI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - CONTACT_RECIPIENT_EMAIL=${CONTACT_RECIPIENT_EMAIL:-}
     tmpfs:
       - /tmp:size=128M,mode=1777,noexec,nosuid,nodev
     volumes:

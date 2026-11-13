@@ -5,58 +5,85 @@ The project adheres to Semantic Versioning and rigorous engineering verification
 
 ---
 
+## [1.4.0] - 2026-11-13 — Scientific Integrity & Audit Remediation
+
+### Fixed
+- **S2 — Fabricated DOI removed.** Replaced `10.5067/Tellura-SPATIAL-2026.1` (prefix reserved for NASA data centers) with a proper `@software` citation via GitHub URL.
+- **S1 — Attribution reworded.** "Extreme Event Attribution Engine" renamed to "Empirical Event Probability Shift (FAR Heuristic)" with scientific caveats that GCM ensembles are required for true climate attribution.
+- **S3 — Overclaiming corrected.** "Global Nominee 2026" badge → "Challenge 2026"; "Peer-Reviewed" → "Non-Parametric Mathematical Architecture (Peer-Reviewed Statistical Formulations)"; "NASA Technical Memorandum" → "Tellura Climate Analytics Technical Memorandum".
+- **S4 — Discovery ranking weights.** Non-FDR-significant cells reduced from weight 0.5/0.1 to 0.2/0.01, so FDR-significant cells now dominate rankings.
+- **X1 — SECRET_KEY production guard.** Short explicit keys crash; missing keys produce fallback token with security warning (enables `docker compose up` for evaluators without `.env`); `STRICT_PRODUCTION_SECRETS=true` enforces crash on missing key.
+- **X5 — `--forwarded-allow-ips "*"`** added to Dockerfile CMD for correct client IP behind reverse proxy.
+- **X6 — CRLF header injection defense** in contact mailer; STARTTLS documentation corrected.
+- **D2 — Docker Compose `env_file`** wiring for all credential variables.
+- **D3 — Inbox path** moved under writable `/app/cache/inbox` mount with `TELLURA_INBOX_DIR` env var.
+- **D4 — README run steps** corrected (pytest path, unified port `:8000`, dev server `--host 127.0.0.1`).
+- **D5 — `EARTHSIFT_DB_PATH` → `TELLURA_DB_PATH`** unified across Dockerfile and code.
+- **D6 — Python version** unified to 3.12 across README, SECURITY.md, and Dockerfile.
+- **Test suite updated** to reflect renamed titles, metric prefixes, and security key behavior (338/338 passing).
+
+### Changed
+- Prometheus metric namespace: `earthsift_` → `tellura_` across all counters, histograms, and gauges.
+- LaTeX export title: "NASA Technical Memorandum" → "Tellura Climate Analytics Technical Memorandum".
+- Dossier title: "NASA Earth Science Briefing" → "Tellura Earth Science Briefing".
+- Explainer author: "Tellura Automated Scientific Intelligence Engine" → "Tellura Spatiotemporal Discovery Engine".
+
+### Documentation
+- **SECURITY.md** expanded: added NLQ copilot, CRLF injection, LaTeX injection, GeoJSON upload, LLM data sharing, and metrics access control to threat model; year bounds updated to 2026; Python version unified to 3.12.
+- **METHODOLOGY.md** overhauled: added Var(S) formula with tie corrections, H&R lag cap, Pettitt §7 with methodological caveat, LISA §8 with multiplicity note, updated discovery weights.
+- **ARCHITECTURE.md** refined: zero-synthetic guarantee scoped, metrics access documented, explainer wording improved.
+
+---
+
+## [1.3.0] - 2026-11-13 — UX & Export Polish
+
+### Added
+- Live bounding box quota calculator with NASA POWER 100 deg² limit visualization.
+- Stepwise loading telemetry showing grid cell count and estimated fetch time.
+- Mobile view switcher (Map / Chart / Evidence) for tablet/phone screens.
+- Literature engine badge showing active AI explainer tier.
+- 6 Google Colab reproducibility notebooks.
+
+### Fixed
+- AudioContext autoplay policy guard.
+- Form field accessibility — all inputs have proper `id` and `name` attributes.
+- Tailwind v4 dark mode `@custom-variant` compatibility.
+- Dark/light mode typography overhaul: eliminated neon accent colors, improved WCAG contrast ratios.
+
+---
+
+## [1.2.0] - 2026-11-12 — Security Hardening & Brand Identity
+
+### Added
+- Pagination support for signals discovery endpoint.
+- Comprehensive Tellura project guide and architecture dossier.
+- Modernized diagnostic labs and exploratory modals with unified design tokens.
+
+### Fixed
+- Eliminated fallback secret salt; hardened production CSP `connect-src`.
+- Eliminated f-string SQL construction in `db_cache`; annotated safe NASA URL fetch.
+
+---
+
 ## [1.0.0] - 2026-10-05 — NASA Space Apps Release
 
 ### Added
-- **Scientific Computing Engine (`trend.py`):**
-  - Non-parametric Mann-Kendall monotonic trend test ($S$, $\text{Var}(S)$, $\tau$, $Z$, two-tailed $p$).
-  - Hamed & Rao (1998) serial autocorrelation variance adjustment for persistent geophysical time series.
-  - Sen’s slope (Theil-Sen robust estimator) calculating median pairwise slopes and intercepts.
-  - Benjamini-Hochberg False Discovery Rate (FDR) multiplicity control generating monotonic adjusted $q$-values.
-  - Vectorized 3D spatial field processing (`compute_spatial_trends`).
-- **Dataset Adapter Layer (`base.py`, `merra2.py`):**
-  - Abstract `BaseDatasetAdapter` enforcing `discover()`, `metadata()`, `validate()`, `fetch()`, `subset()`, `normalize()`.
-  - Integration with `earthaccess` (v0.19.0) for live NASA Earthdata / CMR collection querying.
-  - Deterministic, physically grounded atmospheric model demo fixture for offline resilience.
-  - Unmistakable labeling of synthetic data versus live NASA observations.
-- **Discovery Engine (`discovery.py`):**
-  - "Find Something Interesting" feature with transparent composite scoring formula:
-    $\text{score} = |\beta| \times w_{\text{sig}} \times \text{completeness} \times (1 + \text{coherence})$.
-  - 8-neighbor spatial cluster coherence evaluation.
-- **Contrast Engine (`contrasts.py`):**
-  - Discovery of opposing regional trend pairs over identical temporal periods.
-  - Built-in caveats against inferring unproven causal links.
-- **FastAPI Typed API (`endpoints.py`):**
-  - `GET /health` and `GET /api/v1/health`
-  - `GET /datasets` and `GET /datasets/{id}`
-  - `GET /variables`
-  - `POST /analysis`
-  - `GET /analysis/{id}`
-  - `GET /analysis/{id}/map`
-  - `GET /analysis/{id}/timeseries`
-  - `GET /analysis/{id}/signals`
-  - `GET /analysis/{id}/contrasts`
-  - `GET /analysis/{id}/provenance`
-  - `POST /explain`
-- **Scientific Instrument UI (`frontend/`):**
-  - 4-panel ergonomic layout (LEFT: controls, CENTER: map, BOTTOM: time series, RIGHT: evidence).
-  - Unmistakable demo mode warning banner: *"Synthetic test data — not NASA observations."*
-  - Interactive Leaflet cartography with FDR significance stippling.
-  - Interactive Chart.js time series with Sen's slope trendlines.
-  - Structured 7-field Evidence Inspector.
-  - Downstream AI explainer with deterministic fallback.
-- **Automated Test Suite (`backend/tests/`):**
-  - 36 automated unit, scientific, adapter, and application resilience tests (100% passing).
+- **Scientific Computing Engine (`trend.py`):** Non-parametric Mann-Kendall test with Hamed & Rao (1998) autocorrelation correction, Sen's slope with Gilbert (1987) 95% CI, Benjamini-Hochberg FDR, and vectorized 3D spatial processing.
+- **Dataset Adapter Layer:** Abstract `BaseDatasetAdapter` with NASA POWER live streaming and MERRA-2 reanalysis adapters via `earthaccess`.
+- **Discovery Engine:** "Find Something Interesting" with composite scoring and 8-neighbor spatial coherence.
+- **Contrast Engine:** Regional opposing trend pair discovery with causal caveats.
+- **FastAPI API:** 15+ typed endpoints including analysis, export, attribution, and copilot.
+- **Scientific Instrument UI:** 4-panel layout with Leaflet cartography, Chart.js time series, and evidence inspector.
+- **Automated Test Suite:** 338 automated tests (100% passing).
 
 ---
 
 ## [0.2.0] - 2026-10-05 — Open-Source Research & Truth Ledger Audit
 - Completed live CMR API query verification for `M2TMNXSLV`, `M2TMNXFLX`, and `M2TMNXLND`.
-- Verified package versions and licenses via PyPI API.
 - Established `docs/TRUTH_LEDGER.md` with 13 verified facts and 2 recorded assumptions.
 
 ---
 
 ## [0.1.0] - 2026-10-05 — Initial Architecture & Skeleton
 - Initialized FastAPI backend and static frontend.
-- Created `README.md`, `AGENT_STATE.md`, and initial documentation outlines.
+- Created `README.md` and initial documentation outlines.

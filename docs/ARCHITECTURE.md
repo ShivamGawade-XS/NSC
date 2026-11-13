@@ -108,7 +108,7 @@ For any analyzed variable, Tellura deterministically answers:
 * **Compound Hazard Copula Modeling (`copula_hazard.py`):** Fits bivariate Archimedean copulas (Gumbel upper tail and Clayton lower tail) to estimate joint return periods for compounding climate extremes (e.g., severe heat combined with precipitation deficit).
 * **Climate Velocity Vector Fields (`climate_velocity.py`):** Computes isocline speeds (km/decade) and trajectory movement bearings toward cooler regimes based on local spatial and temporal gradients.
 * **Contrasting Regions Finder (`contrasts.py`):** Identifies dual opposing trend dipole regimes within the same temporal window.
-* **Scientific Artifact Export (`export.py`):** Generates CF-1.8 compliant NetCDF binaries, GeoJSON feature collections, peer-reviewed NASA Technical Memorandum LaTeX documents, and executable Google Colab Jupyter Notebooks.
+* **Scientific Artifact Export (`export.py`):** Generates CF-1.8 compliant NetCDF binaries, GeoJSON feature collections, formal Tellura Climate Analytics Technical Memorandum LaTeX documents, and executable Google Colab Jupyter Notebooks.
 
 ### 4.3 Evidence Layer & Cache (`/backend/app/core`)
 * **Cryptographic Cache (`db_cache.py`):** High-throughput SQLite WAL database caching analysis summaries and coordinate drilldown time-series. Every compressed binary payload is sealed with an **HMAC-SHA256 signature** to eliminate insecure deserialization vulnerabilities and race conditions across concurrent workers.
@@ -125,27 +125,27 @@ For any analyzed variable, Tellura deterministically answers:
 * **Evidence Panel:** Displays live computed domain metrics, confidence intervals, Moran's I spatial coherence, data completeness, DOI links, and provenance warnings.
 
 ### 4.5 Multi-LLM Scientific Explainer & NLQ Copilot (`/backend/app/science`)
-* **Downstream Scientific Explainer (`explainer.py`):** Translates verified empirical calculations into peer-reviewed scientific English without hallucination. Enforces strict XML evidence boundaries (`<evidence_context>`), temperature 0.2, and numerical preservation checks.
+* **Downstream Scientific Explainer (`explainer.py`):** Translates verified empirical calculations into rigorous scientific prose grounded in peer-reviewed literature without hallucination. Enforces strict XML evidence boundaries (`<evidence_context>`), temperature 0.2, and numerical preservation checks.
 * **Cascading Multi-Provider Architecture:**
   1. **Primary**: Google Gemini (`gemini-flash-lite-latest`, `gemini-flash-latest`, `gemini-2.5-flash`).
   2. **Secondary Fallback**: Groq Cloud ultra-fast LLaMA (`api.groq.com`) or xAI Grok (`api.x.ai`).
   3. **Tertiary Fallback**: OpenAI (`gpt-4o-mini`).
-  4. **Quaternary Base**: Zero-hallucination deterministic scientific template engine.
+  4. **Quaternary Base**: Zero-hallucination institutional literature engine (IPCC AR6 / NASA GMAO literature-grounded).
 * **Natural Language Query Copilot (`nlq_parser.py`):** Translates freeform research inquiries (e.g., *"Show warming in Tibetan Plateau between 2005 and 2022"*) into structured bounding boxes, variable IDs, and temporal horizons using regex caching coupled with LLM JSON schema extraction.
 * **Resource Protection & Spend Caps (`auth.py`):** Implements `DailyLLMBudgetTracker` capping anonymous external LLM calls to 200/day, gracefully degrading to deterministic templates once exhausted to protect project compute budgets.
 
 ### 4.6 Privacy-Preserving Telemetry & Observability (`/backend/app/core`)
 * **Self-Hosted Telemetry:** `POST /api/v1/telemetry` stores anonymized route views and query dataset frequencies in local SQLite B-trees.
 * **Zero PII & GDPR/CCPA Compliance:** Unconditionally honors `Do Not Track` (`navigator.doNotTrack === '1'`) and user cookie consent preferences. Collects zero IP addresses, zero device fingerprints, and zero advertising trackers.
-* **Prometheus Observability:** Exposes live system metrics at `/metrics` and `/metrics/prometheus` for server health, memory RSS, cache hit ratios, and computed trend telemetry.
+* **Prometheus Observability:** Exposes live system metrics at `/metrics` and `/metrics/prometheus` for server health, memory RSS, cache hit ratios, and computed trend telemetry (access restricted via `require_metrics_access`).
 
 ### 4.7 Zero-Synthetic Guarantee (`/backend/app/adapters`)
-* **Strict Real Data Mandate:** In production mode (`STRICT_ZERO_SYNTHETIC=true`), synthetic data generation is permanently prohibited. If a NetCDF granule is unavailable, the system raises an explicit HTTP 503 guidance error instead of fabricating numbers.
+* **Strict Real Data Mandate:** In production mode (`STRICT_ZERO_SYNTHETIC=true`), synthetic data cannot masquerade as NASA observations. If a NetCDF granule or live stream is unavailable, the system raises an explicit HTTP 503 guidance error instead of fabricating numbers. Pre-packaged synthetic test datasets in the UI (e.g. for offline testing) are strictly isolated and visibly labeled as synthetic simulations.
 * **Live Streaming:** Streams authentic NASA POWER and MERRA-2 Earth observations covering global coordinates from 1980 to 2026.
 
 ### 4.8 Transactional Communications (`/backend/app/core/mailer.py`)
-* **Python Standard Library Mailer:** Direct SMTP dispatch using Python stdlib `smtplib` and `email.message.EmailMessage` over SSL/TLS port 587.
-* **Zero Message Loss Queue:** If offline or credentials pending, submissions are safely archived to a local JSON inbox queue (`backend/data/inbox/`) with unique UUID receipt identifiers.
+* **Python Standard Library Mailer:** Direct SMTP dispatch using Python stdlib `smtplib` and `email.message.EmailMessage` over STARTTLS (port 587).
+* **Zero Message Loss Queue:** If offline or credentials pending, submissions are safely archived to a local JSON inbox queue (`TELLURA_INBOX_DIR` / `/app/cache/inbox` or `backend/data/inbox/`) with unique UUID receipt identifiers and CRLF header injection defenses.
 
 ---
 

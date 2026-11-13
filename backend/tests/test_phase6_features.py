@@ -131,7 +131,7 @@ def test_export_netcdf_geojson_and_dossier():
         assert dossier_res.status_code == 200
         assert "text/markdown" in dossier_res.headers.get("content-type")
         dossier_md = dossier_res.text
-        assert "NASA Earth Science Briefing & Empirical Dossier" in dossier_md
+        assert "Tellura Earth Science Briefing & Empirical Dossier" in dossier_md
         assert "Gilbert (1987)" in dossier_md
         assert "Moran's I" in dossier_md
         assert "Anselin LISA" in dossier_md

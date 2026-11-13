@@ -16,14 +16,23 @@ from typing import Any
 
 logger = logging.getLogger("Tellura.mailer")
 
-_INBOX = Path(__file__).resolve().parents[3] / "data" / "inbox"
+
+def _get_inbox_path() -> Path:
+    env_inbox = os.getenv("TELLURA_INBOX_DIR")
+    if env_inbox:
+        return Path(env_inbox)
+    if os.getenv("ENVIRONMENT") == "production":
+        return Path("/app/cache/inbox")
+    return Path(__file__).resolve().parents[3] / "data" / "inbox"
 
 
 def _fallback_write(payload: dict) -> str:
     """Write inquiry to local JSON file when SMTP is not configured."""
-    _INBOX.mkdir(parents=True, exist_ok=True)
+    inbox = _get_inbox_path()
+    inbox.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M-%S")
-    dest = _INBOX / f"{stamp}_{payload.get('name','unknown').replace(' ','_')[:20]}.json"
+    safe_name = "".join(c for c in payload.get('name', 'unknown') if c.isalnum() or c in ('_', '-'))[:20]
+    dest = inbox / f"{stamp}_{safe_name or 'unknown'}.json"
     dest.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("Mailer fallback: inquiry saved to %s", dest)
     return str(dest)
@@ -75,16 +84,21 @@ def send_contact_inquiry(
             "detail": f"Archived to {Path(saved_file).name}"
         }
 
+    # Prevent CRLF header injection
+    clean_name = " ".join(name.split())
+    clean_topic = " ".join(topic.split())
+    clean_email = " ".join(email.split())
+
     msg = EmailMessage()
-    msg["Subject"] = f"[Tellura Contact] {topic} — from {name} [{receipt_id}]"
+    msg["Subject"] = f"[Tellura Contact] {clean_topic} — from {clean_name} [{receipt_id}]"
     msg["From"] = smtp_user
     msg["To"] = recipient
-    msg["Reply-To"] = email
+    msg["Reply-To"] = clean_email
     msg.set_content(
         f"Receipt ID: {receipt_id}\n"
-        f"Name:       {name}\n"
-        f"Email:      {email}\n"
-        f"Topic:      {topic}\n"
+        f"Name:       {clean_name}\n"
+        f"Email:      {clean_email}\n"
+        f"Topic:      {clean_topic}\n"
         f"Time:       {payload['received_at']}\n\n"
         f"Message:\n{message}\n"
     )
