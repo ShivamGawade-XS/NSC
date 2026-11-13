@@ -198,7 +198,7 @@ export default function AnalysisPanel() {
                 setValidationError('');
                 setFormField('startYear', parseInt(e.target.value, 10));
               }}
-              className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono focus:border-[var(--color-accent-blue)] focus:outline-none"
+              className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium focus:border-[var(--color-accent-blue)] focus:outline-none"
             />
           </div>
           <div>
@@ -214,7 +214,7 @@ export default function AnalysisPanel() {
                 setValidationError('');
                 setFormField('endYear', parseInt(e.target.value, 10));
               }}
-              className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono focus:border-[var(--color-accent-blue)] focus:outline-none"
+              className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium focus:border-[var(--color-accent-blue)] focus:outline-none"
             />
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function AnalysisPanel() {
                 title={title}
                 value={bbox[field]}
                 onChange={(e) => handleBboxChange(field, e.target.value)}
-                className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+                className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent-blue)] focus:outline-none"
               />
             ))}
           </div>
@@ -334,9 +334,9 @@ export default function AnalysisPanel() {
           type="button"
           onClick={() => handleExecute(true)}
           disabled={isLoading || isCooldown || gateResult?.can_execute === false}
-          className="w-full interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-amber-500/40 hover:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-amber-400 dark:hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <svg className="w-3.5 h-3.5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+          <svg className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
           </svg>
           <span>Compound Hazard Analysis (T & P)</span>

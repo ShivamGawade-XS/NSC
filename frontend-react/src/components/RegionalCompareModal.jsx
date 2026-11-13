@@ -272,7 +272,7 @@ export default function RegionalCompareModal({ onClose }) {
               </div>
 
               <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg p-3.5 space-y-2.5">
-                <div className="font-mono text-xs font-bold text-amber-400 flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-1.5">
+                <div className="font-mono text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-1.5">
                   <span>Region B</span>
                   <span className="text-[10px] text-[var(--color-text-muted)] uppercase">Comparison</span>
                 </div>
@@ -320,7 +320,7 @@ export default function RegionalCompareModal({ onClose }) {
           </form>
 
           {error && (
-            <div className="p-3 rounded bg-red-950/20 border border-red-500/40 text-red-300 text-xs font-mono">
+            <div className="p-3 rounded bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-500/40 text-red-700 dark:text-red-300 text-xs font-mono">
               {error}
             </div>
           )}
@@ -332,14 +332,14 @@ export default function RegionalCompareModal({ onClose }) {
               <div
                 className={`p-4 rounded-lg border ${
                   result.is_divergence_significant
-                    ? 'bg-emerald-950/20 border-emerald-500/35'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-500/35'
                     : 'bg-[var(--color-bg-elevated)] border-[var(--color-border-subtle)]'
                 }`}
               >
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
                   <span
                     className={`font-mono text-xs font-bold tracking-wider uppercase ${
-                      result.is_divergence_significant ? 'text-emerald-400' : 'text-[var(--color-text-secondary)]'
+                      result.is_divergence_significant ? 'text-emerald-700 dark:text-emerald-400' : 'text-[var(--color-text-secondary)]'
                     }`}
                   >
                     {result.is_divergence_significant
@@ -382,7 +382,7 @@ export default function RegionalCompareModal({ onClose }) {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[var(--color-text-muted)]">Significant Cells (FDR):</span>
-                      <span className="font-semibold text-emerald-400 tabular-nums">
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
                         {((result.region_a?.significant_fraction || 0) * 100).toFixed(1)}%
                       </span>
                     </div>
@@ -398,7 +398,7 @@ export default function RegionalCompareModal({ onClose }) {
                 {/* Card B */}
                 <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] border-t-2 border-t-amber-400 rounded-lg p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-['Space_Grotesk'] text-sm font-bold text-amber-400">
+                    <span className="font-['Space_Grotesk'] text-sm font-bold text-amber-700 dark:text-amber-400">
                       {result.region_b?.name || 'Region B'}
                     </span>
                     <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] text-[var(--color-text-muted)]">
@@ -420,7 +420,7 @@ export default function RegionalCompareModal({ onClose }) {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[var(--color-text-muted)]">Significant Cells (FDR):</span>
-                      <span className="font-semibold text-emerald-400 tabular-nums">
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
                         {((result.region_b?.significant_fraction || 0) * 100).toFixed(1)}%
                       </span>
                     </div>

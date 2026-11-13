@@ -106,7 +106,7 @@ export default function LatexModal() {
                 <button
                   type="submit"
                   disabled={!latexCode || isLoading}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-mono text-xs transition-colors disabled:opacity-40"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-mono text-xs transition-colors disabled:opacity-40"
                   title="Open directly in Overleaf Cloud LaTeX Editor"
                 >
                   <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -157,7 +157,7 @@ export default function LatexModal() {
                 <button
                   type="submit"
                   disabled={!latexCode || isLoading}
-                  className="interface-btn-secondary !text-xs !py-1.5 font-mono text-emerald-400 hover:text-emerald-300 border-emerald-500/40 disabled:opacity-40"
+                  className="interface-btn-secondary !text-xs !py-1.5 font-mono text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 border-emerald-300 dark:border-emerald-500/40 disabled:opacity-40"
                 >
                   Open in Overleaf
                 </button>
@@ -169,7 +169,7 @@ export default function LatexModal() {
                   setOpen(false);
                   useStore.getState().setPreprintModalOpen(true);
                 }}
-                className="interface-btn-secondary !text-xs !py-1.5 font-mono text-rose-400 hover:text-rose-300 border-rose-500/40"
+                className="interface-btn-secondary !text-xs !py-1.5 font-mono text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 border-rose-300 dark:border-rose-500/40"
               >
                 AGU Preprint (PDF)
               </button>

@@ -34,7 +34,7 @@ export default function ThankYouPage() {
 
       <main className="pt-24 pb-16 px-4 sm:px-6 flex-1 flex items-center justify-center">
         <div className="max-w-xl w-full p-8 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] text-center shadow-xl">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-4 border border-emerald-500/30">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4 border border-emerald-200 dark:border-emerald-500/30">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>

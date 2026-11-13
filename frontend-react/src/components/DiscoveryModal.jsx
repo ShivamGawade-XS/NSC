@@ -257,7 +257,7 @@ export default function DiscoveryModal({ onClose }) {
                     {results.fdr_discovery_count} Significant Signals Discovered from {results.total_tests_conducted} Hypothesis Tests
                   </span>
                 </div>
-                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
                   FDR q ≤ 0.05
                 </span>
               </div>
@@ -281,7 +281,7 @@ export default function DiscoveryModal({ onClose }) {
                             • {c.physical_domain}
                           </span>
                         </div>
-                        <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 uppercase tracking-wider">
+                        <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                           {c.discovery_badge}
                         </span>
                       </div>
@@ -300,7 +300,7 @@ export default function DiscoveryModal({ onClose }) {
                           <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold block">
                             FDR q-value
                           </span>
-                          <span className="text-xs font-semibold text-emerald-400 tabular-nums">
+                          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
                             {c.q_value != null ? c.q_value.toFixed(4) : '—'}
                           </span>
                         </div>
@@ -324,7 +324,7 @@ export default function DiscoveryModal({ onClose }) {
                           <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold block">
                             Discovery Score
                           </span>
-                          <span className="text-xs font-semibold text-amber-400 tabular-nums">
+                          <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 tabular-nums">
                             {c.discovery_score?.toFixed(1)}
                           </span>
                         </div>

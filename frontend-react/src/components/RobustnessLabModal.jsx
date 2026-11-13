@@ -10,21 +10,21 @@ import { playTactileClick } from '../utils/audio';
 
 const STABILITY_CONFIG = {
   ROBUST: {
-    textColor: 'text-emerald-400',
-    bgColor: 'bg-emerald-950/20',
-    borderColor: 'border-emerald-500/35',
+    textColor: 'text-emerald-800 dark:text-emerald-300',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-950/25',
+    borderColor: 'border-emerald-200 dark:border-emerald-700/40',
     label: 'ROBUST',
   },
   MODERATELY_SENSITIVE: {
-    textColor: 'text-amber-400',
-    bgColor: 'bg-amber-950/20',
-    borderColor: 'border-amber-500/35',
+    textColor: 'text-amber-800 dark:text-amber-300',
+    bgColor: 'bg-amber-50 dark:bg-amber-950/25',
+    borderColor: 'border-amber-200 dark:border-amber-700/40',
     label: 'MODERATELY SENSITIVE',
   },
   HIGHLY_SENSITIVE: {
-    textColor: 'text-red-400',
-    bgColor: 'bg-red-950/20',
-    borderColor: 'border-red-500/35',
+    textColor: 'text-red-800 dark:text-red-300',
+    bgColor: 'bg-red-50 dark:bg-red-950/25',
+    borderColor: 'border-red-200 dark:border-red-700/40',
     label: 'HIGHLY SENSITIVE',
   },
   INSUFFICIENT_DATA: {
@@ -74,12 +74,12 @@ function WindowTable({ windows }) {
               <td className={`px-3 py-2 font-semibold tabular-nums ${w.slope > 0 ? 'text-red-400' : 'text-blue-400'}`}>
                 {w.slope > 0 ? '+' : ''}{w.slope}
               </td>
-              <td className={`px-3 py-2 tabular-nums ${w.p_value < 0.05 ? 'text-emerald-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
+              <td className={`px-3 py-2 tabular-nums ${w.p_value < 0.05 ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
                 {w.p_value.toFixed(3)}
               </td>
               <td className="px-3 py-2">
                 {w.significant ? (
-                  <span className="text-emerald-400 font-bold">✓</span>
+                  <span className="text-emerald-700 dark:text-emerald-400 font-bold">✓</span>
                 ) : (
                   <span className="text-red-400 font-bold">✗</span>
                 )}
@@ -111,9 +111,9 @@ function EstimatorTable({ estimators }) {
         </thead>
         <tbody className="divide-y divide-[var(--color-border-subtle)]">
           {estimators.map((e, i) => (
-            <tr key={i} className={`hover:bg-[var(--color-bg-elevated)] transition-colors ${i === 0 ? 'bg-emerald-500/5' : ''}`}>
+            <tr key={i} className={`hover:bg-[var(--color-bg-elevated)] transition-colors ${i === 0 ? 'bg-emerald-50 dark:bg-emerald-500/5' : ''}`}>
               <td className="px-3 py-2 text-[var(--color-text-main)] max-w-[180px]">
-                {i === 0 && <span className="mr-1.5 text-emerald-400 font-bold">★</span>}
+                {i === 0 && <span className="mr-1.5 text-emerald-600 dark:text-emerald-400 font-bold">★</span>}
                 {e.estimator}
               </td>
               <td className={`px-3 py-2 font-semibold tabular-nums ${(e.slope || 0) > 0 ? 'text-red-400' : 'text-blue-400'}`}>
@@ -122,7 +122,7 @@ function EstimatorTable({ estimators }) {
               <td className="px-3 py-2 text-[var(--color-text-muted)] tabular-nums">
                 {e.se != null ? `±${e.se.toFixed(4)}` : '—'}
               </td>
-              <td className={`px-3 py-2 tabular-nums ${(e.p_value || 1) < 0.05 ? 'text-emerald-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
+              <td className={`px-3 py-2 tabular-nums ${(e.p_value || 1) < 0.05 ? 'text-emerald-700 dark:text-emerald-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
                 {e.p_value != null ? e.p_value.toFixed(3) : '—'}
               </td>
             </tr>
@@ -314,7 +314,7 @@ export default function RobustnessLabModal({ analysisId, onClose }) {
                       {
                         label: 'Significance Shifted?',
                         val: data.autocorrelation_sensitivity.significance_shifted_by_autocorrelation ? 'YES — correction changed conclusion' : 'No — robust to autocorr.',
-                        colorClass: data.autocorrelation_sensitivity.significance_shifted_by_autocorrelation ? 'text-amber-400' : 'text-emerald-400',
+                        colorClass: data.autocorrelation_sensitivity.significance_shifted_by_autocorrelation ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400',
                       },
                     ].map((row, i) => (
                       <div key={i} className="flex justify-between items-center bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded-lg px-3.5 py-2.5 text-xs">

@@ -143,7 +143,7 @@ export default function CommandPaletteModal() {
                 Regex Matcher
               </span>
               <span>&rarr;</span>
-              <span className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-emerald-400">
+              <span className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-emerald-700 dark:text-emerald-400">
                 Google Gemini
               </span>
               <span>&rarr;</span>

@@ -278,7 +278,7 @@ export default function CustomDataModal() {
 
         {/* Error Notification */}
         {errorMsg && (
-          <div className="mt-3 p-2.5 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono">
+          <div className="mt-3 p-2.5 rounded bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs font-mono">
             {errorMsg}
           </div>
         )}
@@ -292,15 +292,15 @@ export default function CustomDataModal() {
 
         {/* Preview Card */}
         {preview && (
-          <div className="mt-4 p-3 rounded bg-[var(--color-bg-surface)] border border-emerald-500/40 text-xs space-y-2">
-            <div className="flex items-center justify-between font-bold text-emerald-400">
+          <div className="mt-4 p-3 rounded bg-[var(--color-bg-surface)] border border-emerald-200 dark:border-emerald-500/40 text-xs space-y-2">
+            <div className="flex items-center justify-between font-bold text-emerald-700 dark:text-emerald-400">
               <span className="flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
                 <span>Dataset Verified &amp; Normalized</span>
               </span>
-              <span className="text-[10px] font-mono bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/40">
+              <span className="text-[10px] font-mono bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/40">
                 {preview.summary?.total_cells || preview.grid?.length || 0} Grid Points
               </span>
             </div>
@@ -310,7 +310,7 @@ export default function CustomDataModal() {
               <div>Significant: {preview.summary?.significant_cells_raw ?? preview.summary?.significant_cells_fdr ?? 0} / {preview.summary?.total_cells || preview.grid?.length || 0}</div>
             </div>
             {preview.summary?.spatial_autocorrelation && (
-              <div className="text-[10px] text-cyan-400 font-mono pt-1 border-t border-[var(--color-border-subtle)]">
+              <div className="text-[10px] text-cyan-700 dark:text-cyan-400 font-mono pt-1 border-t border-[var(--color-border-subtle)]">
                 Global Moran's I: {preview.summary.spatial_autocorrelation.moran_i} (p = {preview.summary.spatial_autocorrelation.p_value}) — {preview.summary.spatial_autocorrelation.interpretation || 'Spatial Autocorrelation Verified'}
               </div>
             )}

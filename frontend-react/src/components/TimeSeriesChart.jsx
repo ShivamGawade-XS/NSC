@@ -576,17 +576,17 @@ export default function TimeSeriesChart() {
     <div className="w-full h-full flex flex-col" style={{ minHeight: '220px' }}>
       {/* Dynamic Scientific Indicator Ribbon */}
       {selectedCell?.isCompound ? (
-        <div className="flex items-center justify-between px-2 py-1 mb-1 bg-[#f59e0b]/10 border border-[#f59e0b]/20 rounded text-[10px] font-mono text-[#f59e0b]">
+        <div className="flex items-center justify-between px-2.5 py-1 mb-1.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-700/40 rounded text-[10px] font-mono text-amber-900 dark:text-amber-300">
           <span className="flex items-center gap-1.5 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
             Dual-Axis Bivariate: Temperature (°C, Left) vs Precipitation (mm/day, Right)
           </span>
           <span className="text-[9px] text-[var(--color-text-secondary)]">CAI Aridification Index</span>
         </div>
       ) : selectedCell?.changepoint_year && selectedCell?.changepoint_p_value !== undefined && selectedCell?.changepoint_p_value !== null && Number(selectedCell?.changepoint_p_value) <= 0.05 ? (
-        <div className="flex items-center justify-between px-2 py-1 mb-1 bg-red-950/20 border border-red-500/30 rounded text-[10px] font-mono text-red-400">
+        <div className="flex items-center justify-between px-2.5 py-1 mb-1.5 bg-rose-50 dark:bg-rose-950/25 border border-rose-200 dark:border-rose-800/40 rounded text-[10px] font-mono text-rose-900 dark:text-rose-300">
           <span className="flex items-center gap-1.5 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400 shrink-0" />
             Pettitt (1979) Regime Shift: Year {selectedCell.changepoint_year} (p = {Number(selectedCell.changepoint_p_value) < 0.001 ? '<0.001' : Number(selectedCell.changepoint_p_value).toFixed(4)})
           </span>
           <span className="text-[9px] text-[var(--color-text-secondary)]">Abrupt Changepoint</span>
@@ -601,7 +601,7 @@ export default function TimeSeriesChart() {
             onClick={toggleSonification}
             className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition-all cursor-pointer font-medium ${
               isPlayingAudio
-                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-xs'
+                ? 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/40 shadow-xs'
                 : 'bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--color-accent-blue)] border border-[var(--color-border-subtle)]'
             }`}
             title="Acoustic time series synthesis (Web Audio Section 508)"

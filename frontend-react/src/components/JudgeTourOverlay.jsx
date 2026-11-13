@@ -238,15 +238,15 @@ export default function JudgeTourOverlay({ mapInstance }) {
                 {isLive ? 'Live Statistical Telemetry' : 'Estimated Baseline'}
               </span>
               {isLive ? (
-                <span className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[9px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
                   LIVE COMPUTED
                 </span>
               ) : (
-                <span className="text-[9px] text-amber-400/80 flex items-center gap-1 font-mono">
+                <span className="text-[9px] text-amber-700 dark:text-amber-400/80 flex items-center gap-1 font-mono">
                   {isLoading ? (
                     <>
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-ping" />
                       COMPUTING...
                     </>
                   ) : (
@@ -274,7 +274,7 @@ export default function JudgeTourOverlay({ mapInstance }) {
                 <span className="text-[9px] text-[var(--color-text-muted)] block uppercase tracking-wider">
                   Significance
                 </span>
-                <span className="text-emerald-500 font-semibold block leading-tight">
+                <span className="text-emerald-700 dark:text-emerald-400 font-semibold block leading-tight">
                   {displaySignificance}
                 </span>
               </div>

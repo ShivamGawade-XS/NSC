@@ -9,30 +9,30 @@ import { playTactileClick } from '../utils/audio';
 
 const STATUS_CONFIG = {
   SUPPORTED: {
-    textColor: 'text-emerald-400',
-    bgColor: 'bg-emerald-950/20',
-    borderColor: 'border-emerald-500/35',
+    textColor: 'text-emerald-800 dark:text-emerald-300',
+    bgColor: 'bg-emerald-50 dark:bg-emerald-950/25',
+    borderColor: 'border-emerald-200 dark:border-emerald-700/40',
     icon: '✓',
     label: 'Optimal',
   },
   SUPPORTED_WITH_LIMITATIONS: {
-    textColor: 'text-amber-400',
-    bgColor: 'bg-amber-950/20',
-    borderColor: 'border-amber-500/35',
+    textColor: 'text-amber-800 dark:text-amber-300',
+    bgColor: 'bg-amber-50 dark:bg-amber-950/25',
+    borderColor: 'border-amber-200 dark:border-amber-700/40',
     icon: '!',
     label: 'Caveats',
   },
   INSUFFICIENT_DATA: {
-    textColor: 'text-red-400',
-    bgColor: 'bg-red-950/20',
-    borderColor: 'border-red-500/35',
+    textColor: 'text-red-800 dark:text-red-300',
+    bgColor: 'bg-red-50 dark:bg-red-950/25',
+    borderColor: 'border-red-200 dark:border-red-700/40',
     icon: '✗',
     label: 'Blocked',
   },
   UNSUPPORTED_FOR_THIS_METHOD: {
-    textColor: 'text-red-400',
-    bgColor: 'bg-red-950/20',
-    borderColor: 'border-red-500/35',
+    textColor: 'text-red-800 dark:text-red-300',
+    bgColor: 'bg-red-50 dark:bg-red-950/25',
+    borderColor: 'border-red-200 dark:border-red-700/40',
     icon: '✗',
     label: 'Blocked',
   },
@@ -132,7 +132,7 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
           )}
           {gate.meets_climatological_threshold && (
             <span
-              className="text-[10px] bg-[var(--color-bg-surface)] border border-emerald-500/30 rounded px-1.5 py-0.5 text-emerald-400 font-mono font-semibold"
+              className="text-[10px] bg-[var(--color-bg-surface)] border border-emerald-300 dark:border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-800 dark:text-emerald-300 font-mono font-semibold"
               title="Meets 20yr climatological threshold"
             >
               ✓ WMO
@@ -153,8 +153,8 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
       {!gate.can_execute && gate.limitations?.length > 0 && (
         <div className="mt-2 space-y-1 text-xs">
           {gate.limitations.map((lim, i) => (
-            <div key={i} className="flex items-start gap-1.5 text-red-300 font-mono text-[11px] leading-tight">
-              <span className="shrink-0 text-red-400">▸</span>
+            <div key={i} className="flex items-start gap-1.5 text-red-800 dark:text-red-300 font-mono text-[11px] leading-tight">
+              <span className="shrink-0 text-red-600 dark:text-red-400">▸</span>
               <span>{lim}</span>
             </div>
           ))}

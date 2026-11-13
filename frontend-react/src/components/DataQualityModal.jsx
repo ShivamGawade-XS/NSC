@@ -85,13 +85,13 @@ export default function DataQualityModal({ analysisId, onClose }) {
           {data && (
             <>
               {/* Quality Rating Banner */}
-              <div className="p-4 rounded-lg bg-emerald-950/20 border border-emerald-500/35 space-y-3">
+              <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-700/40 space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                     </svg>
-                    <span className="font-mono text-xs font-bold tracking-wider uppercase text-emerald-400">
+                    <span className="font-mono text-xs font-bold tracking-wider uppercase text-emerald-800 dark:text-emerald-300">
                       {data.quality_rating || 'VERIFIED OBSERVATIONAL QUALITY'}
                     </span>
                   </div>
@@ -113,7 +113,7 @@ export default function DataQualityModal({ analysisId, onClose }) {
                     Valid Records: <strong className="text-[var(--color-text-main)]">{data.valid_records}</strong> / {data.total_expected_records}
                   </span>
                   <span>
-                    Missing Gaps: <strong className={data.missing_intervals?.length ? 'text-amber-400' : 'text-emerald-400'}>{data.missing_intervals?.length || 0}</strong>
+                    Missing Gaps: <strong className={data.missing_intervals?.length ? 'text-amber-800 dark:text-amber-300' : 'text-emerald-800 dark:text-emerald-300'}>{data.missing_intervals?.length || 0}</strong>
                   </span>
                 </div>
               </div>
@@ -185,7 +185,7 @@ export default function DataQualityModal({ analysisId, onClose }) {
                           <tr key={idx} className="hover:bg-[var(--color-bg-elevated)] transition-colors">
                             <td className="px-3 py-2 text-[var(--color-text-main)] font-semibold tabular-nums">{o.year}</td>
                             <td className="px-3 py-2 text-blue-400 tabular-nums">{typeof o.value === 'number' ? o.value.toFixed(3) : o.value}</td>
-                            <td className="px-3 py-2 text-amber-400 font-semibold tabular-nums">{typeof o.z_mad === 'number' ? `${o.z_mad.toFixed(2)}σ` : o.z_mad}</td>
+                            <td className="px-3 py-2 text-amber-700 dark:text-amber-400 font-semibold tabular-nums">{typeof o.z_mad === 'number' ? `${o.z_mad.toFixed(2)}σ` : o.z_mad}</td>
                             <td className="px-3 py-2 text-[var(--color-text-secondary)]">{o.suspected_cause || 'Extreme climate fluctuation / anomaly event'}</td>
                           </tr>
                         ))}
@@ -193,7 +193,7 @@ export default function DataQualityModal({ analysisId, onClose }) {
                     </table>
                   </div>
                 ) : (
-                  <div className="p-3 rounded bg-emerald-950/20 border border-emerald-500/35 text-emerald-400 font-mono text-xs flex items-center gap-2">
+                  <div className="p-3 rounded bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/35 text-emerald-700 dark:text-emerald-400 font-mono text-xs flex items-center gap-2">
                     <span className="font-bold">✓</span>
                     <span>No extreme outliers detected (&gt;3.5 MAD). Observation distribution conforms to expected regional climatology.</span>
                   </div>

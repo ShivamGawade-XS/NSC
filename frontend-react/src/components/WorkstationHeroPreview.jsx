@@ -122,8 +122,8 @@ export default function WorkstationHeroPreview() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-emerald-500 font-semibold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
             <span>ONLINE</span>
           </span>
           <span className="text-[var(--color-text-muted)]">•</span>
@@ -265,7 +265,7 @@ export default function WorkstationHeroPreview() {
                 </div>
                 <div>
                   <span className="text-[9px] text-[var(--color-text-muted)] block">p-value</span>
-                  <span className="font-semibold text-emerald-500 tabular-nums">{current.pVal}</span>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{current.pVal}</span>
                 </div>
               </div>
               <div className="pt-1 border-t border-[var(--color-border-subtle)]">

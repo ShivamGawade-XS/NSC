@@ -110,3 +110,5 @@ data/inbox/
 .github/agents/
 .github/hooks/
 .github/skills/
+
+.playwright-mcp/

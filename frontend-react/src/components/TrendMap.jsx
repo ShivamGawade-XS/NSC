@@ -725,7 +725,7 @@ function inferGridStep(grid) {
           }`}
           title="Toggle NASA GIBS real-time satellite imagery overlay underneath trend grid"
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${showGibs ? 'bg-white' : 'bg-emerald-400'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${showGibs ? 'bg-white' : 'bg-emerald-600 dark:bg-emerald-400'}`} />
           NASA GIBS Satellite
         </button>
 
@@ -842,7 +842,7 @@ function inferGridStep(grid) {
         <div className="absolute top-14 right-3 z-[1000] w-72 bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 rounded shadow-2xl backdrop-blur-md p-3 font-mono text-xs animate-in fade-in duration-200">
           <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2 mb-2.5">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
               <span className="font-semibold text-[var(--color-text-main)] tracking-wider">NASA EOSDIS GIBS</span>
             </div>
             <span className="text-[10px] bg-[var(--color-accent-blue)]/15 text-[var(--color-accent-blue)] px-1.5 py-0.5 rounded border border-[var(--color-accent-blue)]/30 font-bold">

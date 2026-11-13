@@ -420,37 +420,15 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                {/* Provenance Alert / Verification Badge */}
-                {analysisData?.provenance && (
-                  <>
-                    {analysisData.provenance.is_synthetic === true && (
-                      <div
-                        role="alert"
-                        className="flex items-center gap-1.5 text-xs font-mono bg-amber-500/15 text-amber-300 px-3 py-1.5 rounded border border-amber-500/40 font-semibold"
-                      >
-                        <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                        <span>Synthetic test data — not NASA observations.</span>
-                      </div>
-                    )}
-
-                    {analysisData.provenance.is_synthetic === false && (
-                      <div className="flex items-center gap-1.5 text-xs font-mono bg-emerald-950/30 text-emerald-400 px-3 py-1.5 rounded border border-emerald-500/35 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                        <span>Verified NASA CF-1.8 Observations</span>
-                        {analysisData.provenance.doi && (
-                          <a
-                            href={`https://doi.org/${analysisData.provenance.doi.replace(/^https?:\/\/doi\.org\//, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] text-emerald-300 hover:text-emerald-100 underline decoration-emerald-500/50 ml-0.5 font-bold"
-                            title={`View dataset DOI: ${analysisData.provenance.doi}`}
-                          >
-                            DOI ↗
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </>
+                {/* Synthetic Warning (Only shown if data is synthetic test data) */}
+                {analysisData?.provenance?.is_synthetic === true && (
+                  <div
+                    role="alert"
+                    className="flex items-center gap-1.5 text-xs font-mono bg-amber-50 dark:bg-amber-950/25 text-amber-800 dark:text-amber-300 px-3 py-1.5 rounded border border-amber-200 dark:border-amber-700/40 font-semibold"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                    <span>Synthetic test data — not NASA observations.</span>
+                  </div>
                 )}
 
                 {/* Live Run Metadata Pill */}
@@ -467,7 +445,7 @@ export default function DashboardPage() {
                       <>
                         <span className="text-[var(--color-border-default)] hidden sm:inline">•</span>
                         <span className="text-[var(--color-text-secondary)]">
-                          Moran’s I: <strong className="text-emerald-500 font-semibold">{analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'}</strong> ({analysisData.summary.spatial_autocorrelation.interpretation})
+                          Moran’s I: <strong className="text-emerald-700 dark:text-emerald-400 font-semibold">{analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'}</strong> ({analysisData.summary.spatial_autocorrelation.interpretation})
                         </span>
                       </>
                     )}
@@ -475,7 +453,7 @@ export default function DashboardPage() {
                 )}
 
                 {analysisData && analysisData.isCompound && (
-                  <div className="flex items-center gap-2 text-xs font-mono bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded border border-amber-500/25">
+                  <div className="flex items-center gap-2 text-xs font-mono bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 px-3 py-1.5 rounded border border-amber-200 dark:border-amber-700/40">
                     <span>Compound Hazard Analysis (T & P) • CAI Index Active ({analysisData.cells?.length || 0} Cells Evaluated)</span>
                   </div>
                 )}
@@ -486,9 +464,9 @@ export default function DashboardPage() {
             {analysisData?.provenance?.bbox_clamped === true && analysisData?.provenance?.warning && (
               <div
                 role="alert"
-                className="mt-2.5 p-2.5 rounded bg-amber-950/20 border border-amber-500/35 text-amber-300 font-mono text-xs flex items-center gap-2"
+                className="mt-2.5 p-2.5 rounded bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/35 text-amber-800 dark:text-amber-300 font-mono text-xs flex items-center gap-2"
               >
-                <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <span>{analysisData.provenance.warning}</span>
@@ -498,7 +476,7 @@ export default function DashboardPage() {
 
           {/* Error Banner */}
           {error && (
-            <div className="p-3 mb-4 border border-red-500/30 bg-red-950/20 text-xs text-red-300 flex items-center gap-2 rounded">
+            <div className="p-3 mb-4 border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-950/20 text-xs text-red-700 dark:text-red-300 flex items-center gap-2 rounded">
               <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
               </svg>
@@ -508,14 +486,12 @@ export default function DashboardPage() {
 
           {/* 3-Column Architecture — Balanced 1-Screen Viewport */}
           <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_360px] xl:grid-cols-[340px_1fr_380px] gap-5 items-start">
-            {/* Left Column: Data Controls & Signals */}
+            {/* Left Column: Data Controls & Scientific Feasibility */}
             <div className="space-y-3">
               <AnalysisPanel />
-              <SignalsList />
-              <ExportButtons />
             </div>
 
-            {/* Center Column: GIS Map & Analytical Chart */}
+            {/* Center Column: GIS Map, Analytical Chart & Regional Discovery / Exports Hub */}
             <div id="map-section" className="space-y-3 min-w-0">
               <div className="h-[46vh] min-h-[380px]">
                 <TrendMap />
@@ -534,6 +510,12 @@ export default function DashboardPage() {
                 <div className="h-[220px]">
                   <TimeSeriesChart />
                 </div>
+              </div>
+
+              {/* Balanced Regional Discovery Signals & Open Science Export Suite */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 items-start pt-1">
+                <SignalsList />
+                <ExportButtons />
               </div>
             </div>
 

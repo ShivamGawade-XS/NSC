@@ -48,7 +48,7 @@ export default function SignalsList() {
     return (
       <div className="interface-card p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="instrument-heading text-amber-400">
+          <h3 className="instrument-heading text-amber-700 dark:text-amber-400">
             Compound Hazard Hotspots
           </h3>
           <span className="text-[9px] font-mono text-[var(--color-text-muted)]">
@@ -153,7 +153,7 @@ export default function SignalsList() {
                       {formatCoords1(sig.lat, sig.lon)}
                     </div>
                     <div className="text-[9px] text-[var(--color-text-secondary)] font-mono flex items-center gap-1 mt-0.5">
-                      <span className={sig.slope > 0 ? 'text-amber-500 font-semibold' : 'text-cyan-500 font-semibold'}>
+                      <span className={sig.slope > 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-cyan-700 dark:text-cyan-400 font-semibold'}>
                         {sig.slope > 0 ? '+' : ''}{sig.slope.toFixed(3)}/dec
                       </span>
                       <span className="text-[var(--color-border-strong)]">•</span>
@@ -162,7 +162,7 @@ export default function SignalsList() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-[11px] font-mono font-semibold text-emerald-500 tabular-nums">
+                  <div className="text-[11px] font-mono font-semibold text-emerald-800 dark:text-emerald-300 tabular-nums">
                     {sig.p_value !== undefined ? (sig.p_value < 0.001 ? 'p < 0.001' : `p = ${sig.p_value.toFixed(3)}`) : 'FDR Sig'}
                   </div>
                   <div className="text-[8px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">
