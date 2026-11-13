@@ -412,6 +412,13 @@ def earthdata_auth_status(request: Request):
     return settings.get_earthdata_auth_status()
 
 
+# Unmapped API fallback: ensure /api and /api/* always return standardized JSON 404
+@app.api_route("/api", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
+@app.api_route("/api/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"], include_in_schema=False)
+async def unmapped_api_catchall(full_path: str = ""):
+    raise HTTPException(status_code=404, detail="API endpoint not found")
+
+
 # Mount frontend web instrument (React SPA)
 react_dist_dir = Path(__file__).resolve().parent.parent.parent / "frontend-react" / "dist"
 
