@@ -47,7 +47,7 @@ async def test_submit_contact_does_not_block_event_loop(monkeypatch):
 
     import httpx
 
-    import app.api.endpoints as ep
+    import app.api.routers.system as system_mod
 
     slow_delay = 0.35
 
@@ -60,7 +60,7 @@ async def test_submit_contact_does_not_block_event_loop(monkeypatch):
             "receipt_id": "test-receipt-001"
         }
 
-    monkeypatch.setattr(ep, "send_contact_inquiry", slow_smtp_mock)
+    monkeypatch.setattr(system_mod, "send_contact_inquiry", slow_smtp_mock)
 
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as async_client:
         async def post_contact():
