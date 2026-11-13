@@ -53,10 +53,14 @@ cache/
 
 # Testing & Caches
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
 .coverage
 htmlcov/
 .eslintcache
 .turbo
+_audit/
 
 # IDE & OS
 .DS_Store
