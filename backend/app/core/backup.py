@@ -24,19 +24,20 @@ def verify_sqlite_integrity(db_path: Path) -> dict[str, Any]:
 
     try:
         conn = sqlite3.connect(str(db_path), timeout=15.0)
-        cur = conn.cursor()
+        try:
+            cur = conn.cursor()
 
-        # 1. Full B-Tree integrity check
-        cur.execute("PRAGMA integrity_check;")
-        rows = cur.fetchall()
-        integrity_ok = len(rows) == 1 and rows[0][0].lower() == "ok"
-        integrity_errors = [r[0] for r in rows if r[0].lower() != "ok"]
+            # 1. Full B-Tree integrity check
+            cur.execute("PRAGMA integrity_check;")
+            rows = cur.fetchall()
+            integrity_ok = len(rows) == 1 and rows[0][0].lower() == "ok"
+            integrity_errors = [r[0] for r in rows if r[0].lower() != "ok"]
 
-        # 2. Foreign key consistency check
-        cur.execute("PRAGMA foreign_key_check;")
-        fk_errors = cur.fetchall()
-
-        conn.close()
+            # 2. Foreign key consistency check
+            cur.execute("PRAGMA foreign_key_check;")
+            fk_errors = cur.fetchall()
+        finally:
+            conn.close()
 
         is_healthy = integrity_ok and len(fk_errors) == 0
         return {
@@ -82,12 +83,14 @@ def create_sqlite_backup(
 
     # Online backup using native sqlite3 backup engine
     src_conn = sqlite3.connect(str(source_db_path), timeout=30.0)
-    dst_conn = sqlite3.connect(str(backup_dest), timeout=30.0)
     try:
-        with dst_conn:
-            src_conn.backup(dst_conn, pages=100)
+        dst_conn = sqlite3.connect(str(backup_dest), timeout=30.0)
+        try:
+            with dst_conn:
+                src_conn.backup(dst_conn, pages=100)
+        finally:
+            dst_conn.close()
     finally:
-        dst_conn.close()
         src_conn.close()
 
     # Verify backup integrity before accepting

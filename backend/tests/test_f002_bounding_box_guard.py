@@ -103,3 +103,4 @@ def test_analysis_endpoint_returns_422_on_oversized_bbox():
     data = res.json()
     err_text = str(data)
     assert "exceeds maximum allowed span" in err_text or "Longitude span" in err_text
+

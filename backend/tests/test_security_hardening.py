@@ -337,72 +337,75 @@ def test_hmac_sha256_cache_tamper_detection(monkeypatch, caplog):
 
     # Verify access_count telemetry was persisted upon cache hit
     conn = sqlite3.connect(str(DB_PATH))
-    with conn:
-        cur = conn.cursor()
-        cur.execute("SELECT access_count FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
-        acc_count = cur.fetchone()[0]
-        assert acc_count == 2, f"Expected access_count to increment to 2, got {acc_count}"
+    try:
+        with conn:
+            cur = conn.cursor()
+            cur.execute("SELECT access_count FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
+            acc_count = cur.fetchone()[0]
+            assert acc_count == 2, f"Expected access_count to increment to 2, got {acc_count}"
 
-    # --- Vector A (Bit-flip tamper) ---
-    # Flip bytes in the signed payload and assert load_from_db_cache returns None without deserializing
-    with conn:
-        cur = conn.cursor()
-        cur.execute("SELECT payload_compressed FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
-        blob = cur.fetchone()[0]
-        # A1: Corrupt signature portion (byte 10)
-        tampered_sig = blob[:10] + bytes([blob[10] ^ 0xFF]) + blob[11:]
-        conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (tampered_sig, test_analysis_id))
+        # --- Vector A (Bit-flip tamper) ---
+        # Flip bytes in the signed payload and assert load_from_db_cache returns None without deserializing
+        with conn:
+            cur = conn.cursor()
+            cur.execute("SELECT payload_compressed FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
+            blob = cur.fetchone()[0]
+            # A1: Corrupt signature portion (byte 10)
+            tampered_sig = blob[:10] + bytes([blob[10] ^ 0xFF]) + blob[11:]
+            conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (tampered_sig, test_analysis_id))
 
-    caplog.clear()
-    tampered_sig_load = load_from_db_cache(test_analysis_id)
-    assert tampered_sig_load is None, "Vector A1 failed: signature bit-flipped tampered payload was not rejected!"
-    assert len(deserialized_payloads) == 0, "Vector A1 failed: deserialization executed on tampered signature!"
-    assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
+        caplog.clear()
+        tampered_sig_load = load_from_db_cache(test_analysis_id)
+        assert tampered_sig_load is None, "Vector A1 failed: signature bit-flipped tampered payload was not rejected!"
+        assert len(deserialized_payloads) == 0, "Vector A1 failed: deserialization executed on tampered signature!"
+        assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
 
-    # A2: Corrupt payload portion (byte 35)
-    with conn:
-        tampered_payload_blob = blob[:35] + bytes([blob[35] ^ 0xFF]) + blob[36:]
-        conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (tampered_payload_blob, test_analysis_id))
+        # A2: Corrupt payload portion (byte 35)
+        with conn:
+            tampered_payload_blob = blob[:35] + bytes([blob[35] ^ 0xFF]) + blob[36:]
+            conn.execute("UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;", (tampered_payload_blob, test_analysis_id))
 
-    caplog.clear()
-    tampered_payload_load = load_from_db_cache(test_analysis_id)
-    assert tampered_payload_load is None, "Vector A2 failed: payload bit-flipped tampered payload was not rejected!"
-    assert len(deserialized_payloads) == 0, "Vector A2 failed: deserialization executed on tampered payload!"
-    assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
+        caplog.clear()
+        tampered_payload_load = load_from_db_cache(test_analysis_id)
+        assert tampered_payload_load is None, "Vector A2 failed: payload bit-flipped tampered payload was not rejected!"
+        assert len(deserialized_payloads) == 0, "Vector A2 failed: deserialization executed on tampered payload!"
+        assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
 
-    # --- Vector B (Unsigned valid zlib payload injection — the former RCE vector) ---
-    # Case B1: Short unsigned valid zlib payload (<= 32 bytes)
-    valid_compressed_payload = zlib.compress(b'{"pwned": true}')
-    assert len(valid_compressed_payload) <= 32
-    caplog.clear()
-    with conn:
-        conn.execute(
-            "UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;",
-            (valid_compressed_payload, test_analysis_id)
-        )
-    short_injected_load = load_from_db_cache(test_analysis_id)
-    assert short_injected_load is None, "Vector B1 failed: unsigned valid zlib (<=32 bytes) was not rejected!"
-    assert len(deserialized_payloads) == 0, "Vector B1 failed: deserialization was invoked on unsigned payload!"
-    assert any("Security alert: cache payload too small" in r.message for r in caplog.records)
+        # --- Vector B (Unsigned valid zlib payload injection — the former RCE vector) ---
+        # Case B1: Short unsigned valid zlib payload (<= 32 bytes)
+        valid_compressed_payload = zlib.compress(b'{"pwned": true}')
+        assert len(valid_compressed_payload) <= 32
+        caplog.clear()
+        with conn:
+            conn.execute(
+                "UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;",
+                (valid_compressed_payload, test_analysis_id)
+            )
+        short_injected_load = load_from_db_cache(test_analysis_id)
+        assert short_injected_load is None, "Vector B1 failed: unsigned valid zlib (<=32 bytes) was not rejected!"
+        assert len(deserialized_payloads) == 0, "Vector B1 failed: deserialization was invoked on unsigned payload!"
+        assert any("Security alert: cache payload too small" in r.message for r in caplog.records)
 
-    # Case B2: Valid zlib payload preceded by a forged 32-byte HMAC prefix (> 32 bytes)
-    forged_32b_prefix = b"\xaa" * 32
-    forged_payload = forged_32b_prefix + valid_compressed_payload
-    assert len(forged_payload) > 32
-    caplog.clear()
-    with conn:
-        conn.execute(
-            "UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;",
-            (forged_payload, test_analysis_id)
-        )
-    forged_injected_load = load_from_db_cache(test_analysis_id)
-    assert forged_injected_load is None, "Vector B2 failed: valid zlib with forged HMAC prefix was not rejected!"
-    assert len(deserialized_payloads) == 0, "Vector B2 failed: deserialization was invoked on forged HMAC payload!"
-    assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
+        # Case B2: Valid zlib payload preceded by a forged 32-byte HMAC prefix (> 32 bytes)
+        forged_32b_prefix = b"\xaa" * 32
+        forged_payload = forged_32b_prefix + valid_compressed_payload
+        assert len(forged_payload) > 32
+        caplog.clear()
+        with conn:
+            conn.execute(
+                "UPDATE analysis_metadata_index SET payload_compressed = ? WHERE analysis_id = ?;",
+                (forged_payload, test_analysis_id)
+            )
+        forged_injected_load = load_from_db_cache(test_analysis_id)
+        assert forged_injected_load is None, "Vector B2 failed: valid zlib with forged HMAC prefix was not rejected!"
+        assert len(deserialized_payloads) == 0, "Vector B2 failed: deserialization was invoked on forged HMAC payload!"
+        assert any("HMAC-SHA256 verification failed" in r.message for r in caplog.records)
 
-    # Clean up test entry
-    with conn:
-        conn.execute("DELETE FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
+        # Clean up test entry
+        with conn:
+            conn.execute("DELETE FROM analysis_metadata_index WHERE analysis_id = ?;", (test_analysis_id,))
+    finally:
+        conn.close()
 
 
 # --- Credential Scrubbing & NetRC Isolation ---

@@ -4,6 +4,7 @@ Provides L2 persistent caching, database indexing, and query optimization
 for computed NASA Earth-system trend analyses and coordinate time series.
 """
 
+import atexit
 import contextlib
 import hashlib
 import hmac
@@ -33,6 +34,33 @@ DB_PATH = Path(os.getenv("TELLURA_DB_PATH", str(DEFAULT_DB_DIR / "earthdata_cach
 
 _TLS = threading.local()
 _DB_LOCK = threading.Lock()
+_OPEN_CONNECTIONS: set[sqlite3.Connection] = set()
+
+
+class _ConnectionFinalizer:
+    """Safely closes thread-local connection upon thread termination."""
+
+    def __init__(self, conn: sqlite3.Connection):
+        self.conn = conn
+
+    def __del__(self) -> None:
+        with _DB_LOCK:
+            _OPEN_CONNECTIONS.discard(self.conn)
+        with contextlib.suppress(Exception):
+            self.conn.close()
+
+
+def close_all_connections() -> None:
+    """Close all open SQLite connections across all threads."""
+    with _DB_LOCK:
+        for conn in list(_OPEN_CONNECTIONS):
+            with contextlib.suppress(Exception):
+                conn.close()
+        _OPEN_CONNECTIONS.clear()
+    close_db_connection()
+
+
+atexit.register(close_all_connections)
 
 
 def get_db_path() -> Path:
@@ -46,27 +74,41 @@ def get_db_path() -> Path:
 def close_db_connection() -> None:
     """Close and clear the thread-local database connection if open."""
     if hasattr(_TLS, "conn") and _TLS.conn is not None:
-        with contextlib.suppress(Exception):
-            _TLS.conn.close()
+        conn = _TLS.conn
         _TLS.conn = None
+        _TLS.finalizer = None
+        with _DB_LOCK:
+            _OPEN_CONNECTIONS.discard(conn)
+        with contextlib.suppress(Exception):
+            conn.close()
 
 
 def get_db_connection() -> sqlite3.Connection:
     """Return a thread-local SQLite connection with WAL journal mode."""
-    if not hasattr(_TLS, "conn") or _TLS.conn is None:
-        target_path = get_db_path()
-        target_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(target_path), timeout=30.0, check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        # Enable Write-Ahead Logging for high-concurrency read performance
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA foreign_keys = ON;")
-        conn.execute("PRAGMA synchronous=NORMAL;")
-        conn.execute("PRAGMA busy_timeout=30000;")
-        conn.execute("PRAGMA cache_size=-16000;")  # 16MB in-memory SQLite page cache
-        conn.execute("PRAGMA temp_store=MEMORY;")
-        conn.execute("PRAGMA mmap_size=67108864;")  # 64MB memory-mapped I/O
-        _TLS.conn = conn
+    conn = getattr(_TLS, "conn", None)
+    if conn is not None:
+        try:
+            conn.execute("SELECT 1;")
+            return conn
+        except (sqlite3.ProgrammingError, sqlite3.OperationalError):
+            close_db_connection()
+
+    target_path = get_db_path()
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(target_path), timeout=30.0, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    # Enable Write-Ahead Logging for high-concurrency read performance
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA busy_timeout=30000;")
+    conn.execute("PRAGMA cache_size=-16000;")  # 16MB in-memory SQLite page cache
+    conn.execute("PRAGMA temp_store=MEMORY;")
+    conn.execute("PRAGMA mmap_size=67108864;")  # 64MB memory-mapped I/O
+    _TLS.conn = conn
+    _TLS.finalizer = _ConnectionFinalizer(conn)
+    with _DB_LOCK:
+        _OPEN_CONNECTIONS.add(conn)
     return _TLS.conn
 
 
