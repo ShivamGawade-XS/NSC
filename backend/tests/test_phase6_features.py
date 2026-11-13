@@ -186,7 +186,7 @@ async def test_xai_grok_explainer_and_nlq_fallback(monkeypatch):
             source="NASA POWER",
         )
         res = await explain_evidence_with_ai_async(req)
-        assert "xAI Grok" in res.model_used
+        assert res.model_used is not None and "xAI Grok" in res.model_used
         assert "+0.350" in res.summary
 
     # 2. Mock Grok NLQ response
@@ -267,7 +267,7 @@ async def test_groq_explainer_and_nlq_fallback(monkeypatch):
             source="NASA POWER",
         )
         res = await explain_evidence_with_ai_async(req)
-        assert "Live Groq" in res.model_used
+        assert res.model_used is not None and "Live Groq" in res.model_used
 
         fallback_nlq = NLQParseResponse(
             raw_query="Warming in Texas",

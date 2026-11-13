@@ -5,8 +5,8 @@ are defined as synchronous `def` functions rather than `async def`, guaranteeing
 executes them in the worker threadpool and never blocks the asyncio event loop.
 """
 import inspect
-import pytest
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.api.endpoints import get_analysis, health_check
@@ -44,7 +44,9 @@ async def test_submit_contact_does_not_block_event_loop(monkeypatch):
     """
     import asyncio
     import time
+
     import httpx
+
     import app.api.endpoints as ep
 
     slow_delay = 0.35
@@ -98,6 +100,7 @@ async def test_record_telemetry_offloaded_to_thread(monkeypatch):
     F-01 Regression Test: Verify record_telemetry offloads SQLite writes to a worker thread.
     """
     import httpx
+
     import app.core.db_cache as db_cache
 
     recorded_events = []

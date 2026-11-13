@@ -36,7 +36,9 @@ MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB Maximum request body size
 async def _warm_cache_task():
     """Background startup task: pre-warm SQLite cache with default exemplar transects."""
     import asyncio
+
     from fastapi import Request
+
     from app.api.endpoints import run_analysis
     from app.schemas.analysis import AnalysisRequest
 

@@ -30,7 +30,11 @@ jobs:
 
       - name: Lint with Ruff
         run: |
-          ruff check backend --select E,F,W --ignore E501
+          ruff check backend
+
+      - name: Type Check with Pyright
+        run: |
+          npx pyright
 
       - name: Run Pytest Suite
         run: |
