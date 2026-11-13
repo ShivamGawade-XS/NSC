@@ -4,6 +4,7 @@ Routes for datasets, variables, trend analysis, map layers,
 time series, discovery signals, contrasts, provenance, and AI explanations.
 """
 
+import asyncio
 import hashlib
 import logging
 import math
@@ -2389,7 +2390,8 @@ async def submit_contact(request: Request, req: ContactInquiryRequest) -> Contac
     Dispatches via SMTP when configured; falls back to local JSON inbox.
     """
     try:
-        result = send_contact_inquiry(
+        result = await asyncio.to_thread(
+            send_contact_inquiry,
             name=req.name,
             email=req.email,
             topic=req.topic,
@@ -2419,7 +2421,7 @@ async def record_telemetry(request: Request, event: TelemetryEvent) -> Telemetry
     """
     from app.core.db_cache import save_telemetry_event
     try:
-        save_telemetry_event(event.event, event.page, event.properties)
+        await asyncio.to_thread(save_telemetry_event, event.event, event.page, event.properties)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Telemetry write failed: %s", exc)
     return TelemetryResponse(recorded=True)
