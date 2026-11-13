@@ -145,7 +145,7 @@ def run_e2e_chaos_suite():
         compound_btn.click()
 
         # Wait for compound analysis calculation
-        page.wait_for_selector("text='Top Compound Hotspots'", timeout=20000)
+        page.wait_for_selector("text='Compound Hazard Hotspots'", timeout=20000)
         print("  - Compound hazard calculation completed. Discovered top compound hotspots.")
 
         # Click top compound hotspot #1
@@ -234,14 +234,14 @@ def run_e2e_chaos_suite():
             f_malformed = tmp_path / "malformed.json"
             f_malformed.write_text("{\"type\": \"FeatureCollection\", unclosed_json...", encoding="utf-8")
             file_input.set_input_files(str(f_malformed))
-            page.locator(".text-rose-400").wait_for(timeout=5000)
+            page.locator("[class*='border-rose']").first.wait_for(timeout=5000)
             print("  - [3c] Malformed JSON handled safely with inline error banner.")
 
             # (d) Empty JSON object
             f_empty = tmp_path / "empty.json"
             f_empty.write_text("{}", encoding="utf-8")
             file_input.set_input_files(str(f_empty))
-            page.locator(".text-rose-400").wait_for(timeout=5000)
+            page.locator("[class*='border-rose']").first.wait_for(timeout=5000)
             print("  - [3d] Empty JSON object rejected cleanly with schema guidance.")
 
         # Close modal with Escape key

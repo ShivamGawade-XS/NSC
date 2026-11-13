@@ -118,7 +118,7 @@ export default function WorkstationHeroPreview() {
             <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]/70" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]/70" />
           </div>
-          <span className="ml-2 text-[var(--color-text-muted)]">tellura-workstation://telemetry-preview</span>
+          <span className="ml-2 text-[var(--color-text-secondary)]">tellura-workstation://telemetry-preview</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -222,13 +222,13 @@ export default function WorkstationHeroPreview() {
                     isSelected ? 'ring-2 ring-[var(--color-accent-blue)] scale-[1.03] z-10 shadow-md' : 'hover:scale-[1.01]'
                   }`}
                 >
-                  <span className="text-[10px] font-mono text-[var(--color-text-muted)] block">
+                  <span className="text-[10px] font-mono text-[var(--color-text-secondary)] block">
                     [{c.r},{c.c}]
                   </span>
                   <span className="text-xs sm:text-sm font-mono font-bold tabular-nums" style={{ color: textClr }}>
                     {c.v > 0 ? '+' : ''}{c.v.toFixed(2)}
                   </span>
-                  <span className="text-[9px] font-mono mt-0.5" style={{ color: c.sig ? '#10b981' : 'var(--color-text-muted)' }}>
+                  <span className="text-[9px] font-mono mt-0.5 font-semibold text-[var(--color-text-main)]">
                     {c.sig ? 'q ≤ 0.05' : 'q > 0.05'}
                   </span>
                 </button>
@@ -269,8 +269,9 @@ export default function WorkstationHeroPreview() {
                 </div>
               </div>
               <div className="pt-1 border-t border-[var(--color-border-subtle)]">
-                <span className="text-[9px] text-[var(--color-text-muted)] block">Spatial Regime:</span>
-                <span className="font-semibold text-xs" style={{ color: current.lisaColor }}>
+                <span className="text-[9px] text-[var(--color-text-secondary)] block">Spatial Regime:</span>
+                <span className="font-semibold text-xs flex items-center gap-1.5 text-[var(--color-text-main)]">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: current.lisaColor }} />
                   {current.lisa}
                 </span>
               </div>

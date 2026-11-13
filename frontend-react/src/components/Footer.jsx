@@ -26,7 +26,7 @@ export default function Footer() {
               height="32"
             />
           </Link>
-          <p className="text-[var(--color-text-muted)] text-[11px] leading-relaxed">
+          <p className="text-[var(--color-text-secondary)] text-[11px] leading-relaxed">
             Evidence-first scientific workbench discovering statistically defensible trends in NASA MERRA-2 and POWER Earth-system data.
           </p>
         </div>
@@ -34,19 +34,19 @@ export default function Footer() {
         {/* Center: Standards & Methodology */}
         <div className="flex flex-wrap gap-x-8 gap-y-3 font-mono text-[11px] text-[var(--color-text-secondary)]">
           <div>
-            <span className="text-[var(--color-text-muted)] block uppercase tracking-wider text-[9px] mb-1">Standards</span>
+            <span className="text-[var(--color-text-secondary)] block uppercase tracking-wider text-[9px] mb-1">Standards</span>
             <span className="text-[var(--color-text-main)]">CF-1.8 NetCDF-4</span>
           </div>
           <div>
-            <span className="text-[var(--color-text-muted)] block uppercase tracking-wider text-[9px] mb-1">Statistics</span>
+            <span className="text-[var(--color-text-secondary)] block uppercase tracking-wider text-[9px] mb-1">Statistics</span>
             <span className="text-[var(--color-text-main)]">Mann-Kendall & Sen Slope</span>
           </div>
           <div>
-            <span className="text-[var(--color-text-muted)] block uppercase tracking-wider text-[9px] mb-1">Spatial Engine</span>
+            <span className="text-[var(--color-text-secondary)] block uppercase tracking-wider text-[9px] mb-1">Spatial Engine</span>
             <span className="text-[var(--color-text-main)]">Anselin Local Moran's I</span>
           </div>
           <div>
-            <span className="text-[var(--color-text-muted)] block uppercase tracking-wider text-[9px] mb-1">False Discovery</span>
+            <span className="text-[var(--color-text-secondary)] block uppercase tracking-wider text-[9px] mb-1">False Discovery</span>
             <span className="text-[var(--color-text-main)]">Benjamini-Hochberg (q ≤ 0.05)</span>
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-[var(--color-border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-[var(--color-text-muted)] font-mono">
+      <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-[var(--color-border-subtle)] flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-[var(--color-text-secondary)] font-mono">
         <div>
           NASA Space Apps Challenge 2026 • “Be an Earth System Trend Detective”
         </div>

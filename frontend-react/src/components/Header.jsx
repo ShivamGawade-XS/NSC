@@ -258,7 +258,7 @@ export default function Header() {
             <div className="text-xs font-mono text-[var(--color-text-main)] tabular-nums font-medium">
               {utc || '00:00:00 UTC'}
             </div>
-            <div className="text-[9px] font-mono tracking-wider uppercase text-[var(--color-text-muted)]">
+            <div className="text-[9px] font-mono tracking-wider uppercase text-[var(--color-text-secondary)]">
               Universal Time
             </div>
           </div>

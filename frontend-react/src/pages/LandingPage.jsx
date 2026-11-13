@@ -177,7 +177,7 @@ export default function LandingPage() {
               transition={{ duration: 0.4 }}
             >
               {/* Dignified Institutional Attribution Header */}
-              <div className="flex items-center gap-2.5 text-xs font-mono tracking-wider text-[var(--color-text-muted)] uppercase mb-6 font-medium">
+              <div className="flex items-center gap-2.5 text-xs font-mono tracking-wider text-[var(--color-text-secondary)] uppercase mb-6 font-medium">
                 <img
                   src="/tellura_icon.png"
                   alt="Tellura emblem"
@@ -243,7 +243,7 @@ export default function LandingPage() {
                   <div className="text-xs font-semibold text-[var(--color-text-main)] font-['Space_Grotesk']">
                     {m.label}
                   </div>
-                  <div className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
+                  <div className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
                     {m.desc}
                   </div>
                 </div>
@@ -288,7 +288,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="p-3 rounded-md bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] font-mono text-xs">
-                      <div className="text-[10px] text-[var(--color-text-muted)] uppercase mb-0.5">Calculated Trend</div>
+                      <div className="text-[10px] text-[var(--color-text-secondary)] uppercase mb-0.5">Calculated Trend</div>
                       <div className="text-sm font-bold text-[var(--color-text-main)]">{c.trend}</div>
                       <div className="text-[10px] text-[var(--color-text-secondary)] mt-1 flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: c.badgeClr }} />
@@ -296,7 +296,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="text-[10px] font-mono text-[var(--color-text-muted)] truncate" title={c.coords}>
+                    <div className="text-[10px] font-mono text-[var(--color-text-secondary)] truncate" title={c.coords}>
                       {c.coords}
                     </div>
                   </div>
