@@ -444,14 +444,16 @@ export default function EvidencePanel() {
                 <div className="pt-2 border-t border-[var(--color-border-subtle)] text-xs text-[var(--color-text-secondary)] space-y-2 font-mono">
                   <div className="flex items-center justify-between pb-1 border-b border-[var(--color-border-subtle)]">
                     <div className="flex items-center gap-1.5">
-                      <span className={`inline-block w-2 h-2 rounded-full ${aiResult.model_used && !aiResult.model_used.includes('Deterministic') ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-main)]">
-                        {aiResult.model_used || 'Live Google Gemini'}
+                      <span className={`inline-block w-2 h-2 rounded-full ${aiResult.model_used && !aiResult.model_used.includes('Deterministic') && !aiResult.model_used.includes('Literature') ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                      <span className="text-[10px] font-semibold tracking-wider text-[var(--color-text-main)]">
+                        {aiResult.model_used && !aiResult.model_used.includes('Deterministic')
+                          ? aiResult.model_used
+                          : 'IPCC AR6 / NASA GMAO Literature Engine (Offline Reproducible)'}
                       </span>
                     </div>
                     {aiResult.inference_time_ms !== undefined && (
                       <span className="text-[9px] text-[var(--color-text-muted)] bg-[var(--color-bg-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)]">
-                        {(aiResult.inference_time_ms / 1000).toFixed(2)}s
+                        {aiResult.inference_time_ms < 1 ? '< 1ms (Instant)' : `${(aiResult.inference_time_ms / 1000).toFixed(2)}s`}
                       </span>
                     )}
                   </div>

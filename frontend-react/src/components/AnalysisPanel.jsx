@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import useStore from '../store/useStore';
 import { DATASET_VARIABLES, DETECTIVE_PRESETS } from '../utils/helpers';
 import { playTactileClick } from '../utils/audio';
@@ -14,6 +14,18 @@ export default function AnalysisPanel() {
   const [validationError, setValidationError] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
   const [gateResult, setGateResult] = useState(null);
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  useEffect(() => {
+    if (!isLoading) return;
+    const interval = setInterval(() => {
+      setLoadingStep((s) => (s < 2 ? s + 1 : s));
+    }, 1800);
+    return () => {
+      clearInterval(interval);
+      setLoadingStep(0);
+    };
+  }, [isLoading]);
 
   const handleGateResult = useCallback((res) => {
     setGateResult(res);
@@ -22,6 +34,36 @@ export default function AnalysisPanel() {
 
   const variables = DATASET_VARIABLES[dataset] || DATASET_VARIABLES.nasa_power;
   const yearCount = Math.max(0, endYear - startYear + 1);
+
+  // Live Bounding Box Dimension Calculator (NASA POWER 100 sq deg constraint)
+  const hasBbox = bbox.minLon !== '' && bbox.minLat !== '' && bbox.maxLon !== '' && bbox.maxLat !== '';
+  const bboxWidth = hasBbox ? Math.abs(parseFloat(bbox.maxLon) - parseFloat(bbox.minLon)) : 0;
+  const bboxHeight = hasBbox ? Math.abs(parseFloat(bbox.maxLat) - parseFloat(bbox.minLat)) : 0;
+  const bboxArea = hasBbox ? +(bboxWidth * bboxHeight).toFixed(1) : 0;
+  const exceedsQuota = bboxArea > 100.0;
+
+  const handleAutoFit100 = () => {
+    playTactileClick(600);
+    const minLo = parseFloat(bbox.minLon);
+    const maxLo = parseFloat(bbox.maxLon);
+    const minLa = parseFloat(bbox.minLat);
+    const maxLa = parseFloat(bbox.maxLat);
+    const centerLon = (minLo + maxLo) / 2.0;
+    const centerLat = (minLa + maxLa) / 2.0;
+
+    const newMinLon = Math.max(-180, Math.round((centerLon - 5.0) * 10) / 10);
+    const newMaxLon = Math.min(180, Math.round((centerLon + 5.0) * 10) / 10);
+    const newMinLat = Math.max(-90, Math.round((centerLat - 5.0) * 10) / 10);
+    const newMaxLat = Math.min(90, Math.round((centerLat + 5.0) * 10) / 10);
+
+    setBbox({
+      minLon: String(newMinLon),
+      minLat: String(newMinLat),
+      maxLon: String(newMaxLon),
+      maxLat: String(newMaxLat),
+    });
+    setValidationError('');
+  };
 
   const handleBboxChange = (field, value) => {
     setValidationError('');
@@ -164,6 +206,17 @@ export default function AnalysisPanel() {
               ? 'NASA Langley Research Center • Global Live Stream • DOI: 10.5067/POWER/10.0.0'
               : 'NASA GMAO Atmospheric • Pre-cached North America • DOI: 10.5067/A7F0JNNUTWOB'}
           </p>
+          {dataset === 'merra2_reanalysis' && (
+            <div className="mt-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-[10px] text-blue-900 dark:text-blue-200 leading-relaxed font-sans">
+              <div className="font-semibold flex items-center gap-1 text-blue-950 dark:text-blue-100 mb-0.5">
+                <svg className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                </svg>
+                NASA GES DISC Earthdata Notice
+              </div>
+              Exemplar transects stream pre-assimilated NetCDF-4 observation fixtures. Arbitrary global coordinates require NASA Earthdata credentials configured in your environment.
+            </div>
+          )}
         </div>
 
         <div>
@@ -262,6 +315,24 @@ export default function AnalysisPanel() {
               />
             ))}
           </div>
+          {hasBbox && (
+            <div className="mt-1.5 flex items-center justify-between text-[10px] font-mono">
+              <span className={`flex items-center gap-1 ${exceedsQuota ? 'text-amber-700 dark:text-amber-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
+                <span>Area: {bboxArea} deg²</span>
+                {exceedsQuota ? <span>(Exceeds NASA 100 deg² limit)</span> : <span>• Within NASA limit</span>}
+              </span>
+              {exceedsQuota && (
+                <button
+                  type="button"
+                  onClick={handleAutoFit100}
+                  className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 font-bold transition-colors cursor-pointer"
+                  title="Center and fit to NASA POWER 10.0° x 10.0° focus region"
+                >
+                  Auto-Fit 100 deg² Focus
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* FDR Toggle */}
@@ -316,10 +387,14 @@ export default function AnalysisPanel() {
           className="w-full interface-btn-primary !py-2.5 !text-xs !tracking-wider uppercase font-semibold disabled:opacity-50 disabled:cursor-not-allowed justify-center"
         >
           {isLoading ? (
-            <>
-              <span className="loading-spinner !w-3 !h-3 !border-2" />
-              <span>Computing Trends...</span>
-            </>
+            <span className="flex items-center gap-2">
+              <span className="loading-spinner !w-3.5 !h-3.5 !border-2" />
+              <span className="text-[11px] font-mono tracking-normal capitalize">
+                {loadingStep === 0 && 'Connecting to NASA Gateway...'}
+                {loadingStep === 1 && 'Streaming CF-1.8 raster...'}
+                {loadingStep >= 2 && 'Computing Mann-Kendall & regimes...'}
+              </span>
+            </span>
           ) : (
             <span className="flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -329,6 +404,12 @@ export default function AnalysisPanel() {
             </span>
           )}
         </button>
+
+        {isLoading && (
+          <p className="text-[10px] text-[var(--color-text-muted)] font-mono text-center pt-0.5 animate-pulse leading-snug">
+            Live NASA POWER stream in progress • Results are persistently cached in SQLite for instant future loads.
+          </p>
+        )}
 
         <button
           type="button"

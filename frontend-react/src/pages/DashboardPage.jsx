@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const discoveryModalOpen = useStore((s) => s.discoveryModalOpen);
   const hasInitialized = useRef(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'controls' | 'evidence'
 
   usePageMetadata({
     title: 'Analysis Workspace — Tellura Scientific Workbench',
@@ -484,15 +485,61 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Mobile Workspace Segmented Switcher (< lg screens) */}
+          <div className="lg:hidden flex items-center p-1 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] mb-4 text-xs font-mono">
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(650);
+                setMobileTab('map');
+              }}
+              className={`flex-1 py-1.5 px-2 rounded font-medium text-center transition-colors cursor-pointer ${
+                mobileTab === 'map'
+                  ? 'bg-[var(--color-accent-blue)] text-white font-semibold shadow-xs'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
+              }`}
+            >
+              GIS & Trends
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(650);
+                setMobileTab('controls');
+              }}
+              className={`flex-1 py-1.5 px-2 rounded font-medium text-center transition-colors cursor-pointer ${
+                mobileTab === 'controls'
+                  ? 'bg-[var(--color-accent-blue)] text-white font-semibold shadow-xs'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
+              }`}
+            >
+              Controls
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(650);
+                setMobileTab('evidence');
+              }}
+              className={`flex-1 py-1.5 px-2 rounded font-medium text-center transition-colors cursor-pointer ${
+                mobileTab === 'evidence'
+                  ? 'bg-[var(--color-accent-blue)] text-white font-semibold shadow-xs'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
+              }`}
+            >
+              Evidence
+            </button>
+          </div>
+
           {/* 3-Column Architecture — Balanced 1-Screen Viewport */}
           <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_360px] xl:grid-cols-[340px_1fr_380px] gap-5 items-start">
             {/* Left Column: Data Controls & Scientific Feasibility */}
-            <div className="space-y-3">
+            <div className={`space-y-3 ${mobileTab === 'controls' ? 'block' : 'hidden lg:block'}`}>
               <AnalysisPanel />
             </div>
 
             {/* Center Column: GIS Map, Analytical Chart & Regional Discovery / Exports Hub */}
-            <div id="map-section" className="space-y-3 min-w-0">
+            <div id="map-section" className={`space-y-3 min-w-0 ${mobileTab === 'map' ? 'block' : 'hidden lg:block'}`}>
               <div className="h-[46vh] min-h-[380px]">
                 <TrendMap />
               </div>
@@ -520,7 +567,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Right Column: Evidence & Verification */}
-            <div id="evidence-section" className="space-y-3">
+            <div id="evidence-section" className={`space-y-3 ${mobileTab === 'evidence' ? 'block' : 'hidden lg:block'}`}>
               <EvidencePanel />
             </div>
           </div>

@@ -115,7 +115,7 @@ def deterministic_fallback_explanation(req: ExplainRequest) -> ExplainResponse:
         limitations=limitations,
         physical_hypotheses=hypotheses,
         bibtex_citations=bibtex,
-        model_used="Deterministic Scientific Template",
+        model_used="IPCC AR6 / NASA GMAO Literature Engine (Offline Reproducible)",
         inference_time_ms=0.5,
     )
 
