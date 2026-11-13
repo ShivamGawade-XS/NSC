@@ -46,7 +46,7 @@ class NASAPowerAdapter(BaseDatasetAdapter):
     DOI = "10.5067/POWER/10.0.0"
     CONVENTIONS = "CF-1.8, ACDD-1.3"
     NATIVE_RESOLUTION = "0.5° latitude x 0.5° longitude"
-    TEMPORAL_RANGE = [1981, 2023]
+    TEMPORAL_RANGE = [1981, 2024]
     DEFAULT_BBOX = [-102.0, 30.0, -94.0, 38.0]
     COVERAGE_BBOX = [-180.0, -90.0, 180.0, 90.0]
     MISSIONS_AND_MODELS = "NASA Terra (MODIS, CERES), Aqua (AIRS), TRMM/GPM, and GMAO GEOS-5 FP-IT Assimilation Model"

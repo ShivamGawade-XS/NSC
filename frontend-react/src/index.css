@@ -164,15 +164,22 @@ body {
   color: var(--color-accent-blue);
 }
 
-/* ── Scrollbar — thin, quiet ────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: var(--color-border-default);
-  border-radius: var(--radius-full);
+/* ── Scrollbar — standard modern properties with fallback ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-strong);
+
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-default);
+    border-radius: var(--radius-full);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-strong);
+  }
 }
 
 /* ── Cards — tonal elevation, not shadow ────────────────────── */

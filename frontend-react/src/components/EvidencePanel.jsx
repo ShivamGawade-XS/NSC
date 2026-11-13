@@ -114,6 +114,7 @@ export default function EvidencePanel() {
   const isAnomalyMode = useStore((s) => s.isAnomalyMode);
   const toggleAnomalyMode = useStore((s) => s.toggleAnomalyMode);
   const analysisData = useStore((s) => s.analysisData);
+  const comparisonResult = useStore((s) => s.comparisonResult);
 
   const [aiResult, setAiResult] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -301,7 +302,7 @@ export default function EvidencePanel() {
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
                   <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">CAI Index</div>
                   <div className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums font-semibold">
-                    +{cell.tau?.toFixed(3) || '0.000'}
+                    +{((cell.cai ?? cell.tau) ?? 0).toFixed(3)}
                   </div>
                   <div className="text-[8px] text-[var(--color-text-muted)] font-mono">Aridification</div>
                 </div>
@@ -567,7 +568,7 @@ export default function EvidencePanel() {
                   <Row label="Classification" value={cell.direction?.replace(/_/g, ' ').toUpperCase() || 'Compound Hazard'} />
                   <Row label="Thermal Drift" value={`${cell.temp_slope > 0 ? '+' : ''}${cell.temp_slope?.toFixed(4)} °C / decade`} />
                   <Row label="Hydro Drift" value={`${cell.precip_slope > 0 ? '+' : ''}${cell.precip_slope?.toFixed(4)} mm/day / decade`} />
-                  <Row label="CAI Index" value={`+${cell.tau?.toFixed(3) || '0.000'} (Climate Aridification Index)`} />
+                  <Row label="CAI Index" value={`+${((cell.cai ?? cell.tau) ?? 0).toFixed(3)} (Climate Aridification Index)`} />
                   <Row label="Copula Risk" value="Joint Return Period > 50 Years" />
                   <Row label="Grid Spacing" value={resolutionStr || (datasetId === 'merra2' ? '0.5° × 0.625° MERRA-2' : '0.5° × 0.5° POWER')} />
                   <Row label="Source" value={ev?.source || 'NASA Ingestion (POWER & MERRA-2)'} />
@@ -636,16 +637,16 @@ export default function EvidencePanel() {
             </div>
 
             {/* Differential Comparison result if active */}
-            {useStore.getState().comparisonResult && (
+            {comparisonResult && (
               <div className="p-2.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-accent-blue)]/30 font-mono text-[11px] space-y-1">
                 <span className="text-[10px] font-bold text-[var(--color-accent-blue)] uppercase">Pin A vs Pin B Differential</span>
                 <div className="flex justify-between text-[10px]">
                   <span>ΔSlope:</span>
-                  <span className="font-bold text-[var(--color-text-main)] tabular-nums">{useStore.getState().comparisonResult.delta_slope > 0 ? '+' : ''}{useStore.getState().comparisonResult.delta_slope} {useStore.getState().comparisonResult.slope_units}</span>
+                  <span className="font-bold text-[var(--color-text-main)] tabular-nums">{comparisonResult.delta_slope > 0 ? '+' : ''}{comparisonResult.delta_slope} {comparisonResult.slope_units}</span>
                 </div>
                 <div className="flex justify-between text-[10px]">
                   <span>Pearson r:</span>
-                  <span className="text-emerald-700 dark:text-emerald-400 font-bold tabular-nums">{useStore.getState().comparisonResult.cross_correlation_r}</span>
+                  <span className="text-emerald-700 dark:text-emerald-400 font-bold tabular-nums">{comparisonResult.cross_correlation_r}</span>
                 </div>
               </div>
             )}

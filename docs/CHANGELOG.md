@@ -5,6 +5,19 @@ The project adheres to Semantic Versioning and rigorous engineering verification
 
 ---
 
+## [1.5.2] - 2026-11-13 — Modern Web Platform Standardization & Diagnostic Reliability
+
+### Added
+- **Modern Web Guidance Scrollbar Standardization:** Modernized styling with standard CSS `scrollbar-width: thin` and `scrollbar-color: var(--color-border-default) transparent` per W3C specification, wrapping legacy vendor WebKit pseudo-elements in `@supports not (scrollbar-color: auto)` blocks. Resolved all 3 legacy-scan findings to 0.
+
+### Fixed
+- **Evidence Panel Comparison Reactivity:** Eliminated direct store reads in JSX render tree by introducing a reactive Zustand selector hook for `comparisonResult`, ensuring immediate UI re-rendering when running Pin A vs Pin B differential analysis.
+- **Compound Hazard CAI Metric Display:** Corrected the Climate Aridification Index display card and Audit tab row to show the genuine `cell.cai` metric instead of Kendall's tau (`cell.tau`).
+- **NASA POWER Temporal Range Bounds:** Updated adapter `TEMPORAL_RANGE` upper limit to `[1981, 2024]` matching variable metadata `latest_year: 2024` for full ingestion compatibility.
+- **Controlled Failure Injection Resilience:** Fortified `scripts/test_controlled_failures.py` against socket resets on HTTP 413 oversized body tests on Windows platforms, validating 8/8 controlled failure injections.
+
+---
+
 ## [1.5.1] - 2026-11-13 — Client-Side Zero-Latency Caching & Visual Ergonomics Polish
 
 ### Added

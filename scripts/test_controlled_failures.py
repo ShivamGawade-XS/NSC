@@ -106,7 +106,11 @@ def test_failures():
         urllib.request.urlopen(req)
         print("[8] Huge body FAILED to trigger 413!")
     except urllib.error.HTTPError as e:
-        print(f"[8] Huge body (>2MB): HTTP {e.code} -> {e.read().decode('utf-8')}")
+        try:
+            body = e.read().decode("utf-8")
+        except Exception:
+            body = "(connection closed by server upon 413 limit)"
+        print(f"[8] Huge body (>2MB): HTTP {e.code} -> {body}")
         assert e.code == 413
 
     print("\nALL CONTROLLED FAILURE INJECTIONS VERIFIED SUCCESSFULLY!")
