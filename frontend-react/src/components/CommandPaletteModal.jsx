@@ -116,6 +116,9 @@ export default function CommandPaletteModal() {
             <div className="relative">
               <input
                 ref={inputRef}
+                id="copilot-query-input"
+                name="copilotQuery"
+                aria-label="Spatiotemporal inquiry"
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}

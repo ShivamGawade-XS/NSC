@@ -147,6 +147,7 @@ export default function AnalysisPanel() {
           </div>
           <select
             id="data-stream-select"
+            name="dataset"
             value={dataset}
             onChange={(e) => {
               setFormField('dataset', e.target.value);
@@ -171,6 +172,7 @@ export default function AnalysisPanel() {
           </label>
           <select
             id="variable-select"
+            name="variable"
             value={variable}
             onChange={(e) => setFormField('variable', e.target.value)}
             className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none transition-colors"
@@ -187,6 +189,7 @@ export default function AnalysisPanel() {
             <label className="form-label block mb-1" htmlFor="start-year-input">Start Year</label>
             <input
               id="start-year-input"
+              name="startYear"
               type="number"
               min="1980"
               max="2026"
@@ -202,6 +205,7 @@ export default function AnalysisPanel() {
             <label className="form-label block mb-1" htmlFor="end-year-input">End Year</label>
             <input
               id="end-year-input"
+              name="endYear"
               type="number"
               min="1980"
               max="2026"
@@ -245,6 +249,9 @@ export default function AnalysisPanel() {
             ].map(([field, label, title]) => (
               <input
                 key={field}
+                id={`bbox-${field}`}
+                name={field}
+                aria-label={label}
                 type="number"
                 step="0.1"
                 placeholder={label}

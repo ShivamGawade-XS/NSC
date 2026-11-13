@@ -102,7 +102,7 @@ export default function LatexModal() {
                 target="_blank"
                 className="inline-block"
               >
-                <input type="hidden" name="snip" value={latexCode} />
+                <input id="overleaf-snip-primary" type="hidden" name="snip" value={latexCode} />
                 <button
                   type="submit"
                   disabled={!latexCode || isLoading}
@@ -153,7 +153,7 @@ export default function LatexModal() {
                 target="_blank"
                 className="inline-block"
               >
-                <input type="hidden" name="snip" value={latexCode} />
+                <input id="overleaf-snip-primary" type="hidden" name="snip" value={latexCode} />
                 <button
                   type="submit"
                   disabled={!latexCode || isLoading}

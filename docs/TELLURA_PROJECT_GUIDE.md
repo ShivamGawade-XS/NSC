@@ -210,3 +210,4 @@ From the export tray, researchers can instantly download:
   - **338 / 338 backend tests passing** across mathematical rigor, security hardening, cache concurrency, and API contracts.
   - **0 warnings / 0 errors** on `oxlint` across all frontend modules.
   - **0 High / 0 Medium findings** on Bandit static application security testing (SAST).
+

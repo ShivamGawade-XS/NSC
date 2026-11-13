@@ -233,6 +233,9 @@ export default function CustomDataModal() {
           }`}
         >
           <input
+            id="custom-data-file-input"
+            name="customDataFile"
+            aria-label="Upload custom data file"
             type="file"
             ref={fileInputRef}
             onChange={(e) => e.target.files?.[0] && readFile(e.target.files[0])}

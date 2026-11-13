@@ -152,6 +152,8 @@ export default function ContactModal({ isOpen, onClose }) {
             </label>
             <input
               id="contact-name"
+              name="name"
+              autoComplete="name"
               type="text"
               value={formData.name}
               onChange={(e) => {
@@ -182,6 +184,8 @@ export default function ContactModal({ isOpen, onClose }) {
             </label>
             <input
               id="contact-email"
+              name="email"
+              autoComplete="email"
               type="email"
               value={formData.email}
               onChange={(e) => {
@@ -212,6 +216,7 @@ export default function ContactModal({ isOpen, onClose }) {
             </label>
             <select
               id="contact-topic"
+              name="topic"
               value={formData.topic}
               onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
               className="w-full p-2 rounded bg-[var(--color-bg-deep)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] outline-none focus:border-[var(--color-accent-blue)] transition-colors"
@@ -230,6 +235,7 @@ export default function ContactModal({ isOpen, onClose }) {
             </label>
             <textarea
               id="contact-message"
+              name="message"
               rows={4}
               value={formData.message}
               onChange={(e) => {

@@ -12,15 +12,15 @@ let activeGainNodes = [];
 let audioCtx = null;
 let masterCompressor = null;
 
-function getAudioContext() {
+function getAudioContext(forceResume = false) {
   if (typeof window === 'undefined') return null;
-  if (!audioCtx) {
+  if (!audioCtx && forceResume) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (AudioContextClass) {
       audioCtx = new AudioContextClass();
     }
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
+  if (forceResume && audioCtx && audioCtx.state === 'suspended') {
     audioCtx.resume().catch(() => {});
   }
   return audioCtx;
@@ -58,9 +58,8 @@ export function stopSonification() {
   activeTimeouts.forEach((id) => clearTimeout(id));
   activeTimeouts = [];
 
-  const ctx = getAudioContext();
-  if (ctx) {
-    const now = ctx.currentTime;
+  if (audioCtx) {
+    const now = audioCtx.currentTime;
     activeGainNodes.forEach((gain) => {
       try {
         gain.gain.cancelScheduledValues(now);
@@ -103,7 +102,7 @@ export function sonifyTimeSeries(
     return;
   }
 
-  const ctx = getAudioContext();
+  const ctx = getAudioContext(true);
   if (!ctx) {
     callbacks.onEnd?.();
     return;

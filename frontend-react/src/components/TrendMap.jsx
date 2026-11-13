@@ -628,6 +628,8 @@ function inferGridStep(grid) {
         </div>
 
         <input
+          id="timeline-year-scrubber"
+          name="timelineYearScrubber"
           type="range"
           min={startYear || 2000}
           max={endYear || 2023}
@@ -850,10 +852,13 @@ function inferGridStep(grid) {
 
           <div className="space-y-2.5">
             <div>
-              <label className="text-[10px] text-[var(--color-text-secondary)] block mb-1">
+              <label htmlFor="gibs-satellite-layer-select" className="text-[10px] text-[var(--color-text-secondary)] block mb-1">
                 SATELLITE SENSOR & PRODUCT:
               </label>
               <select
+                id="gibs-satellite-layer-select"
+                name="gibsLayerId"
+                aria-label="Satellite Sensor and Product"
                 value={gibsLayerId}
                 onChange={(e) => useStore.getState().setGibsLayerId(e.target.value)}
                 className="w-full bg-[var(--color-bg-elevated)] text-[var(--color-text-main)] text-xs rounded border border-[var(--color-border-subtle)] px-2 py-1.5 focus:outline-none focus:border-[var(--color-accent-blue)]"
@@ -868,10 +873,13 @@ function inferGridStep(grid) {
 
             <div>
               <div className="flex items-center justify-between text-[10px] text-[var(--color-text-secondary)] mb-1">
-                <span>SATELLITE OPACITY:</span>
+                <label htmlFor="gibs-satellite-opacity">SATELLITE OPACITY:</label>
                 <span className="text-[var(--color-text-main)] font-bold">{Math.round((gibsOpacity ?? 0.7) * 100)}%</span>
               </div>
               <input
+                id="gibs-satellite-opacity"
+                name="gibsOpacity"
+                aria-label="Satellite Opacity"
                 type="range"
                 min="0.10"
                 max="1.0"

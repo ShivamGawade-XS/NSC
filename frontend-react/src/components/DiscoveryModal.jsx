@@ -168,8 +168,10 @@ export default function DiscoveryModal({ onClose }) {
           <form onSubmit={handleRunScan} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="form-label block mb-1">Dataset</label>
+                <label htmlFor="discovery-dataset-select" className="form-label block mb-1">Dataset</label>
                 <select
+                  id="discovery-dataset-select"
+                  name="discoveryDataset"
                   value={dataset}
                   onChange={(e) => setDataset(e.target.value)}
                   className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-1.5 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none"
@@ -179,8 +181,10 @@ export default function DiscoveryModal({ onClose }) {
                 </select>
               </div>
               <div>
-                <label className="form-label block mb-1">Start Year</label>
+                <label htmlFor="discovery-start-year-input" className="form-label block mb-1">Start Year</label>
                 <input
+                  id="discovery-start-year-input"
+                  name="discoveryStartYear"
                   type="number"
                   value={startYear}
                   min={1981}
@@ -190,8 +194,10 @@ export default function DiscoveryModal({ onClose }) {
                 />
               </div>
               <div>
-                <label className="form-label block mb-1">End Year</label>
+                <label htmlFor="discovery-end-year-input" className="form-label block mb-1">End Year</label>
                 <input
+                  id="discovery-end-year-input"
+                  name="discoveryEndYear"
                   type="number"
                   value={endYear}
                   min={1981}
@@ -203,10 +209,12 @@ export default function DiscoveryModal({ onClose }) {
             </div>
 
             <div>
-              <label className="form-label block mb-1">
+              <label htmlFor="discovery-bbox-input" className="form-label block mb-1">
                 Scan Bounding Box (minLon, minLat, maxLon, maxLat)
               </label>
               <input
+                id="discovery-bbox-input"
+                name="discoveryBbox"
                 type="text"
                 value={bboxStr}
                 onChange={(e) => setBboxStr(e.target.value)}

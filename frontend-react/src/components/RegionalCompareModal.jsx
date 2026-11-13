@@ -182,8 +182,10 @@ export default function RegionalCompareModal({ onClose }) {
           <form onSubmit={handleRunComparison} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="form-label block mb-1">Dataset ID</label>
+                <label htmlFor="compare-dataset-select" className="form-label block mb-1">Dataset ID</label>
                 <select
+                  id="compare-dataset-select"
+                  name="compareDataset"
                   value={dataset}
                   onChange={(e) => setDataset(e.target.value)}
                   className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-1.5 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none"
@@ -194,8 +196,10 @@ export default function RegionalCompareModal({ onClose }) {
                 </select>
               </div>
               <div>
-                <label className="form-label block mb-1">Variable ID</label>
+                <label htmlFor="compare-variable-input" className="form-label block mb-1">Variable ID</label>
                 <input
+                  id="compare-variable-input"
+                  name="compareVariable"
                   type="text"
                   value={variable}
                   onChange={(e) => setVariable(e.target.value)}
@@ -207,8 +211,10 @@ export default function RegionalCompareModal({ onClose }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="form-label block mb-1">Start Year</label>
+                <label htmlFor="compare-start-year" className="form-label block mb-1">Start Year</label>
                 <input
+                  id="compare-start-year"
+                  name="compareStartYear"
                   type="number"
                   value={startYear}
                   min={1981}
@@ -218,8 +224,10 @@ export default function RegionalCompareModal({ onClose }) {
                 />
               </div>
               <div>
-                <label className="form-label block mb-1">End Year</label>
+                <label htmlFor="compare-end-year" className="form-label block mb-1">End Year</label>
                 <input
+                  id="compare-end-year"
+                  name="compareEndYear"
                   type="number"
                   value={endYear}
                   min={1981}
@@ -238,8 +246,10 @@ export default function RegionalCompareModal({ onClose }) {
                   <span className="text-[10px] text-[var(--color-text-muted)] uppercase">Reference</span>
                 </div>
                 <div>
-                  <label className="form-label block mb-1">Label</label>
+                  <label htmlFor="compare-name-a" className="form-label block mb-1">Label</label>
                   <input
+                    id="compare-name-a"
+                    name="nameA"
                     type="text"
                     value={nameA}
                     onChange={(e) => setNameA(e.target.value)}
@@ -248,8 +258,10 @@ export default function RegionalCompareModal({ onClose }) {
                   />
                 </div>
                 <div>
-                  <label className="form-label block mb-1">Bounding Box (minLon, minLat, maxLon, maxLat)</label>
+                  <label htmlFor="compare-bbox-a" className="form-label block mb-1">Bounding Box (minLon, minLat, maxLon, maxLat)</label>
                   <input
+                    id="compare-bbox-a"
+                    name="bboxA"
                     type="text"
                     value={bboxA}
                     onChange={(e) => setBboxA(e.target.value)}
@@ -265,8 +277,10 @@ export default function RegionalCompareModal({ onClose }) {
                   <span className="text-[10px] text-[var(--color-text-muted)] uppercase">Comparison</span>
                 </div>
                 <div>
-                  <label className="form-label block mb-1">Label</label>
+                  <label htmlFor="compare-name-b" className="form-label block mb-1">Label</label>
                   <input
+                    id="compare-name-b"
+                    name="nameB"
                     type="text"
                     value={nameB}
                     onChange={(e) => setNameB(e.target.value)}
@@ -275,8 +289,10 @@ export default function RegionalCompareModal({ onClose }) {
                   />
                 </div>
                 <div>
-                  <label className="form-label block mb-1">Bounding Box (minLon, minLat, maxLon, maxLat)</label>
+                  <label htmlFor="compare-bbox-b" className="form-label block mb-1">Bounding Box (minLon, minLat, maxLon, maxLat)</label>
                   <input
+                    id="compare-bbox-b"
+                    name="bboxB"
                     type="text"
                     value={bboxB}
                     onChange={(e) => setBboxB(e.target.value)}
