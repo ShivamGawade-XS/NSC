@@ -201,6 +201,48 @@ export default function DashboardPage() {
         return;
       }
 
+      if (code === 'KeyA' || key === 'a' || key === 'A') {
+        e.preventDefault();
+        playTactileClick(680);
+        storeState.toggleAnomalyMode();
+        return;
+      }
+
+      if (code === 'Space') {
+        e.preventDefault();
+        playTactileClick(700);
+        storeState.toggleTimelinePlay();
+        return;
+      }
+
+      if (code === 'Digit1' || key === '1') {
+        e.preventDefault();
+        playTactileClick(600);
+        storeState.loadPreset('case1');
+        return;
+      }
+
+      if (code === 'Digit2' || key === '2') {
+        e.preventDefault();
+        playTactileClick(600);
+        storeState.loadPreset('case2');
+        return;
+      }
+
+      if (code === 'Digit3' || key === '3') {
+        e.preventDefault();
+        playTactileClick(600);
+        storeState.loadPreset('case3');
+        return;
+      }
+
+      if (code === 'Digit4' || key === '4') {
+        e.preventDefault();
+        playTactileClick(600);
+        storeState.loadPreset('case4');
+        return;
+      }
+
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
         const { analysisData, selectedCell } = storeState;
         if (!analysisData) return;
@@ -407,6 +449,18 @@ export default function DashboardPage() {
                         <div className="flex justify-between">
                           <span className="text-[var(--color-text-secondary)]">Toggle LISA Cluster Regimes</span>
                           <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">L</kbd>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">Toggle Anomaly Mode</span>
+                          <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">A</kbd>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">Play / Pause 4D Timeline</span>
+                          <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">Space</kbd>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[var(--color-text-secondary)]">Load Presets (1–4)</span>
+                          <kbd className="px-1.5 py-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-bold">1 2 3 4</kbd>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-[var(--color-text-secondary)]">Command Query Palette</span>

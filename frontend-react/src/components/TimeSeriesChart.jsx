@@ -75,6 +75,20 @@ const changepointPlugin = {
 
 Chart.register(changepointPlugin);
 
+function getStripeColor(z) {
+  if (z <= -2.0) return '#08306b';
+  if (z <= -1.5) return '#2171b5';
+  if (z <= -1.0) return '#4292c6';
+  if (z <= -0.5) return '#6baed6';
+  if (z <= -0.1) return '#9ecae1';
+  if (z < 0.1) return '#f1f5f9';
+  if (z < 0.5) return '#fcae91';
+  if (z < 1.0) return '#fb6a4a';
+  if (z < 1.5) return '#de2d26';
+  if (z < 2.0) return '#a50f15';
+  return '#67000d';
+}
+
 export default function TimeSeriesChart() {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
@@ -84,6 +98,8 @@ export default function TimeSeriesChart() {
 
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioTelemetry, setAudioTelemetry] = useState(null);
+  const [chartView, setChartView] = useState('trend'); // 'trend' | 'stripes'
+  const [ciConfidence, setCiConfidence] = useState(0.95); // 0.90 | 0.95 | 0.99
 
   useEffect(() => {
     return () => {
@@ -139,6 +155,84 @@ export default function TimeSeriesChart() {
         }
       }
     );
+  };
+
+  const exportHighResFigure = () => {
+    if (!canvasRef.current || !selectedCell) {
+      toast('Select a coordinate to export figure');
+      return;
+    }
+    playTactileClick(800);
+    const srcCanvas = canvasRef.current;
+    const isDark = document.documentElement.classList.contains('dark');
+
+    const dpr = 2;
+    const padX = 32 * dpr;
+    const padTop = 100 * dpr;
+    const padBot = 90 * dpr;
+    const outW = srcCanvas.width * dpr + padX * 2;
+    const outH = srcCanvas.height * dpr + padTop + padBot;
+
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = outW;
+    outCanvas.height = outH;
+    const ctx = outCanvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = isDark ? '#0b0d11' : '#ffffff';
+    ctx.fillRect(0, 0, outW, outH);
+
+    // Frame border
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1 * dpr;
+    ctx.strokeRect(10 * dpr, 10 * dpr, outW - 20 * dpr, outH - 20 * dpr);
+
+    // Header Title
+    ctx.fillStyle = isDark ? '#f1f5f9' : '#0f172a';
+    ctx.font = `bold ${14 * dpr}px "Space Grotesk", sans-serif`;
+    ctx.fillText('TELLURA PLANETARY OBSERVATIONAL TRANSECT', padX, 40 * dpr);
+
+    // Header Subtitle
+    ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+    ctx.font = `${9 * dpr}px "IBM Plex Sans", sans-serif`;
+    const sub = `Variable: ${selectedCell.variable_id || 'T2M'} • Coordinate: [${selectedCell.lat?.toFixed(2)}°N, ${selectedCell.lon?.toFixed(2)}°E] • Baseline: ${selectedCell.years?.[0]}–${selectedCell.years?.[selectedCell.years.length - 1]}`;
+    ctx.fillText(sub, padX, 62 * dpr);
+
+    // Draw Chart Canvas
+    ctx.drawImage(srcCanvas, padX, padTop, srcCanvas.width * dpr, srcCanvas.height * dpr);
+
+    // Footer telemetry panel
+    const botY = outH - 68 * dpr;
+    ctx.fillStyle = isDark ? '#13171f' : '#f8fafc';
+    ctx.fillRect(padX, botY, outW - padX * 2, 44 * dpr);
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    ctx.strokeRect(padX, botY, outW - padX * 2, 44 * dpr);
+
+    // Metrics text
+    ctx.fillStyle = isDark ? '#cbd5e1' : '#334155';
+    ctx.font = `bold ${8.5 * dpr}px "IBM Plex Mono", monospace`;
+    const slopeStr = `Sen's Rate: ${selectedCell.slope >= 0 ? '+' : ''}${selectedCell.slope?.toFixed(4)} ${selectedCell.slope_units || '°C/dec'}`;
+    const pStr = `p-value: ${selectedCell.p_value?.toFixed(4)} (${selectedCell.is_significant_fdr ? 'FDR Pass' : 'Raw'})`;
+    const tauStr = `Kendall τ: ${selectedCell.tau?.toFixed(3)}`;
+    const cpStr = selectedCell.changepoint_year ? `Regime Shift: ${selectedCell.changepoint_year}` : 'Stable Monotonic';
+    ctx.fillText(`${slopeStr}   |   ${pStr}   |   ${tauStr}   |   ${cpStr}`, padX + 14 * dpr, botY + 18 * dpr);
+
+    // Citation watermark
+    ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+    ctx.font = `${7.5 * dpr}px "IBM Plex Sans", sans-serif`;
+    ctx.fillText('Data: NASA POWER / MERRA-2 (CF-1.8) • Tellura Non-Parametric Discovery Engine', padX + 14 * dpr, botY + 33 * dpr);
+
+    // Download trigger
+    outCanvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Tellura_Figure_${selectedCell.variable_id || 'T2M'}_${selectedCell.lat?.toFixed(1)}N_${selectedCell.lon?.toFixed(1)}E.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('High-resolution publication figure exported');
+    });
   };
 
   // Create chart once
@@ -407,8 +501,9 @@ export default function TimeSeriesChart() {
     if (hasCI) {
       const n = cell.years.length;
       const tMid = cell.years[0] + (cell.years[n - 1] - cell.years[0]) / 2.0;
-      const slopeDeltaU = (cell.ci_upper - (cell.slope || 0)) / 10.0;
-      const slopeDeltaL = (cell.ci_lower - (cell.slope || 0)) / 10.0;
+      const zScale = ciConfidence === 0.90 ? 1.645 / 1.960 : ciConfidence === 0.99 ? 2.576 / 1.960 : 1.0;
+      const slopeDeltaU = ((cell.ci_upper - (cell.slope || 0)) / 10.0) * zScale;
+      const slopeDeltaL = ((cell.ci_lower - (cell.slope || 0)) / 10.0) * zScale;
 
       ciUpper = cell.fitted_values.map((fv, i) => {
         const dt = cell.years[i] - tMid;
@@ -429,6 +524,36 @@ export default function TimeSeriesChart() {
     }
 
     chart.data.labels = cell.years;
+
+    if (chartView === 'stripes' && !cell.isCompound) {
+      chart.options.scales.y.display = false;
+      const varObs = obs.length > 0 ? obs.reduce((s, v) => s + (v - meanObs) ** 2, 0) / obs.length : 1.0;
+      const stdObs = Math.sqrt(varObs) || 1.0;
+      const stripeColors = obs.map((v) => {
+        const z = (v - meanObs) / stdObs;
+        return getStripeColor(z);
+      });
+
+      chart.data.datasets[0] = {
+        type: 'bar',
+        label: 'Warming Stripe',
+        data: cell.years.map(() => 1.0),
+        backgroundColor: stripeColors,
+        borderColor: stripeColors,
+        borderWidth: 0,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+        order: 10,
+      };
+      chart.data.datasets[1] = { label: 'hidden1', data: [], showLine: false, pointRadius: 0 };
+      chart.data.datasets[2] = { label: 'hidden2', data: [], showLine: false, pointRadius: 0 };
+      chart.data.datasets[3] = { label: 'hidden3', data: [], showLine: false, pointRadius: 0 };
+      chart.data.datasets[4] = { label: 'hidden4', data: [], showLine: false, pointRadius: 0 };
+      chart.update();
+      return;
+    }
+
+    chart.options.scales.y.display = true;
 
     if (isAnomalyMode) {
       chart.data.datasets[0] = {
@@ -570,7 +695,7 @@ export default function TimeSeriesChart() {
       }
     }
     chart.update();
-  }, [selectedCell, isAnomalyMode]);
+  }, [selectedCell, isAnomalyMode, chartView, ciConfidence]);
 
   return (
     <div className="w-full h-full flex flex-col" style={{ minHeight: '220px' }}>
@@ -650,6 +775,83 @@ export default function TimeSeriesChart() {
             ))}
           </div>
         )}
+
+        {/* Right Scientific Controls: Trendline vs Stripes, CI Level, Figure Export */}
+        <div className="flex items-center gap-1.5 ml-auto">
+          {/* Chart View Toggle: Trendline vs Warming Stripes */}
+          {!selectedCell?.isCompound && (
+            <div className="flex items-center rounded bg-[var(--color-bg-surface)] p-0.5 border border-[var(--color-border-subtle)]">
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(650);
+                  setChartView('trend');
+                }}
+                className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-all cursor-pointer ${
+                  chartView === 'trend'
+                    ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text-main)] shadow-xs font-semibold'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                }`}
+                title="Continuous line chart with Sen's slope and Gilbert 95% CI"
+              >
+                Trendline
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(650);
+                  setChartView('stripes');
+                }}
+                className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                  chartView === 'stripes'
+                    ? 'bg-[var(--color-bg-elevated)] text-rose-500 dark:text-rose-400 shadow-xs font-semibold'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                }`}
+                title="Ed Hawkins Climate Warming Stripes annual anomaly visualization"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                Stripes
+              </button>
+            </div>
+          )}
+
+          {/* CI Level Selector (Trendline mode only) */}
+          {chartView === 'trend' && !selectedCell?.isCompound && (
+            <div className="flex items-center rounded bg-[var(--color-bg-surface)] p-0.5 border border-[var(--color-border-subtle)]">
+              {[0.90, 0.95, 0.99].map((lvl) => (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => {
+                    playTactileClick(600);
+                    setCiConfidence(lvl);
+                  }}
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-all cursor-pointer ${
+                    ciConfidence === lvl
+                      ? 'bg-[var(--color-bg-elevated)] text-amber-600 dark:text-amber-400 font-bold'
+                      : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                  }`}
+                  title={`Gilbert (1987) ${Math.round(lvl * 100)}% Confidence Interval`}
+                >
+                  {Math.round(lvl * 100)}% CI
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* High-Resolution Figure Export */}
+          <button
+            type="button"
+            onClick={exportHighResFigure}
+            className="flex items-center gap-1 px-2 py-0.5 rounded bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] transition-all cursor-pointer font-medium"
+            title="Export publication-ready figure with coordinates, Sen's slope, and NASA citation (PNG)"
+          >
+            <svg className="w-3 h-3 text-[var(--color-accent-blue)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="hidden sm:inline">Figure</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 w-full relative">

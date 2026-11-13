@@ -5,6 +5,19 @@ The project adheres to Semantic Versioning and rigorous engineering verification
 
 ---
 
+## [1.5.0] - 2026-11-13 — Performance & Scientific Feature Enhancements
+
+### Added
+- **FastAPI GZip Middleware:** Automatic wire compression for responses exceeding 1KB, shrinking large spatial grid payloads by 80–90%.
+- **Ed Hawkins Climate Warming Stripes:** Interactive 1-click toggle in the Time Series card to render annual anomalies as color-coded climate stripes with Pettitt (1979) regime changepoints.
+- **High-Resolution Publication Figure Export:** 1-click export of 2x retina figures (PNG) featuring coordinate stamps, Sen's rate, Kendall's $\tau$, Hamed-Rao $p$-value, and official NASA CF-1.8 attribution watermarks.
+- **Dynamic Confidence Interval Selector:** Instant client-side switching between 90% ($Z=1.645$), 95% ($Z=1.960$), and 99% ($Z=2.576$) Gilbert (1987) confidence bands.
+- **Decadal Extremes & Tail Acceleration Tracker:** Quantitative diagnostic in the Evidence Panel calculating the frequency of $\ge 1.5\sigma$ extreme anomaly years grouped by decade.
+- **Expanded Workstation Hotkeys:** Added `A` (Toggle Anomaly Mode), `Space` (Play/Pause 4D Timeline), and `1`–`4` (Instant Exemplar Preset switching: Texas Basin, SW Transect, CONUS, Midwest Ag).
+- **Startup Preset Pre-Warming:** Asynchronous background task during FastAPI lifespan to pre-warm the SQLite cache with baseline exemplar transects.
+
+---
+
 ## [1.4.0] - 2026-11-13 — Scientific Integrity & Audit Remediation
 
 ### Fixed

@@ -5,6 +5,31 @@ import { formatCoords, formatPVal, LISA_LABELS } from '../utils/helpers';
 import * as api from '../api/client';
 import { playTactileClick, playTelemetryChime } from '../utils/audio';
 
+function getDecadalExtremes(cell) {
+  const yrs = cell?.years || [];
+  const obs = cell?.observations || cell?.values || [];
+  if (!yrs.length || !obs.length) return null;
+  const n = obs.length;
+  const mean = obs.reduce((s, v) => s + v, 0) / n;
+  const variance = obs.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+  const std = Math.sqrt(variance) || 1.0;
+  const threshold = 1.5;
+
+  const decades = {};
+  for (let i = 0; i < n; i++) {
+    const yr = yrs[i];
+    const val = obs[i];
+    const dec = Math.floor(yr / 10) * 10;
+    const decKey = `${dec}s`;
+    if (!decades[decKey]) decades[decKey] = { total: 0, warmExtremes: 0, coldExtremes: 0 };
+    decades[decKey].total += 1;
+    const z = (val - mean) / std;
+    if (z >= threshold) decades[decKey].warmExtremes += 1;
+    if (z <= -threshold) decades[decKey].coldExtremes += 1;
+  }
+  return { mean, std, threshold, decades };
+}
+
 function ProvenanceBadge({ provenance }) {
   if (!provenance) return null;
   const doiClean = provenance.doi ? provenance.doi.replace(/^https?:\/\/doi\.org\//, '') : '';
@@ -137,6 +162,7 @@ export default function EvidencePanel() {
   const resolutionStr = analysisData?.provenance?.resolution;
   const datasetName = analysisData?.provenance?.dataset_name || (datasetId === 'merra2' ? 'NASA MERRA-2' : 'NASA POWER');
   const metricScale = getCellMetricScale(cell.lat, resolutionStr, datasetId);
+  const decadalExtremes = getDecadalExtremes(cell);
 
   const handleAiExplain = async () => {
     playTactileClick(750);
@@ -364,6 +390,35 @@ export default function EvidencePanel() {
               <span className="font-bold">Δ</span>
               <span>{isAnomalyMode ? 'Anomaly Mode: Active' : 'Delta Anomaly Mode'}</span>
             </button>
+
+            {/* Decadal Tail Acceleration & Extreme Years */}
+            {decadalExtremes && Object.keys(decadalExtremes.decades).length > 1 && (
+              <div className="p-2.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] space-y-1.5 font-mono">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="font-semibold text-[var(--color-text-main)] flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    Tail Acceleration (≥ 1.5σ Anomalies)
+                  </span>
+                  <span className="text-[9px] text-[var(--color-text-muted)]">Decadal Breakdown</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
+                  {Object.entries(decadalExtremes.decades).map(([decade, stats]) => {
+                    const warmRate = Math.round((stats.warmExtremes / stats.total) * 100);
+                    return (
+                      <div key={decade} className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] text-center">
+                        <span className="text-[9px] font-bold text-[var(--color-text-muted)] block">{decade}</span>
+                        <span className={`text-[11px] font-bold tabular-nums block ${stats.warmExtremes > 0 ? 'text-rose-500 dark:text-rose-400' : 'text-[var(--color-text-main)]'}`}>
+                          {stats.warmExtremes} / {stats.total} yr
+                        </span>
+                        <span className="text-[8px] text-[var(--color-text-muted)] block">
+                          {warmRate > 0 ? `${warmRate}% extreme` : '0% baseline'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

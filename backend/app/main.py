@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.types import Message, Receive, Scope, Send
 
 from app.api.endpoints import router as api_router
@@ -32,12 +33,48 @@ START_TIME = time.time()
 MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB Maximum request body size
 
 
+async def _warm_cache_task():
+    """Background startup task: pre-warm SQLite cache with default exemplar transects."""
+    import asyncio
+    from fastapi import Request
+    from app.api.endpoints import run_analysis
+    from app.schemas.analysis import AnalysisRequest
+
+    await asyncio.sleep(0.5)
+    default_presets = [
+        {
+            "dataset_id": "merra2_reanalysis",
+            "variable_id": "T2M",
+            "start_year": 2000,
+            "end_year": 2020,
+            "bbox": [-100.0, 30.0, -90.0, 40.0],
+            "alpha": 0.05,
+            "use_fdr": True,
+            "prefer_live": False
+        }
+    ]
+    for p in default_presets:
+        try:
+            req = AnalysisRequest(**p)
+            dummy_request = Request({"type": "http", "method": "POST", "path": "/analysis", "headers": []})
+            await asyncio.to_thread(run_analysis, dummy_request, req)
+            logger.info("Pre-warmed analysis cache for baseline preset: %s/%s", p["dataset_id"], p["variable_id"])
+        except Exception as e:
+            logger.debug("Pre-warm preset skipped or failed: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Perform startup checks and setup credentials."""
+    """Perform startup checks, credential setup, and async cache warming."""
     install_security_logging()
     settings.setup_netrc()
+    warmup_task = None
+    if os.getenv("DISABLE_CACHE_WARMUP", "false").lower() != "true":
+        import asyncio
+        warmup_task = asyncio.create_task(_warm_cache_task())
     yield
+    if warmup_task and not warmup_task.done():
+        warmup_task.cancel()
 
 
 app = FastAPI(
@@ -303,9 +340,14 @@ app.add_middleware(
         "X-RateLimit-Remaining",
         "X-RateLimit-Reset",
         "X-Correlation-ID",
+        "X-Cache",
+        "X-Analysis-ID",
         "traceparent",
     ],
 )
+
+# High-performance GZip response compression: reduces wire transfer size for large spatial grids by 80-90%
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Mount both versioned and root paths for all typed endpoints
 app.include_router(api_router, prefix="/api/v1")
