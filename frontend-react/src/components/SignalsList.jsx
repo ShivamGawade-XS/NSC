@@ -162,7 +162,7 @@ export default function SignalsList() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-[11px] font-mono font-semibold text-emerald-800 dark:text-emerald-300 tabular-nums">
+                  <div className="text-[11px] font-mono font-bold text-slate-800 dark:text-slate-200 tabular-nums">
                     {sig.p_value !== undefined ? (sig.p_value < 0.001 ? 'p < 0.001' : `p = ${sig.p_value.toFixed(3)}`) : 'FDR Sig'}
                   </div>
                   <div className="text-[8px] text-[var(--color-text-muted)] font-mono uppercase tracking-wider">

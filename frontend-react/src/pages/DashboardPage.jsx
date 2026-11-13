@@ -438,14 +438,14 @@ export default function DashboardPage() {
                       <strong className="text-[var(--color-text-main)]">{analysisData.variable_name}</strong> ({analysisData.time_span})
                     </span>
                     <span className="text-[var(--color-border-default)] hidden sm:inline">•</span>
-                    <span className="text-[var(--color-accent-blue)] font-medium">
+                    <span className="text-[var(--color-text-main)] font-medium">
                       {analysisData.summary?.significant_cells_fdr ?? 0} / {analysisData.summary?.total_cells ?? 0} FDR Sig (q ≤ 0.05)
                     </span>
                     {analysisData.summary?.spatial_autocorrelation && (
                       <>
                         <span className="text-[var(--color-border-default)] hidden sm:inline">•</span>
                         <span className="text-[var(--color-text-secondary)]">
-                          Moran’s I: <strong className="text-emerald-700 dark:text-emerald-400 font-semibold">{analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'}</strong> ({analysisData.summary.spatial_autocorrelation.interpretation})
+                          Moran’s I: <strong className="text-[var(--color-text-main)] font-bold">{analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'}</strong> ({analysisData.summary.spatial_autocorrelation.interpretation})
                         </span>
                       </>
                     )}
@@ -502,8 +502,8 @@ export default function DashboardPage() {
                     Temporal Trajectory & Theil-Sen Estimator
                   </h2>
                   {selectedCell && (
-                    <span className="text-[11px] text-[var(--color-accent-anomaly)] font-mono tabular-nums font-semibold">
-                      Sen's Slope: {selectedCell.slope > 0 ? '+' : ''}{selectedCell.slope?.toFixed(4)} {selectedCell.slope_units}
+                    <span className="text-xs text-[var(--color-text-secondary)] font-mono tabular-nums font-medium">
+                      Sen's Slope: <strong className="text-[var(--color-text-main)] font-bold">{selectedCell.slope > 0 ? '+' : ''}{selectedCell.slope?.toFixed(4)}</strong> <span className="text-[10px] text-[var(--color-text-muted)]">{selectedCell.slope_units}</span>
                     </span>
                   )}
                 </div>

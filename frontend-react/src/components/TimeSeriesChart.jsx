@@ -584,12 +584,12 @@ export default function TimeSeriesChart() {
           <span className="text-[9px] text-[var(--color-text-secondary)]">CAI Aridification Index</span>
         </div>
       ) : selectedCell?.changepoint_year && selectedCell?.changepoint_p_value !== undefined && selectedCell?.changepoint_p_value !== null && Number(selectedCell?.changepoint_p_value) <= 0.05 ? (
-        <div className="flex items-center justify-between px-2.5 py-1 mb-1.5 bg-rose-50 dark:bg-rose-950/25 border border-rose-200 dark:border-rose-800/40 rounded text-[10px] font-mono text-rose-900 dark:text-rose-300">
-          <span className="flex items-center gap-1.5 font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400 shrink-0" />
-            Pettitt (1979) Regime Shift: Year {selectedCell.changepoint_year} (p = {Number(selectedCell.changepoint_p_value) < 0.001 ? '<0.001' : Number(selectedCell.changepoint_p_value).toFixed(4)})
+        <div className="flex items-center justify-between px-3 py-1.5 mb-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded text-xs font-mono text-[var(--color-text-main)]">
+          <span className="flex items-center gap-2 font-medium">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+            <span>Pettitt (1979) Regime Shift: Year <strong className="font-bold">{selectedCell.changepoint_year}</strong> (p = {Number(selectedCell.changepoint_p_value) < 0.001 ? '<0.001' : Number(selectedCell.changepoint_p_value).toFixed(4)})</span>
           </span>
-          <span className="text-[9px] text-[var(--color-text-secondary)]">Abrupt Changepoint</span>
+          <span className="text-[10px] text-[var(--color-text-muted)] font-normal uppercase tracking-wider">Abrupt Changepoint</span>
         </div>
       ) : null}
 

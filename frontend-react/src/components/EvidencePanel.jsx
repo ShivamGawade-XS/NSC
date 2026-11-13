@@ -24,7 +24,7 @@ function ProvenanceBadge({ provenance }) {
       )}
 
       {provenance.is_synthetic === false && (
-        <div className="flex items-center justify-between p-2.5 rounded bg-emerald-50 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-800/50 text-emerald-900 dark:text-emerald-300 font-mono text-xs">
+        <div className="flex items-center justify-between p-2.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-mono text-xs">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -36,7 +36,7 @@ function ProvenanceBadge({ provenance }) {
               href={`https://doi.org/${doiClean}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] text-emerald-700 dark:text-emerald-300 hover:text-emerald-950 dark:hover:text-emerald-100 underline decoration-emerald-500/50 flex items-center gap-1 font-semibold"
+              className="text-[10px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] underline decoration-slate-400/50 flex items-center gap-1 font-semibold"
               title={`View dataset DOI: ${doiClean}`}
             >
               <span>DOI</span>
@@ -274,7 +274,7 @@ export default function EvidencePanel() {
                 </div>
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
                   <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">CAI Index</div>
-                  <div className="text-sm font-bold font-mono text-amber-700 dark:text-amber-400 tabular-nums font-semibold">
+                  <div className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums font-semibold">
                     +{cell.tau?.toFixed(3) || '0.000'}
                   </div>
                   <div className="text-[8px] text-[var(--color-text-muted)] font-mono">Aridification</div>
@@ -297,11 +297,7 @@ export default function EvidencePanel() {
                 </div>
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
                   <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">p-value</div>
-                  <div className={`text-sm font-bold font-mono tabular-nums font-semibold ${
-                    cell.p_value !== undefined && cell.p_value <= 0.05 
-                      ? 'text-emerald-700 dark:text-emerald-300' 
-                      : 'text-[var(--color-text-main)]'
-                  }`}>
+                  <div className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 font-semibold">
                     {formatPVal(cell.p_value)}
                   </div>
                   <div className="text-[8px] text-[var(--color-text-muted)] font-mono">q = {formatPVal(cell.q_value)}</div>
@@ -322,9 +318,7 @@ export default function EvidencePanel() {
             <div className="grid grid-cols-2 gap-2 text-xs font-mono">
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
                 <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Standardized Z</span>
-                <span className={`font-semibold tabular-nums ${
-                  Math.abs(cell.z ?? 0) > 1.96 ? 'text-emerald-700 dark:text-emerald-300' : 'text-[var(--color-text-main)]'
-                }`}>
+                <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                   {cell.z !== undefined && cell.z !== null
                     ? `${cell.z > 0 ? '+' : ''}${cell.z.toFixed(2)}`
                     : (cell.p_value < 0.001 ? '|Z| > 3.29' : (cell.p_value < 0.05 ? '|Z| > 1.96' : '|Z| ≤ 1.96'))}
@@ -377,15 +371,15 @@ export default function EvidencePanel() {
         {activeTab === 'attribution' && (
           <div className="space-y-3 pt-1 animate-in fade-in duration-150">
             {/* Probabilistic Climate Attribution Card */}
-            <div className="p-3 rounded border border-sky-200 dark:border-sky-800/40 bg-sky-50 dark:bg-sky-950/20 font-mono text-xs">
+            <div className="p-3 rounded border border-[var(--color-border-subtle)] bg-[var(--color-bg-elevated)] font-mono text-xs">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-sky-600 dark:bg-sky-400 shrink-0" />
-                  <span className="text-[11px] font-bold text-sky-800 dark:text-sky-300 uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-[var(--color-text-main)] uppercase tracking-wider">
                     Event Attribution (FAR)
                   </span>
                 </div>
-                <span className="text-[9px] bg-sky-100 dark:bg-sky-500/15 text-sky-800 dark:text-sky-300 px-1.5 py-0.5 rounded border border-sky-200 dark:border-sky-500/30 font-bold">
+                <span className="text-[9px] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)] font-bold">
                   Stott / Otto
                 </span>
               </div>
@@ -395,14 +389,14 @@ export default function EvidencePanel() {
                   <div className="grid grid-cols-2 gap-2 text-xs mb-2">
                     <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
                       <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Risk Ratio (RR)</span>
-                      <span className="text-sm font-bold text-sky-700 dark:text-sky-300 tabular-nums">
+                      <span className="text-sm font-bold text-[var(--color-text-main)] tabular-nums">
                         {ev.attribution.risk_ratio !== undefined ? `${ev.attribution.risk_ratio}×` : '—'}
                       </span>
                       <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">Multiplier</span>
                     </div>
                     <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
                       <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Attributable Risk</span>
-                      <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
+                      <span className="text-sm font-bold text-[var(--color-text-main)] tabular-nums">
                         {ev.attribution.fraction_of_attributable_risk !== undefined
                           ? `${(ev.attribution.fraction_of_attributable_risk * 100).toFixed(1)}%`
                           : '—'}
@@ -522,9 +516,9 @@ export default function EvidencePanel() {
                   <Row label="Source" value={ev?.source || 'NASA Ingestion (POWER & MERRA-2)'} />
                   <Row label="Integrity">
                     {analysisData?.provenance?.is_synthetic === true ? (
-                      <span className="text-amber-800 dark:text-amber-300 font-bold">Synthetic test data</span>
+                      <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-bold"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />Synthetic test data</span>
                     ) : (
-                      <span className="text-emerald-800 dark:text-emerald-300 font-semibold">Verified NASA CF-1.8</span>
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />Verified NASA CF-1.8</span>
                     )}
                   </Row>
                 </>
@@ -543,9 +537,9 @@ export default function EvidencePanel() {
                   <Row label="Source" value={ev?.source || 'NASA Observation'} />
                   <Row label="Integrity">
                     {analysisData?.provenance?.is_synthetic === true ? (
-                      <span className="text-amber-800 dark:text-amber-300 font-bold">Synthetic test data</span>
+                      <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-300 font-bold"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />Synthetic test data</span>
                     ) : (
-                      <span className="text-emerald-800 dark:text-emerald-300 font-semibold">Verified NASA CF-1.8</span>
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />Verified NASA CF-1.8</span>
                     )}
                   </Row>
                 </>

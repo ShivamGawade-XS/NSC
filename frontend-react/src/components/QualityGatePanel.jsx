@@ -9,30 +9,34 @@ import { playTactileClick } from '../utils/audio';
 
 const STATUS_CONFIG = {
   SUPPORTED: {
-    textColor: 'text-emerald-800 dark:text-emerald-300',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-950/25',
-    borderColor: 'border-emerald-200 dark:border-emerald-700/40',
+    textColor: 'text-[var(--color-text-main)]',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    bgColor: 'bg-[var(--color-bg-elevated)]',
+    borderColor: 'border-[var(--color-border-subtle)]',
     icon: '✓',
     label: 'Optimal',
   },
   SUPPORTED_WITH_LIMITATIONS: {
-    textColor: 'text-amber-800 dark:text-amber-300',
-    bgColor: 'bg-amber-50 dark:bg-amber-950/25',
-    borderColor: 'border-amber-200 dark:border-amber-700/40',
+    textColor: 'text-[var(--color-text-main)]',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    bgColor: 'bg-[var(--color-bg-elevated)]',
+    borderColor: 'border-amber-300/40 dark:border-amber-800/40',
     icon: '!',
     label: 'Caveats',
   },
   INSUFFICIENT_DATA: {
-    textColor: 'text-red-800 dark:text-red-300',
-    bgColor: 'bg-red-50 dark:bg-red-950/25',
-    borderColor: 'border-red-200 dark:border-red-700/40',
+    textColor: 'text-[var(--color-text-main)]',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    bgColor: 'bg-[var(--color-bg-elevated)]',
+    borderColor: 'border-rose-300/40 dark:border-rose-800/40',
     icon: '✗',
     label: 'Blocked',
   },
   UNSUPPORTED_FOR_THIS_METHOD: {
-    textColor: 'text-red-800 dark:text-red-300',
-    bgColor: 'bg-red-50 dark:bg-red-950/25',
-    borderColor: 'border-red-200 dark:border-red-700/40',
+    textColor: 'text-[var(--color-text-main)]',
+    iconColor: 'text-rose-600 dark:text-rose-400',
+    bgColor: 'bg-[var(--color-bg-elevated)]',
+    borderColor: 'border-rose-300/40 dark:border-rose-800/40',
     icon: '✗',
     label: 'Blocked',
   },
@@ -109,7 +113,7 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpand()}
       >
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className={`font-mono font-bold text-xs ${cfg.textColor}`}>{cfg.icon}</span>
+          <span className={`font-mono font-bold text-xs ${cfg.iconColor}`}>{cfg.icon}</span>
           <span className={`font-mono text-[11px] font-bold tracking-wider uppercase ${cfg.textColor}`}>
             {gate.status_label}
           </span>
@@ -117,14 +121,14 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
 
         <div className="flex items-center gap-1.5 flex-1 flex-wrap">
           <span
-            className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono"
+            className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono font-medium"
             title="Years of continuous observation"
           >
             ⏱ {gate.observation_count}yr
           </span>
           {gate.grid_intersection_cells > 0 && (
             <span
-              className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono"
+              className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono font-medium"
               title="Grid cells intersecting bounding box"
             >
               ⊞ {gate.grid_intersection_cells} cells
@@ -132,10 +136,10 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
           )}
           {gate.meets_climatological_threshold && (
             <span
-              className="text-[10px] bg-[var(--color-bg-surface)] border border-emerald-300 dark:border-emerald-500/40 rounded px-1.5 py-0.5 text-emerald-800 dark:text-emerald-300 font-mono font-semibold"
+              className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-slate-700 dark:text-slate-300 font-mono font-semibold flex items-center gap-1"
               title="Meets 20yr climatological threshold"
             >
-              ✓ WMO
+              <span className="text-emerald-600 dark:text-emerald-400">✓</span> WMO
             </span>
           )}
         </div>

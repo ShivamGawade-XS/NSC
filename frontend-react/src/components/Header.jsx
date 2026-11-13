@@ -228,21 +228,21 @@ export default function Header() {
               {analysisData.provenance.is_synthetic === true ? (
                 <div
                   role="alert"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50 text-[11px] font-mono font-semibold"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-950/30 text-slate-900 dark:text-slate-100 border border-amber-200 dark:border-amber-700/50 text-[11px] font-mono font-semibold"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
                   <span>Synthetic test data — not NASA observations.</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 text-[11px] font-mono font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--color-bg-elevated)] text-[var(--color-text-main)] border border-[var(--color-border-subtle)] text-[11px] font-mono font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                   <span>Verified NASA CF-1.8 Observations</span>
                   {analysisData.provenance.doi && (
                     <a
                       href={`https://doi.org/${analysisData.provenance.doi.replace(/^https?:\/\/doi\.org\//, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-950 dark:hover:text-emerald-100 underline decoration-emerald-500/50 text-[10px] ml-0.5 font-bold"
+                      className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] underline decoration-slate-400/50 text-[10px] ml-0.5 font-bold"
                       title={`View dataset DOI: ${analysisData.provenance.doi}`}
                     >
                       DOI ↗
@@ -394,9 +394,9 @@ export default function Header() {
           <div className="pt-2 flex items-center justify-between text-xs font-mono text-[var(--color-text-muted)]">
             <span>{utc}</span>
             {analysisData?.provenance?.is_synthetic === true ? (
-              <span className="text-amber-800 dark:text-amber-300 font-bold">Synthetic test data — not NASA observations.</span>
+              <span className="text-amber-800 dark:text-amber-200 font-bold">Synthetic test data — not NASA observations.</span>
             ) : analysisData?.provenance?.is_synthetic === false ? (
-              <span className="text-emerald-800 dark:text-emerald-300 font-semibold">Verified NASA CF-1.8 Observations</span>
+              <span className="text-slate-800 dark:text-slate-200 font-semibold flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Verified NASA CF-1.8 Observations</span>
             ) : (
               <span className="text-[11px] text-[var(--color-text-secondary)]">CF-1.8 Compliant</span>
             )}
