@@ -91,6 +91,11 @@ class Settings:
     MAX_BBOX_DEGREES: float = float(os.getenv("MAX_BBOX_DEGREES", "180.0"))
     DEFAULT_FDR_ALPHA: float = float(os.getenv("DEFAULT_FDR_ALPHA", "0.05"))
     MAX_GRID_CELLS_X_TIMESTEPS: int = int(os.getenv("MAX_GRID_CELLS_X_TIMESTEPS", "500000"))
+    METRICS_TOKEN: str | None = os.getenv("METRICS_TOKEN")
+    FORWARDED_ALLOW_IPS: str = os.getenv(
+        "FORWARDED_ALLOW_IPS",
+        "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    )
 
     def get_earthdata_auth_status(self) -> dict[str, Any]:
         """Check if NASA Earthdata credentials are configured."""

@@ -5,6 +5,7 @@ internal-only listener protection, and daily LLM spend/budget caps.
 """
 import hashlib
 import hmac
+import ipaddress
 import logging
 import os
 import threading
@@ -82,19 +83,35 @@ def verify_api_key(raw_key: str) -> bool:
     return False
 
 
+def is_private_or_loopback_ip(ip_str: str) -> bool:
+    """Check if an IP string corresponds to loopback or RFC1918/RFC4193 private ranges."""
+    try:
+        ip = ipaddress.ip_address(ip_str.strip())
+        return ip.is_loopback or ip.is_private
+    except ValueError:
+        return False
+
+
 def is_internal_listener(request: Request) -> bool:
     """
-    Check if request arrives on the internal loopback listener (127.0.0.1 / localhost)
+    Check if request arrives on the internal loopback listener or private network
     without passing through an untrusted external proxy chain.
     """
     if request.headers.get("x-external-client", "").lower() == "true":
         return False
     xff = request.headers.get("x-forwarded-for")
     if xff:
-        # Forwarded from an external client/proxy
-        return False
+        # Check all IPs in forwarded-for chain: all must be loopback or private
+        for raw_ip in xff.split(","):
+            cleaned = raw_ip.strip()
+            if cleaned and not is_private_or_loopback_ip(cleaned):
+                return False
     client_host = request.client.host if request.client else None
-    return client_host in ("127.0.0.1", "::1", "localhost", "testclient")
+    if client_host in ("127.0.0.1", "::1", "localhost", "testclient"):
+        return True
+    if client_host and is_private_or_loopback_ip(client_host):
+        return True
+    return False
 
 
 def get_auth_tier(request: Request) -> AuthTier:
@@ -132,10 +149,25 @@ def require_api_key(request: Request) -> AuthTier:
 
 def require_metrics_access(request: Request) -> AuthTier:
     """
-    Restrict /metrics and /auth/status to keyed access or an internal-only listener.
-    External anonymous requests receive 401 Unauthorized.
+    Restrict /metrics and /auth/status.
+    If METRICS_TOKEN is configured:
+        Require exact matching token as Bearer token or X-API-Key header.
+    If METRICS_TOKEN is not configured:
+        Allow loopback and private-network clients, or callers with a valid API key.
+    External unauthenticated requests receive 401 Unauthorized.
     """
+    metrics_token = os.getenv("METRICS_TOKEN")
     key = extract_api_key(request)
+
+    if metrics_token:
+        if key and hmac.compare_digest(key, metrics_token):
+            return AuthTier.KEYED
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: /metrics and /auth/status require a valid METRICS_TOKEN bearer token.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
     if key:
         if verify_api_key(key):
             return AuthTier.KEYED

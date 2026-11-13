@@ -440,4 +440,5 @@ if __name__ == "__main__":
     import uvicorn
     bind_host = os.getenv("HOST", "127.0.0.1")
     is_dev = os.getenv("ENVIRONMENT", "production").lower() in ("development", "dev", "local")
-    uvicorn.run("app.main:app", host=bind_host, port=8000, reload=is_dev)  # nosec B104
+    forwarded_ips = getattr(settings, "FORWARDED_ALLOW_IPS", "127.0.0.1")
+    uvicorn.run("app.main:app", host=bind_host, port=8000, reload=is_dev, forwarded_allow_ips=forwarded_ips)  # nosec B104
