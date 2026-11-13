@@ -8,6 +8,57 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.core.config import settings
+
+
+def _validate_bbox_and_compute_cap(bbox: list[float] | None, start_year: int, end_year: int) -> None:
+    """Validate spatial bbox boundaries, axis span limits, and estimated compute complexity."""
+    if bbox is None:
+        return
+    if len(bbox) != 4:
+        raise ValueError("bbox must contain exactly 4 coordinates: [min_lon, min_lat, max_lon, max_lat].")
+    for c in bbox:
+        if not math.isfinite(c):
+            raise ValueError(f"All bbox coordinates must be finite floating-point values, got {c}.")
+    min_lon, min_lat, max_lon, max_lat = bbox
+    if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0):
+        raise ValueError("Longitude must be within the range [-180.0, 180.0].")
+    if not (-90.0 <= min_lat <= 90.0 and -90.0 <= max_lat <= 90.0):
+        raise ValueError("Latitude must be within the range [-90.0, 90.0].")
+    if min_lon >= max_lon:
+        raise ValueError(f"min_lon ({min_lon}) must be strictly less than max_lon ({max_lon}).")
+    if min_lat >= max_lat:
+        raise ValueError(f"min_lat ({min_lat}) must be strictly less than max_lat ({max_lat}).")
+
+    lon_span = max_lon - min_lon
+    lat_span = max_lat - min_lat
+
+    # Enforce maximum degree span per axis (settings.MAX_BBOX_DEGREES)
+    if lon_span > settings.MAX_BBOX_DEGREES:
+        raise ValueError(
+            f"Longitude span ({lon_span:.2f}°) exceeds maximum allowed span of {settings.MAX_BBOX_DEGREES:.1f}° per axis."
+        )
+    if lat_span > settings.MAX_BBOX_DEGREES:
+        raise ValueError(
+            f"Latitude span ({lat_span:.2f}°) exceeds maximum allowed span of {settings.MAX_BBOX_DEGREES:.1f}° per axis."
+        )
+
+    # Enforce total compute complexity cap: estimated cells * timesteps
+    # Standard resolution baseline is 0.5° x 0.5° (~0.5° per cell)
+    est_lon_cells = max(1, math.ceil(lon_span / 0.5))
+    est_lat_cells = max(1, math.ceil(lat_span / 0.5))
+    est_total_cells = est_lon_cells * est_lat_cells
+    time_steps = max(1, end_year - start_year + 1)
+    total_compute = est_total_cells * time_steps
+
+    if total_compute > settings.MAX_GRID_CELLS_X_TIMESTEPS:
+        raise ValueError(
+            f"Requested bounding box ({lon_span:.2f}° × {lat_span:.2f}°) across {time_steps} years "
+            f"yields estimated compute product ({total_compute:,}) exceeding configured maximum "
+            f"({settings.MAX_GRID_CELLS_X_TIMESTEPS:,} cell-timesteps). "
+            f"Please narrow the spatial bounding box or temporal range."
+        )
+
 
 def _sanitize_float(v: Any, default: float) -> Any:
     """Replace non-finite floats (NaN, +Inf, -Inf) with a safe default."""
@@ -50,7 +101,7 @@ class AnalysisRequest(BaseModel):
         default=None,
         description="[min_lon, min_lat, max_lon, max_lat] bounding box"
     )
-    alpha: float = Field(default=0.05, ge=0.001, le=0.20, description="Significance threshold")
+    alpha: float = Field(default=settings.DEFAULT_FDR_ALPHA, ge=0.001, le=0.20, description="Significance threshold")
     prefer_live: bool = Field(default=True, description="Prefer authentic NASA NetCDF observations over synthetic fixture")
     use_fdr: bool = Field(default=True, description="Apply Benjamini-Hochberg False Discovery Rate control")
 
@@ -65,21 +116,7 @@ class AnalysisRequest(BaseModel):
                 f"end_year ({self.end_year}) - start_year ({self.start_year}) must be at least 2 "
                 f"to provide a minimum of 3 annual observation points."
             )
-        if self.bbox is not None:
-            if len(self.bbox) != 4:
-                raise ValueError("bbox must contain exactly 4 coordinates: [min_lon, min_lat, max_lon, max_lat].")
-            for c in self.bbox:
-                if not math.isfinite(c):
-                    raise ValueError(f"All bbox coordinates must be finite floating-point values, got {c}.")
-            min_lon, min_lat, max_lon, max_lat = self.bbox
-            if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0):
-                raise ValueError("Longitude must be within the range [-180.0, 180.0].")
-            if not (-90.0 <= min_lat <= 90.0 and -90.0 <= max_lat <= 90.0):
-                raise ValueError("Latitude must be within the range [-90.0, 90.0].")
-            if min_lon >= max_lon:
-                raise ValueError(f"min_lon ({min_lon}) must be strictly less than max_lon ({max_lon}).")
-            if min_lat >= max_lat:
-                raise ValueError(f"min_lat ({min_lat}) must be strictly less than max_lat ({max_lat}).")
+        _validate_bbox_and_compute_cap(self.bbox, self.start_year, self.end_year)
         return self
 
 
@@ -404,7 +441,7 @@ class CompoundHazardRequest(BaseModel):
     start_year: int = Field(default=2000, ge=1980, le=2026, description="Start year")
     end_year: int = Field(default=2023, ge=1980, le=2026, description="End year")
     bbox: list[float] | None = Field(default=None, description="[min_lon, min_lat, max_lon, max_lat] bounding box")
-    alpha: float = Field(default=0.05, ge=0.001, le=0.20, description="Significance threshold")
+    alpha: float = Field(default=settings.DEFAULT_FDR_ALPHA, ge=0.001, le=0.20, description="Significance threshold")
     prefer_live: bool = Field(default=True, description="Prefer authentic NASA observations")
 
     @model_validator(mode="after")
@@ -418,21 +455,7 @@ class CompoundHazardRequest(BaseModel):
                 f"end_year ({self.end_year}) - start_year ({self.start_year}) must be at least 2 "
                 f"to provide a minimum of 3 annual observation points."
             )
-        if self.bbox is not None:
-            if len(self.bbox) != 4:
-                raise ValueError("bbox must contain exactly 4 coordinates: [min_lon, min_lat, max_lon, max_lat].")
-            for c in self.bbox:
-                if not math.isfinite(c):
-                    raise ValueError(f"All bbox coordinates must be finite floating-point values, got {c}.")
-            min_lon, min_lat, max_lon, max_lat = self.bbox
-            if not (-180.0 <= min_lon <= 180.0 and -180.0 <= max_lon <= 180.0):
-                raise ValueError("Longitude must be within the range [-180.0, 180.0].")
-            if not (-90.0 <= min_lat <= 90.0 and -90.0 <= max_lat <= 90.0):
-                raise ValueError("Latitude must be within the range [-90.0, 90.0].")
-            if min_lon >= max_lon:
-                raise ValueError(f"min_lon ({min_lon}) must be strictly less than max_lon ({max_lon}).")
-            if min_lat >= max_lat:
-                raise ValueError(f"min_lat ({min_lat}) must be strictly less than max_lat ({max_lat}).")
+        _validate_bbox_and_compute_cap(self.bbox, self.start_year, self.end_year)
         return self
 
 

@@ -90,6 +90,7 @@ class Settings:
     SECRET_KEY: str = _init_secret_key(ENVIRONMENT)
     MAX_BBOX_DEGREES: float = float(os.getenv("MAX_BBOX_DEGREES", "180.0"))
     DEFAULT_FDR_ALPHA: float = float(os.getenv("DEFAULT_FDR_ALPHA", "0.05"))
+    MAX_GRID_CELLS_X_TIMESTEPS: int = int(os.getenv("MAX_GRID_CELLS_X_TIMESTEPS", "500000"))
 
     def get_earthdata_auth_status(self) -> dict[str, Any]:
         """Check if NASA Earthdata credentials are configured."""
