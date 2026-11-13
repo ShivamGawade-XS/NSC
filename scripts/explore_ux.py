@@ -4,7 +4,6 @@ Executes real browser runs on Chromium, captures console messages, failed reques
 DOM states, and verifies first-time user journey through to evidence inspection.
 """
 import sys
-import json
 import time
 from playwright.sync_api import sync_playwright
 

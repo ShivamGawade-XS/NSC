@@ -5,7 +5,6 @@ Usage:
     python scripts/backup_sqlite.py [--source DB_PATH] [--dest BACKUP_DIR]
 """
 import argparse
-import os
 from pathlib import Path
 import sys
 

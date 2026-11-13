@@ -9,7 +9,6 @@ Executes 5 Hostile Real-User Workflows against real FastAPI backend and Vite/Rea
 """
 
 import json
-import os
 import socket
 import sys
 import tempfile
