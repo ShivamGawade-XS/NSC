@@ -323,7 +323,7 @@ export default function TimeSeriesChart() {
             display: true,
             position: 'top',
             labels: {
-              filter: (item) => item.text !== 'ci_lower_hidden',
+              filter: (item) => !item.text?.startsWith('hidden') && item.text !== 'ci_lower_hidden',
               color: tickColor,
               font: { size: 10, family: 'IBM Plex Sans, sans-serif' },
               boxWidth: 10,
@@ -340,13 +340,19 @@ export default function TimeSeriesChart() {
             cornerRadius: 6,
             titleFont: { family: 'Space Grotesk, IBM Plex Sans, sans-serif', size: 11, weight: 'bold' },
             bodyFont: { family: 'IBM Plex Mono, monospace', size: 10 },
-            filter: (item) => item.dataset.label !== 'ci_lower_hidden',
+            filter: (item) => !item.dataset?.label?.startsWith('hidden') && item.dataset?.label !== 'ci_lower_hidden',
           },
         },
         scales: {
           x: {
             grid: { color: gridColor },
-            ticks: { color: tickColor, font: { size: 9, family: 'IBM Plex Mono, monospace' } },
+            ticks: {
+              color: tickColor,
+              font: { size: 9, family: 'IBM Plex Mono, monospace' },
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 12,
+            },
           },
           y: {
             position: 'left',
@@ -527,6 +533,7 @@ export default function TimeSeriesChart() {
 
     if (chartView === 'stripes' && !cell.isCompound) {
       chart.options.scales.y.display = false;
+      chart.options.plugins.legend.display = false;
       const varObs = obs.length > 0 ? obs.reduce((s, v) => s + (v - meanObs) ** 2, 0) / obs.length : 1.0;
       const stdObs = Math.sqrt(varObs) || 1.0;
       const stripeColors = obs.map((v) => {
@@ -554,6 +561,7 @@ export default function TimeSeriesChart() {
     }
 
     chart.options.scales.y.display = true;
+    chart.options.plugins.legend.display = true;
 
     if (isAnomalyMode) {
       chart.data.datasets[0] = {
@@ -698,7 +706,7 @@ export default function TimeSeriesChart() {
   }, [selectedCell, isAnomalyMode, chartView, ciConfidence]);
 
   return (
-    <div className="w-full h-full flex flex-col" style={{ minHeight: '220px' }}>
+    <div className="w-full h-full flex flex-col overflow-hidden" style={{ minHeight: '240px' }}>
       {/* Dynamic Scientific Indicator Ribbon */}
       {selectedCell?.isCompound ? (
         <div className="flex items-center justify-between px-2.5 py-1 mb-1.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-700/40 rounded text-[10px] font-mono text-amber-900 dark:text-amber-300">

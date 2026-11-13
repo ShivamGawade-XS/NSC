@@ -5,6 +5,17 @@ The project adheres to Semantic Versioning and rigorous engineering verification
 
 ---
 
+## [1.5.1] - 2026-11-13 — Client-Side Zero-Latency Caching & Visual Ergonomics Polish
+
+### Added
+- **Client-Side In-Memory LRU Cache (`ClientLruCache`):** 120-entry in-memory cache with 10-minute TTL in `api/client.js` for analysis runs, compound runs, cell time series, discovery signals, and velocity vectors. Repeated preset switches and coordinate clicks now resolve in 0ms without network round-trips.
+
+### Fixed
+- **Warming Stripes Visual Ergonomics:** Suppressed unnecessary placeholder legend entries (`hidden1`..`hidden4`) during Warming Stripes mode and restored the full legend when returning to Trendline mode.
+- **Card Viewport & Axis Collision:** Expanded time series container height from 220px to 255px, enabled `overflow-hidden`, and constrained x-axis tick rotation (`maxRotation: 0`, `maxTicksLimit: 12`) to eliminate label clipping and prevent overlap with bottom discovery cards.
+
+---
+
 ## [1.5.0] - 2026-11-13 — Performance & Scientific Feature Enhancements
 
 ### Added

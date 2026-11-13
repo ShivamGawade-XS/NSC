@@ -6,6 +6,51 @@
 const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? `${window.location.origin}/api/v1` : 'http://localhost:8000/api/v1');
 
 /**
+ * High-performance in-memory LRU client cache.
+ * Avoids duplicate network calls when users toggle between presets or re-click cells.
+ */
+class ClientLruCache {
+  constructor(maxEntries = 120, ttlMs = 10 * 60 * 1000) {
+    this.maxEntries = maxEntries;
+    this.ttlMs = ttlMs;
+    this.cache = new Map();
+  }
+
+  get(key) {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    // Refresh LRU order
+    this.cache.delete(key);
+    this.cache.set(key, entry);
+    return entry.data;
+  }
+
+  set(key, data) {
+    if (!data) return;
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    } else if (this.cache.size >= this.maxEntries) {
+      const oldestKey = this.cache.keys().next().value;
+      if (oldestKey) this.cache.delete(oldestKey);
+    }
+    this.cache.set(key, {
+      data,
+      expiry: Date.now() + this.ttlMs,
+    });
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+}
+
+export const clientCache = new ClientLruCache();
+
+/**
  * Module-level map of active AbortControllers for single-flight keyed requests.
  * Prevents race conditions when user rapidly selects cells or switches presets.
  */
@@ -144,6 +189,11 @@ export async function apiFetch(path, options = {}) {
 }
 
 export async function runAnalysis(payload, options = {}) {
+  const cacheKey = `analysis:${JSON.stringify(payload)}`;
+  if (!options.bypassCache) {
+    const cached = clientCache.get(cacheKey);
+    if (cached) return cached;
+  }
   const res = await apiFetch('/analysis', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -152,10 +202,17 @@ export async function runAnalysis(payload, options = {}) {
     ...options,
   });
   if (!res) return undefined;
-  return res.json();
+  const json = await res.json();
+  clientCache.set(cacheKey, json);
+  return json;
 }
 
 export async function runCompoundAnalysis(payload, options = {}) {
+  const cacheKey = `compound:${JSON.stringify(payload)}`;
+  if (!options.bypassCache) {
+    const cached = clientCache.get(cacheKey);
+    if (cached) return cached;
+  }
   const res = await apiFetch('/analysis/compound', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -164,7 +221,9 @@ export async function runCompoundAnalysis(payload, options = {}) {
     ...options,
   });
   if (!res) return undefined;
-  return res.json();
+  const json = await res.json();
+  clientCache.set(cacheKey, json);
+  return json;
 }
 
 export async function runCustomAnalysis(payload, options = {}) {
@@ -190,16 +249,32 @@ export async function getAttribution(payload, options = {}) {
 }
 
 export async function getCellTimeseries(analysisId, lat, lon, options = {}) {
+  const cacheKey = `timeseries:${analysisId}:${Number(lat).toFixed(4)}:${Number(lon).toFixed(4)}`;
+  if (!options.bypassCache) {
+    const cached = clientCache.get(cacheKey);
+    if (cached) return cached;
+  }
   const res = await apiFetch(`/analysis/${analysisId}/timeseries?lat=${lat}&lon=${lon}`, {
     flightKey: 'cell_timeseries',
     ...options,
   });
-  return res.json();
+  if (!res) return undefined;
+  const json = await res.json();
+  clientCache.set(cacheKey, json);
+  return json;
 }
 
 export async function getSignals(analysisId, options = {}) {
+  const cacheKey = `signals:${analysisId}`;
+  if (!options.bypassCache) {
+    const cached = clientCache.get(cacheKey);
+    if (cached) return cached;
+  }
   const res = await apiFetch(`/analysis/${analysisId}/signals`, options);
-  return res.json();
+  if (!res) return undefined;
+  const json = await res.json();
+  clientCache.set(cacheKey, json);
+  return json;
 }
 
 export async function requestExplanation(payload, options = {}) {
@@ -257,11 +332,19 @@ function getFilenameFromHeader(res, fallback) {
 
 // Omni-Scale Championship Endpoints
 export async function getClimateVelocity(analysisId, options = {}) {
+  const cacheKey = `velocity:${analysisId}`;
+  if (!options.bypassCache) {
+    const cached = clientCache.get(cacheKey);
+    if (cached) return cached;
+  }
   const res = await apiFetch(`/analysis/${analysisId}/velocity`, {
     flightKey: 'velocity',
     ...options,
   });
-  return res.json();
+  if (!res) return undefined;
+  const json = await res.json();
+  clientCache.set(cacheKey, json);
+  return json;
 }
 
 export async function parseNLQ(query, options = {}) {

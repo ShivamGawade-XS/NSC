@@ -608,7 +608,7 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <div className="h-[220px]">
+                <div className="h-[255px]">
                   <TimeSeriesChart />
                 </div>
               </div>
