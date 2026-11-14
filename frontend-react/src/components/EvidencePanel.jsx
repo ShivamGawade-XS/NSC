@@ -30,13 +30,13 @@ function getDecadalExtremes(cell) {
   return { mean, std, threshold, decades };
 }
 
-function ProvenanceBadge({ provenance }) {
-  if (!provenance) return null;
-  const doiClean = provenance.doi ? provenance.doi.replace(/^https?:\/\/doi\.org\//, '') : '';
+function ProvenanceBadge({ provenance, summary }) {
+  if (!provenance && !summary) return null;
+  const doiClean = provenance?.doi ? provenance.doi.replace(/^https?:\/\/doi\.org\//, '') : '';
 
   return (
     <div className="space-y-2">
-      {provenance.is_synthetic === true && (
+      {provenance?.is_synthetic === true && (
         <div
           role="alert"
           className="p-3 rounded bg-amber-50 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-700/50 text-amber-900 dark:text-amber-300 font-mono text-xs flex items-center gap-2.5 shadow-xs"
@@ -48,7 +48,7 @@ function ProvenanceBadge({ provenance }) {
         </div>
       )}
 
-      {provenance.is_synthetic === false && (
+      {provenance?.is_synthetic === false && (
         <div className="flex items-center justify-between p-2.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-mono text-xs">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -71,7 +71,21 @@ function ProvenanceBadge({ provenance }) {
         </div>
       )}
 
-      {(provenance.warning || provenance.discontinuity_warning) && (
+      {summary?.field_significance_metric && (
+        <div className="flex items-center justify-between p-2.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)] font-mono text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${summary.field_significance_confirmed ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            <span className="font-semibold">
+              {summary.field_significance_confirmed ? 'Field Significance Confirmed (Wilks 2016)' : 'Field Significance Warning'}
+            </span>
+          </div>
+          <span className="text-[10px] text-[var(--color-text-secondary)] font-mono">
+            {summary.significant_cells_fdr} / {summary.total_cells} pts
+          </span>
+        </div>
+      )}
+
+      {(provenance?.warning || provenance?.discontinuity_warning) && (
         <div
           role="alert"
           className="p-2.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-500/40 text-amber-800 dark:text-amber-300 font-mono text-[11px] flex items-start gap-2"
@@ -124,7 +138,7 @@ export default function EvidencePanel() {
   if (!selectedCell) {
     return (
       <div className="space-y-3">
-        <ProvenanceBadge provenance={analysisData?.provenance} />
+        <ProvenanceBadge provenance={analysisData?.provenance} summary={analysisData?.summary} />
         <div className="interface-card p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2.5">
             <h3 className="instrument-heading">
@@ -207,7 +221,7 @@ export default function EvidencePanel() {
   return (
     <div className="space-y-3">
       {/* Provenance Alert / Verification Header */}
-      <ProvenanceBadge provenance={analysisData?.provenance} />
+      <ProvenanceBadge provenance={analysisData?.provenance} summary={analysisData?.summary} />
 
       {/* Main Diagnostic Inspector Container */}
       <motion.div
@@ -374,6 +388,46 @@ export default function EvidencePanel() {
                 <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">Cosine-calibrated</span>
               </div>
             </div>
+
+            {/* Hawkins & Sutton (2012) Signal-to-Noise Ratio (SNR) & Time of Emergence (ToE) */}
+            {(cell.signal_to_noise !== undefined || ev?.signal_to_noise !== undefined) && (
+              <div className="p-2.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] font-mono text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-main)] flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${
+                      (cell.signal_to_noise ?? ev?.signal_to_noise ?? 0) >= 2.0
+                        ? 'bg-emerald-500'
+                        : (cell.signal_to_noise ?? ev?.signal_to_noise ?? 0) >= 1.0
+                          ? 'bg-amber-500'
+                          : 'bg-slate-400'
+                    }`} />
+                    Signal-to-Noise Ratio (SNR)
+                  </span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                    (cell.signal_to_noise ?? ev?.signal_to_noise ?? 0) >= 2.0
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                      : (cell.signal_to_noise ?? ev?.signal_to_noise ?? 0) >= 1.0
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                        : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20'
+                  }`}>
+                    SNR {(cell.signal_to_noise ?? ev?.signal_to_noise ?? 0).toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-[10px] text-[var(--color-text-secondary)] leading-relaxed">
+                  {cell.emergence_status || ev?.emergence_status || (
+                    (cell.signal_to_noise ?? ev?.signal_to_noise ?? 0) >= 2.0
+                      ? 'Emergent Signal (Trend > 2σ natural noise envelope; IPCC AR6 Time of Emergence)'
+                      : (cell.signal_to_noise ?? ev?.signal_to_noise ?? 0) >= 1.0
+                        ? 'Emerging Signal (Trend > 1σ natural noise)'
+                        : 'Noise Dominated (Interannual variability exceeds trend magnitude)'
+                  )}
+                </p>
+                <div className="text-[9px] text-[var(--color-text-muted)] flex items-center justify-between pt-0.5 border-t border-[var(--color-border-subtle)]">
+                  <span>Hawkins & Sutton (2012) ToE Metric</span>
+                  <span>Threshold: SNR ≥ 2.0</span>
+                </div>
+              </div>
+            )}
 
             {/* Anomaly Mode Toggle */}
             <button

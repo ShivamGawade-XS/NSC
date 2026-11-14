@@ -216,6 +216,14 @@ class AnalysisSummary(BaseModel):
         default="annual_mean",
         description="Temporal aggregation mode of analyzed observations (e.g. 'annual_mean')."
     )
+    field_significance_confirmed: bool = Field(
+        default=True,
+        description="True if spatial field collectively rejects global null under FDR (Wilks 2006, 2016)."
+    )
+    field_significance_metric: str | None = Field(
+        default=None,
+        description="Summary description of collective domain significance under FDR."
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -262,6 +270,8 @@ class CellDetailResponse(BaseModel):
     lisa_cluster: str | None = "NS"
     changepoint_year: int | None = None
     changepoint_p_value: float | None = None
+    signal_to_noise: float | None = None
+    emergence_status: str | None = None
     evidence_record: dict[str, Any]
 
     @model_validator(mode="before")

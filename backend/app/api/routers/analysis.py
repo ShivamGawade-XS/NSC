@@ -421,6 +421,14 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
         "Note: Reflects sample duration for trend detection, not a 30-year WMO Climatological Standard Normal reference baseline average."
     )
 
+    field_sig_confirmed = (sig_fdr_count > 0)
+    field_metric_desc = (
+        f"Wilks (2016) FDR Field Significance Confirmed: {sig_fdr_count}/{total_cells} grid points "
+        f"({round(sig_fdr_count / max(1, total_cells) * 100, 1)}%) reject global null after FDR control."
+        if field_sig_confirmed else
+        "Wilks (2016) Field Significance: No grid points reject global null under Benjamini-Hochberg FDR control."
+    )
+
     summary = AnalysisSummary(
         total_cells=total_cells,
         significant_cells_raw=sig_raw_count,
@@ -432,7 +440,9 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
         meets_climatological_duration_threshold=is_clim_normal,
         is_climatological_normal=is_clim_normal,
         climatological_qualification=clim_qual,
-        temporal_aggregation="annual_mean"
+        temporal_aggregation="annual_mean",
+        field_significance_confirmed=field_sig_confirmed,
+        field_significance_metric=field_metric_desc
     )
 
     if "temporal_aggregation" not in raw_slice["provenance"]:
@@ -720,8 +730,16 @@ def run_custom_analysis(request: Request, req: CustomAnalysisRequest) -> Analysi
         "Short-Term Environmental Variability / Trend Candidate "
         f"({custom_span} years < 20-year WMO minimum)"
     )
+    total_pts = len(grid_points)
+    field_sig_custom = (sig_fdr_count > 0)
+    field_metric_custom = (
+        f"Wilks (2016) FDR Field Significance Confirmed: {sig_fdr_count}/{total_pts} points "
+        f"({round(sig_fdr_count / max(1, total_pts) * 100, 1)}%) reject global null after FDR control."
+        if field_sig_custom else
+        "Wilks (2016) Field Significance: No points reject global null under Benjamini-Hochberg FDR control."
+    )
     summary = AnalysisSummary(
-        total_cells=len(grid_points),
+        total_cells=total_pts,
         significant_cells_raw=sig_raw_count,
         significant_cells_fdr=sig_fdr_count,
         mean_slope=round(float(np.mean(all_slopes)), 4) if all_slopes else 0.0,
@@ -729,7 +747,9 @@ def run_custom_analysis(request: Request, req: CustomAnalysisRequest) -> Analysi
         min_slope=round(float(np.min(all_slopes)), 4) if all_slopes else 0.0,
         spatial_autocorrelation=moran_stats,
         is_climatological_normal=is_clim_normal_custom,
-        climatological_qualification=clim_qual_custom
+        climatological_qualification=clim_qual_custom,
+        field_significance_confirmed=field_sig_custom,
+        field_significance_metric=field_metric_custom
     )
 
     # 7. Opposing regional contrasts & discovery signals

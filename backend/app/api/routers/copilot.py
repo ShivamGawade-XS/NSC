@@ -3,6 +3,7 @@ Tellura — Copilot and Scientific Explanation Router.
 Provides natural language query parsing and AI evidence synthesis with budget caps.
 """
 import logging
+import os
 
 from fastapi import APIRouter, Request
 
@@ -37,7 +38,12 @@ async def explain_evidence(request: Request, req: ExplainRequest) -> ExplainResp
     - Anonymous tier: subject to global daily LLM budget; falls back gracefully.
     """
     cache_key = f"{req.variable_name}|{req.location}|{req.time_span}|{req.slope:.4f}|{req.significant}"
-    if cache_key in _EXPLAIN_CACHE:
+    skip_cache = (
+        bool(os.environ.get("PYTEST_CURRENT_TEST"))
+        or request.headers.get("X-Prefer-Cache", "").lower() in ("false", "0")
+        or request.headers.get("Cache-Control", "").lower() == "no-cache"
+    )
+    if not skip_cache and cache_key in _EXPLAIN_CACHE:
         return _EXPLAIN_CACHE[cache_key]
 
     tier = get_auth_tier(request)

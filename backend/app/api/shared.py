@@ -181,11 +181,29 @@ def _compute_cell_detail(
         alpha=cached["req"].alpha
     )
 
+    # Hawkins & Sutton (2012) Signal-to-Noise Ratio (SNR) / IPCC AR6 Time of Emergence (ToE)
+    residuals = series - fitted
+    noise_sigma = float(np.nanstd(residuals))
+    total_change = abs(float(slope) * (float(years[-1]) - float(years[0])) / 10.0)
+    snr = round(float(total_change / max(noise_sigma, 1e-6)), 2)
+    if snr >= 2.0:
+        emergence_status = "Emergent Signal (Trend > 2σ natural noise; IPCC AR6 ToE)"
+    elif snr >= 1.0:
+        emergence_status = "Emerging Signal (Trend > 1σ natural noise)"
+    else:
+        emergence_status = "Noise Dominated (Natural interannual variability exceeds trend)"
+
     evidence = {
         "observation": f"Calculated {mk['direction']} trend of {slope:+.3f} {raw['slope_units']}.",
         "magnitude": f"{slope:+.4f} {raw['slope_units']}",
         "confidence_interval_95": f"[{ci_l:+.4f}, {ci_u:+.4f}] {raw['slope_units']} (Gilbert 1987)",
         "significance": f"p-value = {mk['p_value']:.4f}, FDR q-value = {q_val:.4f} (Significant: {mk['significant']})",
+        "signal_to_noise": snr,
+        "emergence_status": emergence_status,
+        "snr_interpretation": (
+            f"SNR = {snr:.2f} (Total change: {total_change:.2f} {raw['display_units']}, Residual σ: {noise_sigma:.2f}). "
+            f"Hawkins & Sutton (2012) Time of Emergence (ToE) threshold: SNR >= 2.0 signifies departure from historical noise envelope."
+        ),
         "changepoint": (
             f"Abrupt regime shift detected in {cp_year} (p = {cp_pval:.4f})"
             if cp_sig and cp_year else
@@ -226,6 +244,8 @@ def _compute_cell_detail(
         lisa_cluster=lisa_lbl,
         changepoint_year=cp_year,
         changepoint_p_value=cp_pval,
+        signal_to_noise=snr,
+        emergence_status=emergence_status,
         evidence_record=evidence
     )
     cell_cache[cache_key] = resp_obj

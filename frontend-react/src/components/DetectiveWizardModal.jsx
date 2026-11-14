@@ -201,6 +201,13 @@ const DETECTIVE_REGIONS = [
     center: [31.0, -98.0],
     desc: 'Opposing synoptic contrasts: intense inland heating vs marine boundary buffering.',
   },
+  {
+    id: 'rockies_edw',
+    name: 'Rocky Mountains (Elevation-Dependent Warming)',
+    bbox: [-112.0, 36.0, -104.0, 44.0],
+    center: [40.0, -108.0],
+    desc: 'Elevation-Dependent Warming (EDW) & snow-albedo feedback across high-altitude watersheds (Pepin et al. 2015).',
+  },
 ];
 
 const DETECTIVE_HORIZONS = [

@@ -78,7 +78,10 @@ Key Capabilities:
 7. Pettitt, A. N. (1979). A non-parametric approach to the change-point problem. Applied Statistics, 28(2), 126-135. DOI: 10.2307/2346729
 8. Anselin, L. (1995). Local Indicators of Spatial Association—LISA. Geographical Analysis, 27(2), 93-115. DOI: 10.1111/j.1538-4632.1995.tb00338.x
 9. Burrows, M. T., et al. (2011). The Pace of Shifting Climate in Marine and Terrestrial Ecosystems. Science, 334(6056), 652-655. DOI: 10.1126/science.1210288
-10. Benjamini, Y., & Hochberg, Y. (1995). Controlling the False Discovery Rate: A practical and powerful approach to multiple testing. JRSS: Series B, 57(1), 289-300.`
+10. Benjamini, Y., & Hochberg, Y. (1995). Controlling the False Discovery Rate: A practical and powerful approach to multiple testing. JRSS: Series B, 57(1), 289-300.
+11. Wilks, D. S. (2016). "The Stippling Shows Statistically Significant Grid Points": How Research Results are Often Misrepresented and How to Invert the Problem. BAMS, 97(12), 2263-2270. DOI: 10.1175/BAMS-D-15-00267.1
+12. Hawkins, E., & Sutton, R. (2012). Time of emergence of climate signals. Geophysical Research Letters, 39(1), L01702. DOI: 10.1029/2011GL050087
+13. Pepin, N., et al. (2015). Elevation-dependent warming in mountain regions of the world. Nature Climate Change, 5(5), 424-430. DOI: 10.1038/nclimate2563`
 
 ---
 
