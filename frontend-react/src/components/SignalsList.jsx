@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import useStore from '../store/useStore';
 import { formatCoords1 } from '../utils/helpers';
+import { getLabels } from '../utils/modeLabels';
 import { playTactileClick } from '../utils/audio';
 
 export default function SignalsList() {
@@ -9,6 +10,8 @@ export default function SignalsList() {
   const selectCell = useStore((s) => s.selectCell);
   const selectCompoundCell = useStore((s) => s.selectCompoundCell);
   const selectedCell = useStore((s) => s.selectedCell);
+  const workstationMode = useStore((s) => s.workstationMode);
+  const L = getLabels(workstationMode);
 
   const isCompound = Boolean(analysisData?.isCompound);
   const contrasts = analysisData?.contrasts || [];
@@ -22,7 +25,7 @@ export default function SignalsList() {
     return (
       <div className="interface-card p-4 space-y-2.5">
         <h3 className="instrument-heading mb-1">
-          Discovery Signals
+          {L.discoveryTitle}
         </h3>
         <p className="text-xs text-[var(--color-text-muted)] font-mono">
           Execute an analysis or launch the multi-variable scan to populate candidate trend signals.
@@ -38,7 +41,7 @@ export default function SignalsList() {
           <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
-          <span>Autonomous Discovery Scan</span>
+          <span>{L.discoveryScanBtn}</span>
         </button>
       </div>
     );
@@ -50,10 +53,10 @@ export default function SignalsList() {
       <div className="interface-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="instrument-heading text-amber-700 dark:text-amber-400">
-            Compound Hazard Hotspots
+            {L.compoundTitle}
           </h3>
           <span className="text-[9px] font-mono text-[var(--color-text-muted)]">
-            Ranked by CAI Index
+            {L.compoundRankedBy}
           </span>
         </div>
 
@@ -116,10 +119,10 @@ export default function SignalsList() {
     <div className="interface-card p-3">
       <div className="flex items-center justify-between mb-2">
         <h3 className="instrument-heading !text-xs">
-          Top Discovery Signals
+          {L.signalsTitle}
         </h3>
         <span className="text-[9px] font-mono text-[var(--color-text-muted)]">
-          Ranked by Kendall τ
+          {L.signalsRankedBy}
         </span>
       </div>
 

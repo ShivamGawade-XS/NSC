@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import useStore from '../store/useStore';
 import { formatCoords, formatPVal, LISA_LABELS, GCOS_ECV_MAP } from '../utils/helpers';
+import { getLabels, shouldSimplify } from '../utils/modeLabels';
 import * as api from '../api/client';
 import { playTactileClick, playTelemetryChime } from '../utils/audio';
 
@@ -129,6 +130,9 @@ export default function EvidencePanel() {
   const toggleAnomalyMode = useStore((s) => s.toggleAnomalyMode);
   const analysisData = useStore((s) => s.analysisData);
   const comparisonResult = useStore((s) => s.comparisonResult);
+  const workstationMode = useStore((s) => s.workstationMode);
+  const L = getLabels(workstationMode);
+  const simplified = shouldSimplify(workstationMode);
 
   const [aiResult, setAiResult] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -142,28 +146,30 @@ export default function EvidencePanel() {
         <div className="interface-card p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2.5">
             <h3 className="instrument-heading">
-              Evidence & Diagnostic Record
+              {L.evidenceStandbyTitle}
             </h3>
             <span className="text-[10px] font-mono text-[var(--color-text-muted)] bg-[var(--color-bg-elevated)] px-2 py-0.5 rounded border border-[var(--color-border-subtle)]">
               Standby
             </span>
           </div>
           <p className="text-xs text-[var(--color-text-secondary)] font-mono leading-relaxed">
-            Select any observation cell on the GIS map or pick from the signal rankings to inspect localized empirical evidence, statistical significance, and physical literature drivers.
+            {L.evidenceStandbyDesc}
           </p>
           <div className="pt-1 border-t border-[var(--color-border-subtle)] text-[10px] font-mono text-[var(--color-text-muted)] space-y-1">
             <div className="flex justify-between">
               <span>Grid Navigation:</span>
               <span className="text-[var(--color-text-main)] font-semibold">Arrow Keys (↑↓←→)</span>
             </div>
+            {!simplified && (<>
             <div className="flex justify-between">
               <span>FDR Significance Mask:</span>
               <span className="text-[var(--color-text-main)] font-semibold">Key [F]</span>
             </div>
             <div className="flex justify-between">
-              <span>Anselin LISA Regimes:</span>
+              <span>{L.spatialSub} Regimes:</span>
               <span className="text-[var(--color-text-main)] font-semibold">Key [L]</span>
             </div>
+            </>)}
           </div>
         </div>
       </div>
@@ -248,7 +254,7 @@ export default function EvidencePanel() {
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono tracking-wider uppercase shrink-0 ${
             cell.significant ? 'badge-hotspot' : 'badge-nominal'
           }`}>
-            {cell.significant ? 'HOTSPOT' : 'NOMINAL'}
+            {cell.significant ? L.hotspotLabel : L.nominalLabel}
           </span>
         </div>
 
@@ -266,7 +272,7 @@ export default function EvidencePanel() {
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
             }`}
           >
-            Telemetry
+            {L.telemetryTab}
           </button>
           <button
             type="button"
@@ -280,7 +286,7 @@ export default function EvidencePanel() {
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
             }`}
           >
-            Attribution & AI
+            {L.attributionTab}
           </button>
           <button
             type="button"
@@ -294,7 +300,7 @@ export default function EvidencePanel() {
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
             }`}
           >
-            Audit & Labs
+            {L.auditTab}
           </button>
         </div>
 
@@ -329,7 +335,7 @@ export default function EvidencePanel() {
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Sen's Slope</div>
+                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.slopeLabel}</div>
                   <div className={`text-sm font-bold font-mono tabular-nums ${
                     (cell.slope ?? 0) > 0 
                       ? 'text-rose-600 dark:text-rose-400' 
@@ -342,20 +348,20 @@ export default function EvidencePanel() {
                   <div className="text-[8px] text-[var(--color-text-muted)] font-mono">{cell.slope_units}</div>
                 </div>
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">p-value</div>
+                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.pValueLabel}</div>
                   <div className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 font-semibold">
                     {formatPVal(cell.p_value)}
                   </div>
-                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">q = {formatPVal(cell.q_value)}</div>
+                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">{simplified ? '' : `q = ${formatPVal(cell.q_value)}`}</div>
                 </div>
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Kendall τ</div>
+                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.tauLabel}</div>
                   <div className="text-sm font-bold font-mono text-[var(--color-text-main)] tabular-nums font-semibold">
                     {cell.tau !== undefined && cell.tau !== null && !isNaN(cell.tau)
                       ? `${cell.tau > 0 ? '+' : ''}${Number(cell.tau).toFixed(3)}`
                       : 'N/A'}
                   </div>
-                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">Rank Corr</div>
+                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">{simplified ? 'Higher = stronger trend' : 'Rank Corr'}</div>
                 </div>
               </div>
             )}
@@ -363,7 +369,7 @@ export default function EvidencePanel() {
             {/* Test Statistics Secondary Grid */}
             <div className="grid grid-cols-2 gap-2 text-xs font-mono">
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Standardized Z</span>
+                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.zLabel}</span>
                 <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                   {cell.z !== undefined && cell.z !== null
                     ? `${cell.z > 0 ? '+' : ''}${cell.z.toFixed(2)}`
@@ -372,25 +378,25 @@ export default function EvidencePanel() {
                 <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">p = {formatPVal(cell.p_value)}</span>
               </div>
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Gilbert 95% CI</span>
+                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.ciLabel}</span>
                 <span className="font-semibold text-[var(--color-text-main)] tabular-nums text-[11px]">
                   {cell.ci_lower !== undefined ? `[${cell.ci_lower.toFixed(3)}, ${cell.ci_upper.toFixed(3)}]` : 'Bounded'}
                 </span>
                 <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">{cell.slope_units}</span>
               </div>
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Spatial Regime</span>
+                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.spatialLabel}</span>
                 <span className="font-semibold text-[var(--color-text-main)] text-[11px]">
                   {LISA_LABELS[cluster] || cluster}
                 </span>
-                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">Anselin Moran's I</span>
+                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">{L.spatialSub}</span>
               </div>
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Ground Footprint</span>
+                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.footprintLabel}</span>
                 <span className="font-semibold text-[var(--color-text-main)] text-[11px] tabular-nums">
                   {metricScale ? `${metricScale.areaKm2} km²` : '≈ 2,650 km²'}
                 </span>
-                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">Cosine-calibrated</span>
+                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">{L.footprintSub}</span>
               </div>
             </div>
 
@@ -406,7 +412,7 @@ export default function EvidencePanel() {
                           ? 'bg-amber-500'
                           : 'bg-slate-400'
                     }`} />
-                    Signal-to-Noise Ratio (SNR)
+                    {L.snrTitle}
                   </span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
                     (cell.signal_to_noise ?? ev?.signal_to_noise ?? 0) >= 2.0
@@ -444,7 +450,7 @@ export default function EvidencePanel() {
                         ? 'bg-emerald-500'
                         : 'bg-amber-500'
                     }`} />
-                    Natural Oscillation Decoupling (ENSO/PDO)
+                    {L.varianceTitle}
                   </span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)]">
                     {(cell.variance_explained_pct ?? ev?.variance_explained_pct ?? 0).toFixed(1)}% Variance Explained
@@ -458,7 +464,7 @@ export default function EvidencePanel() {
                   )}
                 </p>
                 <div className="text-[9px] text-[var(--color-text-muted)] flex items-center justify-between pt-0.5 border-t border-[var(--color-border-subtle)]">
-                  <span>Hamed-Rao Variance Inflation: {cell.variance_inflation_factor ?? ev?.variance_inflation_factor ?? '1.0'}×</span>
+                  <span>{L.vifLabel}: {cell.variance_inflation_factor ?? ev?.variance_inflation_factor ?? '1.0'}×</span>
                   <span>Red-Noise Penalty Active</span>
                 </div>
               </div>
@@ -478,7 +484,7 @@ export default function EvidencePanel() {
               }`}
             >
               <span className="font-bold">Δ</span>
-              <span>{isAnomalyMode ? 'Anomaly Mode: Active' : 'Delta Anomaly Mode'}</span>
+              <span>{isAnomalyMode ? L.anomalyActive : L.anomalyBtn}</span>
             </button>
 
             {/* Decadal Tail Acceleration & Extreme Years */}
@@ -487,7 +493,7 @@ export default function EvidencePanel() {
                 <div className="flex items-center justify-between text-[10px]">
                   <span className="font-semibold text-[var(--color-text-main)] flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                    Tail Acceleration (≥ 1.5σ Anomalies)
+                    {L.tailTitle}
                   </span>
                   <span className="text-[9px] text-[var(--color-text-muted)]">Decadal Breakdown</span>
                 </div>
@@ -521,7 +527,7 @@ export default function EvidencePanel() {
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
                   <span className="text-[11px] font-bold text-[var(--color-text-main)] uppercase tracking-wider">
-                    Event Attribution (FAR)
+                    {L.attributionTitle}
                   </span>
                 </div>
                 <span className="text-[9px] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)] font-bold">
@@ -573,14 +579,14 @@ export default function EvidencePanel() {
                 {aiLoading ? (
                   <>
                     <span className="loading-spinner !w-3 !h-3 !border-2" />
-                    <span>Querying Physical Drivers...</span>
+                    <span>{L.aiExplainLoading}</span>
                   </>
                 ) : (
                   <span className="flex items-center gap-1.5">
                     <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                     </svg>
-                    <span>Literature Mechanism & Drivers</span>
+                    <span>{L.aiExplainBtn}</span>
                   </span>
                 )}
               </button>

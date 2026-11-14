@@ -30,6 +30,9 @@ const useStore = create((set, get) => ({
   gibsOpacity: 0.70,
   isAnomalyMode: false,
 
+  // Workstation Persona Mode: 'detective' (Student/Citizen) | 'policy' (City Planner/Risk) | 'pro' (Scientist/NASA Judge)
+  workstationMode: (typeof window !== 'undefined' && localStorage.getItem('tellura_workstation_mode')) || 'pro',
+
   // Omni-Scale Championship Features
   velocityData: null,
   isVelocityMode: false,
@@ -502,6 +505,55 @@ const useStore = create((set, get) => ({
   setGibsOpacity: (gibsOpacity) => set({ gibsOpacity }),
   toggleMask: () => set((s) => ({ maskSigOnly: !s.maskSigOnly })),
   toggleFdr: () => set((s) => ({ useFdr: !s.useFdr })),
+
+  setWorkstationMode: (mode) => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('tellura_workstation_mode', mode); } catch {}
+    }
+    set({ workstationMode: mode });
+  },
+
+  launchPersona: (persona) => {
+    const validPersona = ['detective', 'policy', 'pro'].includes(persona) ? persona : 'pro';
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('tellura_workstation_mode', validPersona); } catch {}
+    }
+
+    if (validPersona === 'detective') {
+      // Student / Detective track: launch Texas Heat Mystery with Detective Wizard
+      set({
+        workstationMode: 'detective',
+        detectiveWizardModalOpen: true,
+        nlqModalOpen: false,
+        latexModalOpen: false,
+        customDataModalOpen: false,
+        preprintModalOpen: false,
+      });
+      get().loadPreset('case1');
+    } else if (validPersona === 'policy') {
+      // City Planner & Policy track: launch Southwest Compound Aridification & Megadrought
+      set({
+        workstationMode: 'policy',
+        detectiveWizardModalOpen: false,
+        nlqModalOpen: false,
+        latexModalOpen: false,
+        customDataModalOpen: false,
+        preprintModalOpen: false,
+      });
+      get().loadPreset('case2');
+    } else {
+      // Pro Research track: full continental scientific footprint
+      set({
+        workstationMode: 'pro',
+        detectiveWizardModalOpen: false,
+        nlqModalOpen: false,
+        latexModalOpen: false,
+        customDataModalOpen: false,
+        preprintModalOpen: false,
+      });
+      get().loadPreset('case3');
+    }
+  },
 
   clearBbox: () => set({
     bbox: { minLon: '', minLat: '', maxLon: '', maxLat: '' },

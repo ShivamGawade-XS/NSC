@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Chart, registerables } from 'chart.js';
 import toast from 'react-hot-toast';
 import useStore from '../store/useStore';
+import { getLabels } from '../utils/modeLabels';
 import { sonifyTimeSeries, stopSonification } from '../utils/sonification';
 import { playTactileClick } from '../utils/audio';
 
@@ -95,6 +96,8 @@ export default function TimeSeriesChart() {
   const selectedCell = useStore((s) => s.selectedCell);
   const analysisId = useStore((s) => s.analysisId);
   const isAnomalyMode = useStore((s) => s.isAnomalyMode);
+  const workstationMode = useStore((s) => s.workstationMode);
+  const L = getLabels(workstationMode);
 
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioTelemetry, setAudioTelemetry] = useState(null);
@@ -576,7 +579,7 @@ export default function TimeSeriesChart() {
         order: 2,
       };
       chart.data.datasets[1] = {
-        label: "Sen's Trend (Anomaly Space)",
+        label: L.anomalyTrendLabel,
         data: cell.fitted_values.map((v) => +(v - meanObs).toFixed(3)),
         yAxisID: 'y',
         borderColor: '#f59e0b',
@@ -587,7 +590,7 @@ export default function TimeSeriesChart() {
         order: 1,
       };
       chart.data.datasets[2] = {
-        label: 'Baseline Zero Reference',
+        label: L.anomalyBaseLabel,
         data: cell.years.map(() => 0.0),
         yAxisID: 'y',
         borderColor: '#636775',
@@ -599,7 +602,7 @@ export default function TimeSeriesChart() {
         order: 5,
       };
       chart.data.datasets[3] = {
-        label: '95% CI (Gilbert 1987)',
+        label: L.ciChartLabel,
         data: ciUpper.map((v) => +(v - meanObs).toFixed(3)),
         yAxisID: 'y',
         borderColor: 'rgba(245, 158, 11, 0.3)',
@@ -645,7 +648,7 @@ export default function TimeSeriesChart() {
         order: 2,
       };
       chart.data.datasets[1] = {
-        label: "Sen's Robust Trendline",
+        label: L.trendlineLabel,
         data: cell.fitted_values,
         yAxisID: 'y',
         borderColor: '#f59e0b',
@@ -656,7 +659,7 @@ export default function TimeSeriesChart() {
         order: 1,
       };
       chart.data.datasets[2] = {
-        label: `Climatology Baseline (μ = ${meanObs.toFixed(2)})`,
+        label: `${L.baselineLabel} (${meanObs.toFixed(2)})`,
         data: cell.years.map(() => +meanObs.toFixed(2)),
         yAxisID: 'y',
         borderColor: '#636775',
@@ -668,7 +671,7 @@ export default function TimeSeriesChart() {
         order: 5,
       };
       chart.data.datasets[3] = {
-        label: '95% CI (Gilbert 1987)',
+        label: L.ciChartLabel,
         data: ciUpper,
         yAxisID: 'y',
         borderColor: 'rgba(245, 158, 11, 0.3)',
@@ -703,7 +706,7 @@ export default function TimeSeriesChart() {
       }
     }
     chart.update();
-  }, [selectedCell, isAnomalyMode, chartView, ciConfidence]);
+  }, [selectedCell, isAnomalyMode, chartView, ciConfidence, workstationMode, L]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden" style={{ minHeight: '240px' }}>
@@ -720,9 +723,9 @@ export default function TimeSeriesChart() {
         <div className="flex items-center justify-between px-3 py-1.5 mb-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded text-xs font-mono text-[var(--color-text-main)]">
           <span className="flex items-center gap-2 font-medium">
             <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
-            <span>Pettitt (1979) Regime Shift: Year <strong className="font-bold">{selectedCell.changepoint_year}</strong> (p = {Number(selectedCell.changepoint_p_value) < 0.001 ? '<0.001' : Number(selectedCell.changepoint_p_value).toFixed(4)})</span>
+            <span>{L.changepointLabel}: Year <strong className="font-bold">{selectedCell.changepoint_year}</strong> (p = {Number(selectedCell.changepoint_p_value) < 0.001 ? '<0.001' : Number(selectedCell.changepoint_p_value).toFixed(4)})</span>
           </span>
-          <span className="text-[10px] text-[var(--color-text-muted)] font-normal uppercase tracking-wider">Abrupt Changepoint</span>
+          <span className="text-[10px] text-[var(--color-text-muted)] font-normal uppercase tracking-wider">{L.changepointRibbon}</span>
         </div>
       ) : null}
 
@@ -737,7 +740,7 @@ export default function TimeSeriesChart() {
                 ? 'bg-rose-50 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/40 shadow-xs'
                 : 'bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] text-[var(--color-accent-blue)] border border-[var(--color-border-subtle)]'
             }`}
-            title="Acoustic time series synthesis (Web Audio Section 508)"
+            title={L.sonifySubLabel}
           >
             {isPlayingAudio ? (
               <>
@@ -749,7 +752,7 @@ export default function TimeSeriesChart() {
                 <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V9c0-.414.336-.75.75-.75h2.24z" />
                 </svg>
-                <span>Sonify Atmosphere</span>
+                <span>{L.sonifyBtnLabel}</span>
               </>
             )}
           </button>
@@ -857,7 +860,7 @@ export default function TimeSeriesChart() {
             <svg className="w-3 h-3 text-[var(--color-accent-blue)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            <span className="hidden sm:inline">Figure</span>
+            <span className="hidden sm:inline">{L.figureExportTitle}</span>
           </button>
         </div>
       </div>

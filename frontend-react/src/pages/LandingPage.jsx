@@ -96,6 +96,63 @@ const PIPELINE_STAGES = [
   },
 ];
 
+const PERSONA_GATEWAYS = [
+  {
+    key: 'detective',
+    badge: 'Student & Citizen Detective',
+    icon: '🎓',
+    title: 'Earth System Detective',
+    tagline: 'Curiosity-Driven STEM Learning',
+    description: 'Solve climate mysteries, formulate guided hypotheses, hear trajectories through audio sonification, and discover real NASA trends with zero intimidating equations.',
+    highlights: [
+      '3-Step Guided Hypothesis Wizard',
+      'Plain-English clues (no mathematical jargon)',
+      'Web Audio interactive sonification',
+      'Live NASA POWER satellite observations',
+    ],
+    ctaText: 'Launch Detective Track →',
+    borderClass: 'hover:border-[var(--color-accent-blue)]',
+    badgeClass: 'bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)] border-[var(--color-accent-blue)]/30',
+    btnClass: 'interface-btn-primary',
+  },
+  {
+    key: 'policy',
+    badge: 'City Planner & Policy Maker',
+    icon: '🏛️',
+    title: 'Climate Risk & Resilience',
+    tagline: 'Municipal & Infrastructure Planning',
+    description: 'Evaluate concurrent compound heatwave + drought risks, calculate joint Copula return periods, and track climate migration velocity for proactive municipal adaptation.',
+    highlights: [
+      'Compound Aridification Index (CAI)',
+      '25-yr / 50-yr / 100-yr Copula joint return periods',
+      'Climate velocity vectors (km/decade)',
+      'Wildfire & municipal water stress focus',
+    ],
+    ctaText: 'Launch Policy Track →',
+    borderClass: 'hover:border-amber-500/60',
+    badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+    btnClass: 'interface-btn-secondary !bg-amber-600/10 hover:!bg-amber-600/20 !border-amber-500/40 !text-amber-600 dark:!text-amber-300',
+  },
+  {
+    key: 'pro',
+    badge: 'Climate Scientist & NASA Judge',
+    icon: '🔬',
+    title: 'Open-Science Research Pro',
+    tagline: 'Empirical Peer-Review Rigor',
+    description: 'Full uncompromised non-parametric trend battery, Anselin LISA spatial autocorrelation, Benjamini-Hochberg FDR control, and reproducible CF-1.8 NetCDF & LaTeX exports.',
+    highlights: [
+      'Outlier-resistant Mann-Kendall τ & Theil-Sen β',
+      'Anselin Local Moran’s I spatial clustering',
+      'Wilks (2016) FDR field significance control',
+      'CF-1.8 NetCDF-4, LaTeX manuscript & Colab code',
+    ],
+    ctaText: 'Launch Pro Workstation →',
+    borderClass: 'hover:border-emerald-500/60',
+    badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+    btnClass: 'interface-btn-secondary !bg-emerald-600/10 hover:!bg-emerald-600/20 !border-emerald-500/40 !text-emerald-600 dark:!text-emerald-300',
+  },
+];
+
 const CASE_STUDIES = [
   {
     key: 'case1',
@@ -160,6 +217,12 @@ export default function LandingPage() {
   const handleLaunchPreset = (key) => {
     playTactileClick(800);
     useStore.getState().loadPreset(key);
+    navigate('/dashboard');
+  };
+
+  const handleLaunchPersona = (personaKey) => {
+    playTactileClick(800);
+    useStore.getState().launchPersona(personaKey);
     navigate('/dashboard');
   };
 
@@ -245,6 +308,86 @@ export default function LandingPage() {
                   </div>
                   <div className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
                     {m.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Tailored Investigation Gateways (Multi-Persona Portals) */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border-subtle)] bg-[var(--color-bg-surface)]">
+          <div className="max-w-6xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 pb-4 border-b border-[var(--color-border-subtle)]">
+              <div>
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[11px] font-mono uppercase tracking-wider text-[var(--color-accent-blue)] mb-3">
+                  <span>Adaptive Workstation Profiles</span>
+                </div>
+                <h2 className="font-['Space_Grotesk'] text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text-main)]">
+                  Choose Your Investigation Track
+                </h2>
+              </div>
+              <p className="text-xs text-[var(--color-text-secondary)] max-w-md font-mono">
+                Tellura adapts its statistical complexity, labeling, and workflows to match your research level — from student detectives to senior climatologists.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {PERSONA_GATEWAYS.map((p) => (
+                <div
+                  key={p.key}
+                  className={`p-6 rounded-xl bg-[var(--color-bg-deep)] border border-[var(--color-border-subtle)] flex flex-col justify-between transition-all duration-300 shadow-sm ${p.borderClass} group`}
+                >
+                  <div className="space-y-4">
+                    {/* Badge & Icon Header */}
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs px-2.5 py-1 rounded-md border font-mono font-medium ${p.badgeClass}`}>
+                        {p.badge}
+                      </span>
+                      <span className="text-2xl" role="img" aria-label={p.badge}>
+                        {p.icon}
+                      </span>
+                    </div>
+
+                    {/* Title & Tagline */}
+                    <div>
+                      <h3 className="font-['Space_Grotesk'] text-lg font-bold text-[var(--color-text-main)] group-hover:text-[var(--color-accent-blue)] transition-colors">
+                        {p.title}
+                      </h3>
+                      <div className="text-[11px] font-mono text-[var(--color-text-muted)] tracking-wide uppercase mt-0.5">
+                        {p.tagline}
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                      {p.description}
+                    </p>
+
+                    {/* Feature Highlights Checklist */}
+                    <div className="space-y-2 pt-3 border-t border-[var(--color-border-subtle)]">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] font-semibold">
+                        Workflow Inclusions:
+                      </div>
+                      <ul className="space-y-1.5 text-xs text-[var(--color-text-secondary)] font-mono">
+                        {p.highlights.map((h, hIdx) => (
+                          <li key={hIdx} className="flex items-center gap-2">
+                            <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                            <span className="truncate">{h}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Action Launch Button */}
+                  <div className="pt-6 mt-6 border-t border-[var(--color-border-subtle)]">
+                    <button
+                      onClick={() => handleLaunchPersona(p.key)}
+                      className={`w-full py-2.5 px-4 text-xs font-mono uppercase tracking-wider font-semibold justify-center flex items-center gap-2 cursor-pointer transition-transform active:scale-[0.98] ${p.btnClass}`}
+                    >
+                      <span>{p.ctaText}</span>
+                    </button>
                   </div>
                 </div>
               ))}

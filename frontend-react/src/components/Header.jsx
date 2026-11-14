@@ -54,6 +54,7 @@ export default function Header() {
   }, []);
 
   const isDashboard = location.pathname === '/dashboard';
+  const workstationMode = useStore((s) => s.workstationMode);
   const backendOffline = useStore((s) => s.backendOffline);
   const setBackendOffline = useStore((s) => s.setBackendOffline);
 
@@ -154,7 +155,59 @@ export default function Header() {
         </div>
 
         {/* Center/Right: Action Buttons, Theme Toggle, & Telemetry */}
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-2.5">
+          {/* Persona Workstation Mode Selector */}
+          <div className="flex items-center p-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] font-mono text-[11px]">
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                useStore.getState().setWorkstationMode('detective');
+              }}
+              className={`px-2 py-1 rounded transition-all flex items-center gap-1 cursor-pointer ${
+                workstationMode === 'detective'
+                  ? 'bg-[var(--color-accent-blue)] text-white font-semibold shadow-xs'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
+              }`}
+              title="Student & Citizen Detective: Simplified labels, guided clues, and audio sonification"
+            >
+              <span aria-hidden="true">🎓</span>
+              <span>Detective</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                useStore.getState().setWorkstationMode('policy');
+              }}
+              className={`px-2 py-1 rounded transition-all flex items-center gap-1 cursor-pointer ${
+                workstationMode === 'policy'
+                  ? 'bg-amber-600 text-white font-semibold shadow-xs'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
+              }`}
+              title="City Planner & Policy: Compound hazards, joint return periods, and climate velocity"
+            >
+              <span aria-hidden="true">🏛️</span>
+              <span>Policy</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                useStore.getState().setWorkstationMode('pro');
+              }}
+              className={`px-2 py-1 rounded transition-all flex items-center gap-1 cursor-pointer ${
+                workstationMode === 'pro'
+                  ? 'bg-emerald-600 text-white font-semibold shadow-xs'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
+              }`}
+              title="Climate Scientist & NASA Judge: Full non-parametric rigor, LISA, FDR control, and NetCDF/LaTeX"
+            >
+              <span aria-hidden="true">🔬</span>
+              <span>Pro</span>
+            </button>
+          </div>
+
           <button
             onClick={() => {
               playTactileClick(750);
@@ -373,6 +426,60 @@ export default function Header() {
               <span className="text-[var(--color-text-muted)]" aria-hidden="true">↗</span>
             </a>
           </nav>
+
+          {/* Mobile Persona Switcher */}
+          <div className="p-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] space-y-1.5">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-[var(--color-text-muted)] font-semibold px-1">
+              Workstation Persona
+            </div>
+            <div className="grid grid-cols-3 gap-1 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(600);
+                  useStore.getState().setWorkstationMode('detective');
+                }}
+                className={`py-1.5 px-1 rounded text-center transition-all flex flex-col items-center gap-0.5 cursor-pointer ${
+                  workstationMode === 'detective'
+                    ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+                    : 'text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)]'
+                }`}
+              >
+                <span aria-hidden="true">🎓</span>
+                <span className="text-[10px]">Detective</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(600);
+                  useStore.getState().setWorkstationMode('policy');
+                }}
+                className={`py-1.5 px-1 rounded text-center transition-all flex flex-col items-center gap-0.5 cursor-pointer ${
+                  workstationMode === 'policy'
+                    ? 'bg-amber-600 text-white font-semibold'
+                    : 'text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)]'
+                }`}
+              >
+                <span aria-hidden="true">🏛️</span>
+                <span className="text-[10px]">Policy</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(600);
+                  useStore.getState().setWorkstationMode('pro');
+                }}
+                className={`py-1.5 px-1 rounded text-center transition-all flex flex-col items-center gap-0.5 cursor-pointer ${
+                  workstationMode === 'pro'
+                    ? 'bg-emerald-600 text-white font-semibold'
+                    : 'text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)]'
+                }`}
+              >
+                <span aria-hidden="true">🔬</span>
+                <span className="text-[10px]">Pro</span>
+              </button>
+            </div>
+          </div>
 
           <div className="pt-3 border-t border-[var(--color-border-subtle)] flex flex-col gap-2">
             <button

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import useStore from '../store/useStore';
 import { DATASET_VARIABLES, DETECTIVE_PRESETS, GCOS_ECV_MAP } from '../utils/helpers';
+import { getLabels } from '../utils/modeLabels';
 import { playTactileClick } from '../utils/audio';
 import QualityGatePanel from './QualityGatePanel';
 
@@ -9,8 +10,9 @@ export default function AnalysisPanel() {
     dataset, variable, startYear, endYear, bbox, useFdr, isLoading,
     setFormField, setBbox, clearBbox, executeAnalysis, executeCompoundAnalysis, loadPreset,
     setCustomDataModalOpen, setDiscoveryModalOpen, setRegionalCompareModalOpen, setQualityGateResult,
-    setDetectiveWizardModalOpen,
+    setDetectiveWizardModalOpen, workstationMode,
   } = useStore();
+  const L = getLabels(workstationMode);
 
   const [validationError, setValidationError] = useState('');
   const [isCooldown, setIsCooldown] = useState(false);
@@ -151,11 +153,11 @@ export default function AnalysisPanel() {
               <path d="M11 8v6" />
               <path d="M8 11h6" />
             </svg>
-            <span>Data Detective Wizard</span>
+            <span>{L.wizardTitle}</span>
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--color-accent-blue)] text-white">3-Step</span>
           </div>
           <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
-            Guided hypothesis builder for students & evaluators.
+            {L.wizardDesc}
           </p>
         </div>
         <button
@@ -173,7 +175,7 @@ export default function AnalysisPanel() {
       {/* Quick Preset Ribbon */}
       <div>
         <div className="instrument-heading !text-xs mb-2">
-          Exemplar Transect Presets
+          {L.presetsLabel}
         </div>
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(DETECTIVE_PRESETS).map(([key, preset]) => (
@@ -204,7 +206,7 @@ export default function AnalysisPanel() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="form-label" htmlFor="data-stream-select">
-              Data Stream
+              {L.dataStreamLabel}
             </label>
             <button
               type="button"
@@ -266,7 +268,7 @@ export default function AnalysisPanel() {
 
         <div>
           <label className="form-label block mb-1.5" htmlFor="variable-select">
-            Variable
+            {L.variableLabel}
           </label>
           <select
             id="variable-select"
@@ -426,7 +428,7 @@ export default function AnalysisPanel() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <span className="form-label">
-              Spatial Bounding Box
+              {L.bboxLabel}
             </span>
             <button
               type="button"
@@ -484,7 +486,7 @@ export default function AnalysisPanel() {
 
         {/* FDR Toggle */}
         <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-[var(--color-text-secondary)] font-mono">FDR Correction (q ≤ 0.05)</span>
+          <span className="text-xs text-[var(--color-text-secondary)] font-mono">{L.fdrLabel}</span>
           <button
             type="button"
             onClick={() => {
@@ -547,7 +549,7 @@ export default function AnalysisPanel() {
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
               </svg>
-              <span>{isCooldown ? 'Cooldown Active...' : (gateResult?.can_execute === false ? 'Execution Blocked by Gate' : 'Execute Trend Detection')}</span>
+              <span>{isCooldown ? 'Cooldown Active...' : (gateResult?.can_execute === false ? 'Execution Blocked by Gate' : L.executeBtn)}</span>
             </span>
           )}
         </button>
@@ -567,7 +569,7 @@ export default function AnalysisPanel() {
           <svg className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
           </svg>
-          <span>Compound Hazard Analysis (T & P)</span>
+          <span>{L.compoundBtn}</span>
         </button>
 
         {/* Tellura 2.0 Exploratory Launchers */}

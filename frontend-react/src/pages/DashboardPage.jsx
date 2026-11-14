@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const analysisData = useStore((s) => s.analysisData);
   const selectedCell = useStore((s) => s.selectedCell);
   const analysisId = useStore((s) => s.analysisId);
+  const workstationMode = useStore((s) => s.workstationMode);
   const robustnessModalOpen = useStore((s) => s.robustnessModalOpen);
   const qualityProfileModalOpen = useStore((s) => s.qualityProfileModalOpen);
   const reproducibilityModalOpen = useStore((s) => s.reproducibilityModalOpen);
@@ -375,10 +376,14 @@ export default function DashboardPage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent-blue)] shrink-0" />
                 <div>
                   <p className="font-['Space_Grotesk'] text-xs font-semibold text-[var(--color-text-main)]">
-                    Computing Statistical Analysis
+                    {workstationMode === 'detective' ? 'Investigating Satellite Clues' : workstationMode === 'policy' ? 'Evaluating Climate Risk Indicators' : 'Computing Statistical Analysis'}
                   </p>
                   <p className="text-[10px] text-[var(--color-text-secondary)] font-mono">
-                    Evaluating Theil-Sen Slope • Mann-Kendall τ • Benjamini-Hochberg FDR • Anselin LISA Regimes
+                    {workstationMode === 'detective'
+                      ? 'Searching for significant warming and cooling patterns across NASA observations'
+                      : workstationMode === 'policy'
+                      ? 'Evaluating Trend Velocity • Compound Aridification • Copula Return Periods'
+                      : 'Evaluating Theil-Sen Slope • Mann-Kendall τ • Benjamini-Hochberg FDR • Anselin LISA Regimes'}
                   </p>
                 </div>
               </div>
@@ -392,11 +397,26 @@ export default function DashboardPage() {
           <section className="mb-4 pt-1">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--color-border-subtle)]">
               <div>
-                <h1 className="font-['Space_Grotesk'] text-lg sm:text-xl font-bold tracking-tight text-[var(--color-text-main)] flex items-center gap-2">
+                <h1 className="font-['Space_Grotesk'] text-lg sm:text-xl font-bold tracking-tight text-[var(--color-text-main)] flex flex-wrap items-center gap-2">
                   <span>Analysis Workspace</span>
                   <span className="text-[11px] font-mono font-normal text-[var(--color-text-muted)] border-l border-[var(--color-border-subtle)] pl-2">
                     Spatiotemporal Trend Discovery System
                   </span>
+                  {workstationMode === 'detective' && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
+                      🎓 Detective Track
+                    </span>
+                  )}
+                  {workstationMode === 'policy' && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                      🏛️ Policy Track
+                    </span>
+                  )}
+                  {workstationMode === 'pro' && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                      🔬 Pro Science Track
+                    </span>
+                  )}
                 </h1>
               </div>
 
