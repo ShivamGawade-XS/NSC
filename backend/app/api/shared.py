@@ -38,8 +38,8 @@ ADAPTERS = {
 CACHE_LOCK = threading.Lock()
 ANALYSIS_CACHE: OrderedDict[str, dict[str, Any]] = OrderedDict()
 
-# Concurrency semaphore protecting compute resources against saturation
-COMPUTE_SEMAPHORE = threading.Semaphore(int(os.getenv("MAX_CONCURRENT_COMPUTATIONS", "6")))
+# Concurrency semaphore protecting compute resources against memory/CPU saturation on free tiers
+COMPUTE_SEMAPHORE = threading.Semaphore(int(os.getenv("MAX_CONCURRENT_COMPUTATIONS", "2")))
 
 
 def get_cached_analysis(analysis_id: str) -> dict[str, Any] | None:

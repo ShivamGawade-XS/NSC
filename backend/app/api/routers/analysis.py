@@ -235,16 +235,15 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
 
     analysis_id = _generate_analysis_id(req)
     # High-performance L1/L2 cache evaluation: serve verified authentic analysis in <15ms
-    if not req.prefer_live or request.headers.get("X-Prefer-Cache", "").lower() in ("true", "1"):
+    force_refresh = request.headers.get("X-Force-Refresh", "").lower() in ("true", "1")
+    if not force_refresh:
         cached = get_cached_analysis(analysis_id)
         if cached and "response_json" in cached and isinstance(cached["response_json"], str):
-            force_refresh = request.headers.get("X-Force-Refresh", "").lower() in ("true", "1")
-            if not force_refresh:
-                return Response(
-                    content=cached["response_json"],
-                    media_type="application/json",
-                    headers={"X-Cache": "HIT", "X-Analysis-ID": analysis_id}
-                )
+            return Response(
+                content=cached["response_json"],
+                media_type="application/json",
+                headers={"X-Cache": "HIT", "X-Analysis-ID": analysis_id}
+            )
 
     if req.variable_id in ("ALLSKY_SFC_SW_DWN",) and req.start_year < 2001 and req.end_year >= 2001:
         raise HTTPException(
@@ -315,7 +314,7 @@ def run_analysis(request: Request, req: AnalysisRequest) -> AnalysisResponse | R
         )
 
     # Acquire compute concurrency semaphore to prevent CPU/memory saturation
-    acquired = COMPUTE_SEMAPHORE.acquire(blocking=True, timeout=2.0)
+    acquired = COMPUTE_SEMAPHORE.acquire(blocking=True, timeout=5.0)
     if not acquired:
         raise HTTPException(
             status_code=503,

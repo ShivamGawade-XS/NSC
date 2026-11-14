@@ -12,6 +12,10 @@ services:
     envVars:
       - key: ENVIRONMENT
         value: production
+      - key: MAX_CONCURRENT_COMPUTATIONS
+        value: "2"
+      - key: DAILY_LLM_CALL_LIMIT
+        value: "150"
       - key: SECRET_KEY
         generateValue: true      # Render generates a 64-char random string
       - key: ALLOWED_ORIGINS
