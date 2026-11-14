@@ -89,7 +89,15 @@ jobs:
       - name: Run Container & Verify Health
         run: |
           docker run -d -p 8000:8000 --name tellura-ci tellura:latest
-          sleep 5
+          for i in {1..15}; do
+            if curl -s -f http://127.0.0.1:8000/api/v1/health; then
+              echo "Container is healthy!"
+              break
+            fi
+            echo "Waiting for container to initialize ($i/15)..."
+            sleep 2
+          done
+          docker logs tellura-ci
           curl -f http://127.0.0.1:8000/api/v1/health || exit 1
           docker stop tellura-ci
 
