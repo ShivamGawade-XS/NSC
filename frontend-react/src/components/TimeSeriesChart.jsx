@@ -717,7 +717,7 @@ export default function TimeSeriesChart() {
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
             Dual-Axis Bivariate: Temperature (°C, Left) vs Precipitation (mm/day, Right)
           </span>
-          <span className="text-[9px] text-[var(--color-text-secondary)]">CAI Aridification Index</span>
+          <span className="text-[10px] text-[var(--color-text-secondary)]">CAI Aridification Index</span>
         </div>
       ) : selectedCell?.changepoint_year && selectedCell?.changepoint_p_value !== undefined && selectedCell?.changepoint_p_value !== null && Number(selectedCell?.changepoint_p_value) <= 0.05 ? (
         <div className="flex items-center justify-between px-3 py-1.5 mb-1.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded text-xs font-mono text-[var(--color-text-main)]">
@@ -758,7 +758,7 @@ export default function TimeSeriesChart() {
           </button>
 
           {isPlayingAudio && audioTelemetry ? (
-            <div className="flex items-center gap-1.5 text-[9px] text-[var(--color-text-secondary)]">
+            <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-secondary)]">
               <span className="font-bold text-[var(--color-accent-blue)]">{audioTelemetry.year}</span>
               <span>•</span>
               <span>{audioTelemetry.freq} Hz</span>
@@ -769,7 +769,7 @@ export default function TimeSeriesChart() {
               )}
             </div>
           ) : (
-            <span className="text-[9px] text-[var(--color-text-muted)] hidden sm:inline-block">
+            <span className="text-[10px] text-[var(--color-text-muted)] hidden sm:inline-block">
               Acoustic Pitch Mapping (Section 508)
             </span>
           )}
@@ -798,7 +798,7 @@ export default function TimeSeriesChart() {
                   playTactileClick(650);
                   setChartView('trend');
                 }}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-all cursor-pointer ${
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
                   chartView === 'trend'
                     ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text-main)] shadow-xs font-semibold'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
@@ -813,7 +813,7 @@ export default function TimeSeriesChart() {
                   playTactileClick(650);
                   setChartView('stripes');
                 }}
-                className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1 ${
                   chartView === 'stripes'
                     ? 'bg-[var(--color-bg-elevated)] text-rose-500 dark:text-rose-400 shadow-xs font-semibold'
                     : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
@@ -837,7 +837,7 @@ export default function TimeSeriesChart() {
                     playTactileClick(600);
                     setCiConfidence(lvl);
                   }}
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-all cursor-pointer ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
                     ciConfidence === lvl
                       ? 'bg-[var(--color-bg-elevated)] text-amber-600 dark:text-amber-400 font-bold'
                       : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'

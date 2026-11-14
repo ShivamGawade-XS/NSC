@@ -33,6 +33,7 @@ def run_attribution_analysis(
         n_years=n_years,
         series=series,
         alpha=alpha,
-        threshold_percentile=threshold_percentile
+        threshold_percentile=threshold_percentile,
+        variable_id=payload.get("variable_id")
     )
 

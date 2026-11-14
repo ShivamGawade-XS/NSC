@@ -311,31 +311,31 @@ export default function EvidencePanel() {
             {cell.isCompound ? (
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Thermal Rate</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Thermal Rate</div>
                   <div className="text-sm font-bold font-mono text-[#ef4444] tabular-nums">
                     {cell.temp_slope > 0 ? '+' : ''}{cell.temp_slope?.toFixed(3)}
                   </div>
-                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">°C / decade</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] font-mono">°C / decade</div>
                 </div>
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Hydro Rate</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Hydro Rate</div>
                   <div className="text-sm font-bold font-mono text-[#06b6d4] tabular-nums font-semibold">
                     {cell.precip_slope > 0 ? '+' : ''}{cell.precip_slope?.toFixed(3)}
                   </div>
-                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">mm/day / dec</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] font-mono">mm/day / dec</div>
                 </div>
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">CAI Index</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">CAI Index</div>
                   <div className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums font-semibold">
                     +{((cell.cai ?? cell.tau) ?? 0).toFixed(3)}
                   </div>
-                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">Aridification</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] font-mono">Aridification</div>
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.slopeLabel}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.slopeLabel}</div>
                   <div className={`text-sm font-bold font-mono tabular-nums ${
                     (cell.slope ?? 0) > 0 
                       ? 'text-rose-600 dark:text-rose-400' 
@@ -345,23 +345,23 @@ export default function EvidencePanel() {
                   }`}>
                     {(cell.slope ?? 0) > 0 ? '+' : ''}{(cell.slope ?? 0).toFixed(4)}
                   </div>
-                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">{cell.slope_units}</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] font-mono">{cell.slope_units}</div>
                 </div>
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.pValueLabel}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.pValueLabel}</div>
                   <div className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 font-semibold">
                     {formatPVal(cell.p_value)}
                   </div>
-                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">{simplified ? '' : `q = ${formatPVal(cell.q_value)}`}</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] font-mono">{simplified ? '' : `q = ${formatPVal(cell.q_value)}`}</div>
                 </div>
                 <div className="bg-[var(--color-bg-elevated)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
-                  <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.tauLabel}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">{L.tauLabel}</div>
                   <div className="text-sm font-bold font-mono text-[var(--color-text-main)] tabular-nums font-semibold">
                     {cell.tau !== undefined && cell.tau !== null && !isNaN(cell.tau)
                       ? `${cell.tau > 0 ? '+' : ''}${Number(cell.tau).toFixed(3)}`
                       : 'N/A'}
                   </div>
-                  <div className="text-[8px] text-[var(--color-text-muted)] font-mono">{simplified ? 'Higher = stronger trend' : 'Rank Corr'}</div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] font-mono">{simplified ? 'Higher = stronger trend' : 'Rank Corr'}</div>
                 </div>
               </div>
             )}
@@ -369,34 +369,34 @@ export default function EvidencePanel() {
             {/* Test Statistics Secondary Grid */}
             <div className="grid grid-cols-2 gap-2 text-xs font-mono">
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.zLabel}</span>
+                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.zLabel}</span>
                 <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                   {cell.z !== undefined && cell.z !== null
                     ? `${cell.z > 0 ? '+' : ''}${cell.z.toFixed(2)}`
                     : (cell.p_value < 0.001 ? '|Z| > 3.29' : (cell.p_value < 0.05 ? '|Z| > 1.96' : '|Z| ≤ 1.96'))}
                 </span>
-                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">p = {formatPVal(cell.p_value)}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">p = {formatPVal(cell.p_value)}</span>
               </div>
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.ciLabel}</span>
+                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.ciLabel}</span>
                 <span className="font-semibold text-[var(--color-text-main)] tabular-nums text-[11px]">
                   {cell.ci_lower !== undefined ? `[${cell.ci_lower.toFixed(3)}, ${cell.ci_upper.toFixed(3)}]` : 'Bounded'}
                 </span>
-                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">{cell.slope_units}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">{cell.slope_units}</span>
               </div>
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.spatialLabel}</span>
+                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.spatialLabel}</span>
                 <span className="font-semibold text-[var(--color-text-main)] text-[11px]">
                   {LISA_LABELS[cluster] || cluster}
                 </span>
-                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">{L.spatialSub}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">{L.spatialSub}</span>
               </div>
               <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.footprintLabel}</span>
+                <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">{L.footprintLabel}</span>
                 <span className="font-semibold text-[var(--color-text-main)] text-[11px] tabular-nums">
                   {metricScale ? `${metricScale.areaKm2} km²` : '≈ 2,650 km²'}
                 </span>
-                <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">{L.footprintSub}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">{L.footprintSub}</span>
               </div>
             </div>
 
@@ -502,11 +502,11 @@ export default function EvidencePanel() {
                     const warmRate = Math.round((stats.warmExtremes / stats.total) * 100);
                     return (
                       <div key={decade} className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] text-center">
-                        <span className="text-[9px] font-bold text-[var(--color-text-muted)] block">{decade}</span>
+                        <span className="text-[10px] font-bold text-[var(--color-text-muted)] block">{decade}</span>
                         <span className={`text-[11px] font-bold tabular-nums block ${stats.warmExtremes > 0 ? 'text-rose-500 dark:text-rose-400' : 'text-[var(--color-text-main)]'}`}>
                           {stats.warmExtremes} / {stats.total} yr
                         </span>
-                        <span className="text-[8px] text-[var(--color-text-muted)] block">
+                        <span className="text-[10px] text-[var(--color-text-muted)] block">
                           {warmRate > 0 ? `${warmRate}% extreme` : '0% baseline'}
                         </span>
                       </div>
@@ -530,7 +530,7 @@ export default function EvidencePanel() {
                     {L.attributionTitle}
                   </span>
                 </div>
-                <span className="text-[9px] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)] font-bold">
+                <span className="text-[10px] bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)] font-bold">
                   Stott / Otto
                 </span>
               </div>
@@ -539,20 +539,20 @@ export default function EvidencePanel() {
                 <>
                   <div className="grid grid-cols-2 gap-2 text-xs mb-2">
                     <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                      <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Risk Ratio (RR)</span>
+                      <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Risk Ratio (RR)</span>
                       <span className="text-sm font-bold text-[var(--color-text-main)] tabular-nums">
                         {ev.attribution.risk_ratio !== undefined ? `${ev.attribution.risk_ratio}×` : '—'}
                       </span>
-                      <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">Multiplier</span>
+                      <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">Multiplier</span>
                     </div>
                     <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                      <span className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Attributable Risk</span>
+                      <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Attributable Risk</span>
                       <span className="text-sm font-bold text-[var(--color-text-main)] tabular-nums">
                         {ev.attribution.fraction_of_attributable_risk !== undefined
                           ? `${(ev.attribution.fraction_of_attributable_risk * 100).toFixed(1)}%`
                           : '—'}
                       </span>
-                      <span className="text-[8px] text-[var(--color-text-muted)] block mt-0.5">
+                      <span className="text-[10px] text-[var(--color-text-muted)] block mt-0.5">
                         90% CI: [{ev.attribution.far_ci_lower !== undefined ? ev.attribution.far_ci_lower : '—'}, {ev.attribution.far_ci_upper !== undefined ? ev.attribution.far_ci_upper : '—'}]
                       </span>
                     </div>

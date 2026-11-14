@@ -180,7 +180,8 @@ def _compute_cell_detail(
         slope=float(slope),
         n_years=len(years),
         series=series,
-        alpha=cached["req"].alpha
+        alpha=cached["req"].alpha,
+        variable_id=getattr(cached["req"], "variable_id", None)
     )
 
     # Hawkins & Sutton (2012) Signal-to-Noise Ratio (SNR) / IPCC AR6 Time of Emergence (ToE)

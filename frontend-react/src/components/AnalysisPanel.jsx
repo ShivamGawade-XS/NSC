@@ -254,14 +254,32 @@ export default function AnalysisPanel() {
             </div>
           )}
           {dataset === 'merra2_reanalysis' && (
-            <div className="mt-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-[10px] text-blue-900 dark:text-blue-200 leading-relaxed font-sans">
-              <div className="font-semibold flex items-center gap-1 text-blue-950 dark:text-blue-100 mb-0.5">
-                <svg className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                </svg>
-                NASA GES DISC Earthdata Notice
+            <div className="mt-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-[10px] text-blue-900 dark:text-blue-200 leading-relaxed font-sans space-y-1.5">
+              <div className="font-semibold flex items-center justify-between text-blue-950 dark:text-blue-100">
+                <span className="flex items-center gap-1">
+                  <svg className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                  </svg>
+                  NASA GES DISC Continental Domain
+                </span>
+                <span className="text-[9px] font-mono bg-blue-500/20 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold">
+                  [-170°W to -50°W]
+                </span>
               </div>
-              Exemplar transects stream pre-assimilated NetCDF-4 observation fixtures. Arbitrary global coordinates require NASA Earthdata credentials configured in your environment.
+              <p>
+                Offline assimilation covers the North America domain. For instant zero-latency exploration, snap to the verified Continental transect:
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(700);
+                  setFormField('bbox', [-102.0, 31.0, -94.0, 39.0]);
+                }}
+                className="w-full py-1 px-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-mono text-[10px] font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <span>🎯</span>
+                <span>Snap Coordinates to Central US Transect</span>
+              </button>
             </div>
           )}
         </div>

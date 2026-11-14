@@ -93,6 +93,15 @@ const MODE_LABELS = {
     keyGridNav:          'Move with Arrow Keys',
     keyFdrMask:          'Filter: Press F',
     keyLisa:             'Neighborhoods: Press L',
+
+    // Map tooltips & legend
+    mapTooltipSlope:     'Trend Speed',
+    mapTooltipCi:        'Confidence Range',
+    mapTooltipLisa:      'Neighborhood',
+    mapTooltipConf:      'Confidence',
+    mapLegendTitle:      'Trend Speed',
+    mapPillSignificant:  'Verified Zones',
+    mapPillSpatial:      'Neighborhood Pattern',
   },
 
   // ── 🏛️ Policy (City Planner / Risk Analyst) ─────────────────
@@ -165,6 +174,15 @@ const MODE_LABELS = {
     keyGridNav:          'Grid Navigation: Arrow Keys',
     keyFdrMask:          'FDR Significance Mask: Key [F]',
     keyLisa:             'Spatial Risk Clusters: Key [L]',
+
+    // Map tooltips & legend
+    mapTooltipSlope:     'Rate of Change',
+    mapTooltipCi:        'Confidence Interval',
+    mapTooltipLisa:      'Risk Cluster',
+    mapTooltipConf:      'Adjusted Sig.',
+    mapLegendTitle:      'Rate of Change',
+    mapPillSignificant:  'Elevated Risk Cells',
+    mapPillSpatial:      'Spatial Autocorrelation',
   },
 
   // ── 🔬 Pro (Climate Scientist / NASA Judge) ──────────────────
@@ -237,6 +255,15 @@ const MODE_LABELS = {
     keyGridNav:          'Grid Navigation: Arrow Keys (↑↓←→)',
     keyFdrMask:          'FDR Significance Mask: Key [F]',
     keyLisa:             'Anselin LISA Regimes: Key [L]',
+
+    // Map tooltips & legend
+    mapTooltipSlope:     'Slope',
+    mapTooltipCi:        '95% CI',
+    mapTooltipLisa:      'LISA',
+    mapTooltipConf:      'p-val / FDR q',
+    mapLegendTitle:      'Theil-Sen Trend Rate',
+    mapPillSignificant:  'FDR Sig (q ≤ 0.05)',
+    mapPillSpatial:      'Moran’s I',
   },
 };
 

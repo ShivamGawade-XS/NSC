@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useStore from '../store/useStore';
 import { getTrendColor, getLISAColor, getHazardColor, formatCoords, escapeHtml } from '../utils/helpers';
+import { getLabels } from '../utils/modeLabels';
 import JudgeTourOverlay from './JudgeTourOverlay';
 import PlanetaryGlobe3D from './PlanetaryGlobe3D';
 import { playTactileClick } from '../utils/audio';
@@ -69,6 +70,8 @@ export default function TrendMap() {
   const endYear = useStore((s) => s.endYear);
   const selectCell = useStore((s) => s.selectCell);
   const toggleCompareMode = useStore((s) => s.toggleCompareMode);
+  const workstationMode = useStore((s) => s.workstationMode);
+  const L_map = getLabels(workstationMode);
   const [showGlobe3D, setShowGlobe3D] = useState(false);
 
 function inferGridStep(grid) {
@@ -165,13 +168,23 @@ function inferGridStep(grid) {
         ? `[${cell.ci_lower > 0 ? '+' : ''}${cell.ci_lower.toFixed(3)}, ${cell.ci_upper > 0 ? '+' : ''}${cell.ci_upper.toFixed(3)}]`
         : 'N/A';
 
+      const confText = workstationMode === 'detective'
+        ? (cell.q_value !== undefined && cell.q_value <= 0.05 ? 'High Confidence (Verified)' : 'Normal Variation')
+        : workstationMode === 'policy'
+          ? (cell.q_value !== undefined && cell.q_value <= 0.05 ? `Significant (q=${cell.q_value.toFixed(3)})` : `Baseline (q=${cell.q_value !== undefined ? cell.q_value.toFixed(3) : 'N/A'})`)
+          : `<strong>p-val:</strong> ${escapeHtml(cell.p_value !== undefined ? cell.p_value.toFixed(4) : 'N/A')} | <strong>FDR q:</strong> ${escapeHtml(cell.q_value !== undefined ? cell.q_value.toFixed(4) : 'N/A')}`;
+
+      const lisaText = workstationMode === 'detective'
+        ? (cell.lisa_cluster === 'High-High' ? 'Warming Neighborhood (Hotspot)' : cell.lisa_cluster === 'Low-Low' ? 'Cooling Neighborhood (Refugia)' : cell.lisa_cluster || 'Normal')
+        : (cell.lisa_cluster || 'NS');
+
       marker.bindTooltip(`
         <div style="font-family: var(--font-sans, system-ui, sans-serif); font-size: 11px;">
           <strong>Coords:</strong> ${escapeHtml(formatCoords(cell.lat, cell.lon))}<br/>
-          <strong>Slope:</strong> ${escapeHtml((cell.slope > 0 ? '+' : '') + cell.slope.toFixed(4))}<br/>
-          <strong>95% CI:</strong> ${escapeHtml(ciText)}<br/>
-          <strong>LISA:</strong> ${escapeHtml(cell.lisa_cluster || 'NS')}<br/>
-          <strong>p-val:</strong> ${escapeHtml(cell.p_value !== undefined ? cell.p_value.toFixed(4) : 'N/A')} | <strong>FDR q:</strong> ${escapeHtml(cell.q_value !== undefined ? cell.q_value.toFixed(4) : 'N/A')}<br/>
+          <strong>${escapeHtml(L_map.mapTooltipSlope)}:</strong> ${escapeHtml((cell.slope > 0 ? '+' : '') + cell.slope.toFixed(4))}<br/>
+          <strong>${escapeHtml(L_map.mapTooltipCi)}:</strong> ${escapeHtml(ciText)}<br/>
+          <strong>${escapeHtml(L_map.mapTooltipLisa)}:</strong> ${escapeHtml(lisaText)}<br/>
+          <strong>${escapeHtml(L_map.mapTooltipConf)}:</strong> ${confText}<br/>
           <span style="color: #38bdf8; display: inline-block; margin-top: 3px; padding-top: 3px; border-top: 1px solid rgba(255,255,255,0.15);">
             <strong>4D Epoch (${escapeHtml(activeYear)}):</strong> Net Shift: ${escapeHtml((accumulatedShift > 0 ? '+' : '') + accumulatedShift)} ${escapeHtml(cell.slope_units || '')}
           </span>
@@ -184,7 +197,7 @@ function inferGridStep(grid) {
       });
       gridLayerRef.current?.addLayer(marker);
     });
-  }, [analysisData, maskSigOnly, showLisa, selectCell, isRasterMode, timeScrubberYear, startYear, endYear]);
+  }, [analysisData, maskSigOnly, showLisa, selectCell, isRasterMode, timeScrubberYear, startYear, endYear, workstationMode, L_map]);
 
   // 2. Render Compound Grid
   const renderCompoundGrid = useCallback((cells) => {
@@ -522,6 +535,11 @@ function inferGridStep(grid) {
     e.preventDefault();
     const container = mapRef.current;
     if (!container) return;
+    try {
+      e.target.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Ignored if target does not support pointer capture
+    }
 
     const onMove = (moveEv) => {
       const rect = container.getBoundingClientRect();
@@ -529,7 +547,12 @@ function inferGridStep(grid) {
       setCurtainSplit(Math.round(pct));
     };
 
-    const onUp = () => {
+    const onUp = (upEv) => {
+      try {
+        e.target.releasePointerCapture?.(upEv.pointerId);
+      } catch {
+        // Ignored if pointer capture was already released
+      }
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
@@ -583,8 +606,13 @@ function inferGridStep(grid) {
       {showCurtainMode && (
         <div
           onPointerDown={handleCurtainPointerDown}
-          className="absolute top-0 bottom-0 z-[1000] w-1 bg-[var(--color-accent-blue)] cursor-ew-resize flex items-center justify-center border-x border-white/30 shadow-md"
-          style={{ left: `${curtainSplit}%` }}
+          className="absolute top-0 bottom-0 z-[1000] w-1 bg-[var(--color-accent-blue)] cursor-ew-resize flex items-center justify-center border-x border-white/30 shadow-md touch-none select-none"
+          style={{ left: `${curtainSplit}%`, touchAction: 'none' }}
+          role="slider"
+          aria-label="Satellite Imagery Curtain Splitter"
+          aria-valuenow={curtainSplit}
+          aria-valuemin={5}
+          aria-valuemax={95}
         >
           <div className="w-6 h-6 rounded bg-[var(--color-accent-blue)] text-white flex items-center justify-center text-[10px] font-bold shadow pointer-events-auto select-none">
             ↔
@@ -952,7 +980,7 @@ function inferGridStep(grid) {
           ) : (
             <div>
               <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
-                <span>Theil-Sen Trend Rate</span>
+                <span>{L_map.mapLegendTitle || 'Theil-Sen Trend Rate'}</span>
                 <span>{analysisData.slope_units || '°C / dec'}</span>
               </div>
               <div

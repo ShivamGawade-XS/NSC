@@ -12,12 +12,23 @@ import numpy as np
 import scipy.stats as stats
 
 
+VARIABLE_CLIMATOLOGY: dict[str, tuple[float, float]] = {
+    "T2M": (15.0, 1.8),
+    "PRECTOT": (2.5, 1.2),
+    "PRECTOTCORR": (2.5, 1.2),
+    "ALLSKY_SFC_SW_DWN": (18.5, 3.2),
+    "WS10M": (4.5, 1.6),
+    "RH2M": (65.0, 11.5),
+}
+
+
 def compute_event_attribution(
     slope: float,
     n_years: int = 24,
     series: list[float] | np.ndarray | None = None,
     alpha: float = 0.05,
-    threshold_percentile: float = 90.0
+    threshold_percentile: float = 90.0,
+    variable_id: str | None = None,
 ) -> dict[str, Any]:
     """
     Compute probabilistic climate event attribution metrics:
@@ -42,10 +53,13 @@ def compute_event_attribution(
     else:
         clean_s = np.array([], dtype=float)
 
-    if len(clean_s) >= 10:
-        # Factual current state mean is the recent end-of-period mean (last ~20% of series)
-        recent_window = max(2, len(clean_s) // 5)
-        mu_1 = float(np.mean(clean_s[-recent_window:]))
+    if len(clean_s) >= 3:
+        # Factual current state mean from actual observations
+        if len(clean_s) >= 10:
+            recent_window = max(2, len(clean_s) // 5)
+            mu_1 = float(np.mean(clean_s[-recent_window:]))
+        else:
+            mu_1 = float(np.mean(clean_s))
         sigma = float(np.std(clean_s, ddof=1)) if np.std(clean_s, ddof=1) > 1e-4 else 1.0
 
         # Empirical Sen/OLS residual standard error of decadal slope SE(beta)
@@ -69,8 +83,11 @@ def compute_event_attribution(
             except Exception:
                 use_gev = False
     else:
-        mu_1 = 15.0  # Normalized baseline reference
-        sigma = max(0.8, abs(slope) * 2.5)
+        # Variable-aware climatological baseline fallback
+        var_key = (variable_id or "T2M").upper()
+        default_mu, default_sigma = VARIABLE_CLIMATOLOGY.get(var_key, (15.0, max(0.8, abs(slope) * 2.5)))
+        mu_1 = float(default_mu)
+        sigma = float(default_sigma)
         scale = max(0.01, abs(slope) * 0.20)
 
     is_increase = slope >= 0

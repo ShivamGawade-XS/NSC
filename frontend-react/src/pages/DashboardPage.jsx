@@ -18,6 +18,7 @@ import DataQualityModal from '../components/DataQualityModal';
 import ReproducibilityModal from '../components/ReproducibilityModal';
 import DiscoveryModal from '../components/DiscoveryModal';
 import useStore from '../store/useStore';
+import { getLabels } from '../utils/modeLabels';
 import { trackPageView } from '../utils/analytics';
 import { playTactileClick } from '../utils/audio';
 import { stopSonification } from '../utils/sonification';
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const selectedCell = useStore((s) => s.selectedCell);
   const analysisId = useStore((s) => s.analysisId);
   const workstationMode = useStore((s) => s.workstationMode);
+  const L = getLabels(workstationMode);
   const robustnessModalOpen = useStore((s) => s.robustnessModalOpen);
   const qualityProfileModalOpen = useStore((s) => s.qualityProfileModalOpen);
   const reproducibilityModalOpen = useStore((s) => s.reproducibilityModalOpen);
@@ -500,13 +502,17 @@ export default function DashboardPage() {
                     </span>
                     <span className="text-[var(--color-border-default)] hidden sm:inline">•</span>
                     <span className="text-[var(--color-text-main)] font-medium">
-                      {analysisData.summary?.significant_cells_fdr ?? 0} / {analysisData.summary?.total_cells ?? 0} FDR Sig (q ≤ 0.05)
+                      {analysisData.summary?.significant_cells_fdr ?? 0} / {analysisData.summary?.total_cells ?? 0} {L.mapPillSignificant || 'FDR Sig (q ≤ 0.05)'}
                     </span>
                     {analysisData.summary?.spatial_autocorrelation && (
                       <>
                         <span className="text-[var(--color-border-default)] hidden sm:inline">•</span>
                         <span className="text-[var(--color-text-secondary)]">
-                          Moran’s I: <strong className="text-[var(--color-text-main)] font-bold">{analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'}</strong> ({analysisData.summary.spatial_autocorrelation.interpretation})
+                          {workstationMode === 'detective' ? (
+                            <span>{L.mapPillSpatial}: <strong className="text-[var(--color-text-main)] font-bold">{analysisData.summary.spatial_autocorrelation.interpretation}</strong></span>
+                          ) : (
+                            <span>{L.mapPillSpatial}: <strong className="text-[var(--color-text-main)] font-bold">{analysisData.summary.spatial_autocorrelation.moran_i?.toFixed(3) || '0.000'}</strong> ({analysisData.summary.spatial_autocorrelation.interpretation})</span>
+                          )}
                         </span>
                       </>
                     )}
