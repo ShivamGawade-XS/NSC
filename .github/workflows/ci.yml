@@ -27,7 +27,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
-          pip install ruff pytest pytest-asyncio prometheus-client matplotlib
+          pip install ruff pytest pytest-asyncio pytest-timeout prometheus-client matplotlib
 
       - name: Lint with Ruff
         run: |
@@ -83,12 +83,12 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
-          tags: Tellura:latest
+          tags: tellura:latest
           load: true
 
       - name: Run Container & Verify Health
         run: |
-          docker run -d -p 8000:8000 --name tellura-ci Tellura:latest
+          docker run -d -p 8000:8000 --name tellura-ci tellura:latest
           sleep 5
           curl -f http://127.0.0.1:8000/api/v1/health || exit 1
           docker stop tellura-ci
@@ -96,7 +96,7 @@ jobs:
       - name: Run Trivy Vulnerability Scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "Tellura:latest"
+          image-ref: "tellura:latest"
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
