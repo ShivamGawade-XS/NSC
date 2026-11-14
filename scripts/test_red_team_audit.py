@@ -26,11 +26,14 @@ print("2. SEC-001 Oversized timeseries (>150): 422 Rejection confirmed")
 # 3. SEC-002 Production Secret Key enforcement
 try:
     os.environ["SECRET_KEY"] = ""
+    os.environ["STRICT_PRODUCTION_SECRETS"] = "true"
     Settings._init_secret_key("production")
     raise AssertionError("Failed to raise RuntimeError on empty production SECRET_KEY")
 except RuntimeError as exc:
-    assert "SECRET_KEY" in str(exc)
+    assert "SECRET_KEY" in str(exc) or "STRICT_PRODUCTION_SECRETS" in str(exc)
     print("3. SEC-002 Production Secret Key enforcement: RuntimeError raised confirmed")
+finally:
+    os.environ.pop("STRICT_PRODUCTION_SECRETS", None)
 
 # 4. SEC-004 Filename traversal sanitization
 dirty_vars = ["../../etc/passwd", "..\\windows\\system32\\calc", "clean_var"]

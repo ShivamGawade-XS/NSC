@@ -220,8 +220,8 @@ const MODE_LABELS = {
     variableLabel:       'Variable',
     wizardTitle:         'Data Detective Wizard',
     wizardDesc:          'Guided hypothesis builder for students & evaluators.',
-    executeBtn:          'Execute Analysis',
-    compoundBtn:         'Compound Hazard Discovery',
+    executeBtn:          'Execute Trend Detection',
+    compoundBtn:         'Compound Hazard Analysis (T & P)',
 
     attributionTitle:    'Event Attribution (FAR)',
     aiExplainBtn:        'Literature Mechanism & Drivers',
