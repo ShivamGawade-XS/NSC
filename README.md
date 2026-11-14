@@ -50,11 +50,15 @@ Tellura implements an end-to-end non-parametric analytical pipeline:
 | **Trend Significance** | Naive $t$-test / OLS $p$-value | **Mann-Kendall test with Hamed & Rao (1998) variance correction** | `backend/app/science/trend.py` |
 | **Magnitude of Change** | OLS regression slope | **Theil-Sen median slope with Gilbert (1987) 95% confidence intervals** | `backend/app/science/trend.py` |
 | **Spatial Multiplicity** | Unadjusted raw $p < 0.05$ | **Benjamini-Hochberg (1995) False Discovery Rate (FDR) control** | `backend/app/science/trend.py` |
+| **Field Significance** | Misrepresented stippling | **Wilks (2016) False Discovery Rate field significance verification** | `backend/app/api/routers/analysis.py` |
+| **Signal-to-Noise Emergence** | Unbounded slope magnitude | **Hawkins & Sutton (2012) Time of Emergence (ToE) SNR ($\ge 2.0$)** | `backend/app/api/shared.py` |
+| **Oscillation Decoupling** | Mistaking ENSO for secular trend | **Hamed-Rao VIF ($\eta$) & Monotonic-to-Total Variance Explained ($R^2$)** | `backend/app/api/shared.py` |
 | **Regime Shifts** | Arbitrary visual inflection | **Pettitt (1979) non-parametric changepoint detection** | `backend/app/science/trend.py` |
 | **Spatial Clustering** | Simple color heatmap | **Local Moran's I (LISA) hotspot and coldspot classification** | `backend/app/science/spatial.py` |
 | **Compound Hazards** | Single-variable analysis | **Archimedean Copula bivariate joint exceedance modeling** | `backend/app/science/copula_hazard.py` |
 | **Extreme Event Attribution** | Descriptive statistics | **Fraction of Attributable Risk (FAR) framework (Stott et al., 2004)** | `backend/app/science/attribution.py` |
 | **Thermal Migration** | Static maps | **Spatial Climate Velocity vectors (Burrows et al., Nature 2011)** | `backend/app/science/climate_velocity.py` |
+| **Standard ECV Taxonomy** | Ad-hoc variable naming | **WMO / GCOS Essential Climate Variable (ECV) Tier 1 classification** | `frontend-react/src/utils/helpers.js` |
 
 ---
 
@@ -96,6 +100,28 @@ Grid cells are classified into spatial regimes:
 - **High-High (Hotspots)**: Significant positive rate of change surrounded by similar rapid warming.
 - **Low-Low (Coldspots)**: Statistically cooling/stable cells surrounded by stable cells.
 - **High-Low / Low-High (Spatial Outliers)**: Microclimatic divergence from regional baselines.
+
+### 4. Hawkins & Sutton (2012) Signal-to-Noise Ratio & Time of Emergence (ToE)
+
+To determine whether an observed trend represents a true anthropogenic departure from internal climate variability, Tellura evaluates the Hawkins & Sutton (2012) Signal-to-Noise Ratio:
+
+$$\text{SNR} = \frac{|\Delta y|}{\sigma_{\text{residuals}}} = \frac{|\beta \cdot (t_n - t_1)|}{\sqrt{\frac{1}{n-2} \sum_{i=1}^n (y_i - \hat{y}_i)^2}}$$
+
+Where $\hat{y}_i = \beta \cdot (t_i - t_1) + y_0$. Trends are classified into 3 empirical regimes:
+- **Emergent Signal ($\text{SNR} \ge 2.0$)**: The secular trajectory has permanently cleared the $2\sigma$ natural variability envelope (IPCC AR6 Time of Emergence standard).
+- **Emerging Trend ($1.0 \le \text{SNR} < 2.0$)**: Trend signal exceeds standard error but has not yet fully detached from background swings.
+- **Noise Dominated ($\text{SNR} < 1.0$)**: Internal interannual fluctuations exceed the secular drift magnitude.
+
+### 5. Decoupling Natural Oscillations (ENSO/PDO) via Hamed-Rao VIF
+
+Decadal climate modes (El Niño Southern Oscillation, Pacific Decadal Oscillation) create red-noise persistence in observational records. Tellura computes two metrics to decouple natural cycles from anthropogenic forcing:
+
+1. **Monotonic-to-Total Variance Ratio ($R^2_{\text{trend}}$)**:
+   $$R^2_{\text{trend}} = \frac{\text{Var}(\hat{y})}{\text{Var}(y)} \times 100\%$$
+   Identifies what percentage of total decadal variability is explained by continuous monotonic forcing vs. oscillatory climate cycles.
+2. **Hamed-Rao Variance Inflation Factor ($\eta$)**:
+   $$\eta = \frac{\text{Var}^*(S)}{\text{Var}_0(S)}$$
+   Directly measures the variance expansion required to neutralize temporal autocorrelation, ensuring cyclical persistence is never misdiagnosed as secular climate drift.
 
 ---
 
@@ -164,7 +190,7 @@ flowchart TD
 
 ## Supported NASA Datasets
 
-Tellura integrates data from NASA Earth Science Division missions and models via two standard adapters:
+Tellura integrates data from NASA Earth Science Division missions and models via three standard adapters:
 
 1. **NASA MERRA-2 Atmospheric Reanalysis (GMAO)**
    - Atmospheric assimilation from 1980 to present.
@@ -173,6 +199,10 @@ Tellura integrates data from NASA Earth Science Division missions and models via
 2. **NASA POWER Project (Langley Research Center)**
    - Satellite-derived surface solar and meteorological parameters.
    - Variables: `T2M` (Air Temperature), `PRECTOTCORR` (Precipitation Corrected), `ALLSKY_SFC_SW_DWN` (Shortwave Solar Irradiance), `RH2M` (Relative Humidity), `WS10M` (10-Meter Wind Speed).
+3. **Microsoft Planetary Computer STAC (NASA Space Apps Global Collaborator 2026)**
+   - Open STAC catalog API bridging micro-parcel high-resolution satellite remote sensing with regional synoptic grids.
+   - Resolutions: 30m (USGS/NASA Landsat 8/9 Collection 2) and 10m–20m (ESA Copernicus Sentinel-2 L2A).
+   - Variables: `NDVI` (Normalized Difference Vegetation Index / Canopy Greenness), `NDWI` (Normalized Difference Water Index / Surface Water).
 
 ---
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import useStore from '../store/useStore';
-import { formatCoords, formatPVal, LISA_LABELS } from '../utils/helpers';
+import { formatCoords, formatPVal, LISA_LABELS, GCOS_ECV_MAP } from '../utils/helpers';
 import * as api from '../api/client';
 import { playTactileClick, playTelemetryChime } from '../utils/audio';
 
@@ -29,18 +29,6 @@ function getDecadalExtremes(cell) {
   }
   return { mean, std, threshold, decades };
 }
-
-const GCOS_ECV_MAP = {
-  T2M: 'GCOS ECV-A.1: Atmospheric Surface Temperature',
-  PRECTOT: 'GCOS ECV-A.2: Surface Precipitation (Flux)',
-  PRECTOTCORR: 'GCOS ECV-A.2: Surface Precipitation (Wind-Corrected)',
-  ALLSKY_SFC_SW_DWN: 'GCOS ECV-A.5: Surface Radiation Budget (Shortwave)',
-  WS10M: 'GCOS ECV-A.3: Surface Wind Speed & Dynamics',
-  RH2M: 'GCOS ECV-A.4: Atmospheric Water Vapor (2m RH)',
-  NDVI: 'GCOS ECV-T.1: Terrestrial Vegetation Greenness (Planetary STAC)',
-  NDWI: 'GCOS ECV-T.2: Terrestrial Surface Water Index (Planetary STAC)',
-  Compound: 'WCRP Compound Climate Hazard (Copula Bivariate)',
-};
 
 function ProvenanceBadge({ provenance, summary }) {
   if (!provenance && !summary) return null;

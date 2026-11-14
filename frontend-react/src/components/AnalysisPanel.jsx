@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import useStore from '../store/useStore';
-import { DATASET_VARIABLES, DETECTIVE_PRESETS } from '../utils/helpers';
+import { DATASET_VARIABLES, DETECTIVE_PRESETS, GCOS_ECV_MAP } from '../utils/helpers';
 import { playTactileClick } from '../utils/audio';
 import QualityGatePanel from './QualityGatePanel';
 
@@ -231,12 +231,26 @@ export default function AnalysisPanel() {
           >
             <option value="nasa_power">NASA POWER (Global Live Streaming)</option>
             <option value="merra2_reanalysis">MERRA-2 Reanalysis (North America Continental)</option>
+            <option value="planetary_computer">Microsoft Planetary Computer STAC (Global Offer 2026)</option>
           </select>
           <p className="text-[9px] text-[var(--color-text-muted)] mt-1 font-mono">
             {dataset === 'nasa_power'
               ? 'NASA Langley Research Center • Global Live Stream • DOI: 10.5067/POWER/10.0.0'
+              : dataset === 'planetary_computer'
+              ? 'Microsoft Planetary Computer STAC • Landsat 8/9 & Sentinel-2 • NASA Global Collaborator 2026'
               : 'NASA GMAO Atmospheric • Pre-cached North America • DOI: 10.5067/A7F0JNNUTWOB'}
           </p>
+          {dataset === 'planetary_computer' && (
+            <div className="mt-2 p-2 rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-[10px] text-emerald-900 dark:text-emerald-200 leading-relaxed font-sans">
+              <div className="font-semibold flex items-center gap-1 text-emerald-950 dark:text-emerald-100 mb-0.5">
+                <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                </svg>
+                NASA Space Apps 2026 Global Collaborator
+              </div>
+              Direct STAC query to Landsat 8/9 (30m) &amp; Sentinel-2 (10–20m) multispectral indices across the Microsoft Planetary Computer open catalog.
+            </div>
+          )}
           {dataset === 'merra2_reanalysis' && (
             <div className="mt-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-[10px] text-blue-900 dark:text-blue-200 leading-relaxed font-sans">
               <div className="font-semibold flex items-center gap-1 text-blue-950 dark:text-blue-100 mb-0.5">
@@ -293,6 +307,12 @@ export default function AnalysisPanel() {
                 {activeVarInfo.missions && (
                   <div className="text-[9px] font-mono text-[var(--color-text-muted)]">
                     Missions: {activeVarInfo.missions}
+                  </div>
+                )}
+                {GCOS_ECV_MAP[variable] && (
+                  <div className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 inline-flex items-center gap-1">
+                    <span>🏛️</span>
+                    <span>{GCOS_ECV_MAP[variable]}</span>
                   </div>
                 )}
                 {activeVarInfo.discontinuityWarning && (

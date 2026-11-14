@@ -189,6 +189,45 @@ export const DATASET_VARIABLES = {
       missions: 'NASA GMAO GEOS-5 atmospheric assimilation with satellite radar/gauge integration.',
     },
   ],
+  planetary_computer: [
+    {
+      id: 'NDVI',
+      label: 'Normalized Difference Vegetation Index (NDVI) [30m / 10m]',
+      plainName: 'Canopy Greenness & Vegetation Health',
+      domain: 'Biosphere & Terrestrial Vegetation',
+      units: 'index [-1, 1]',
+      description: 'Photosynthetic canopy vigor derived from Landsat 8/9 & Sentinel-2 L2A surface reflectance',
+      eli5: 'A measure of how green and healthy plants are, calculated from how leaves reflect near-infrared sunlight.',
+      earthSystemRole: 'Direct proxy for terrestrial primary productivity, forest biomass, and agricultural vigor.',
+      detectiveClue: 'Rising = vegetative greening or agricultural expansion; Falling = canopy dieback, deforestation, or drought stress.',
+      missions: 'USGS/NASA Landsat 8/9 Collection 2 & ESA Copernicus Sentinel-2 via Planetary Computer STAC (Global Offer 2026).',
+    },
+    {
+      id: 'NDWI',
+      label: 'Normalized Difference Water Index (NDWI) [30m / 10m]',
+      plainName: 'Surface Water & Canopy Moisture',
+      domain: 'Hydrology & Surface Water',
+      units: 'index [-1, 1]',
+      description: 'Surface water delineation and leaf moisture content (Green & NIR reflectance)',
+      eli5: 'Highlights open water bodies, wetlands, and water content inside plant leaves.',
+      earthSystemRole: 'Monitors reservoir levels, wetland retreat, and surface hydrological changes.',
+      detectiveClue: 'Falling = drying reservoirs and shrinking wetlands; Rising = flooding and inundation expansion.',
+      missions: 'USGS/NASA Landsat 8/9 & ESA Sentinel-2 via Planetary Computer STAC (Global Offer 2026).',
+    },
+  ],
+};
+
+// Official WMO / GCOS Essential Climate Variable (ECV) Taxonomy Mapping
+export const GCOS_ECV_MAP = {
+  T2M: 'GCOS ECV-A.1: Atmospheric Surface Temperature',
+  PRECTOT: 'GCOS ECV-A.2: Surface Precipitation (Flux)',
+  PRECTOTCORR: 'GCOS ECV-A.2: Surface Precipitation (Wind-Corrected)',
+  ALLSKY_SFC_SW_DWN: 'GCOS ECV-A.5: Surface Radiation Budget (Shortwave)',
+  WS10M: 'GCOS ECV-A.3: Surface Wind Speed & Dynamics',
+  RH2M: 'GCOS ECV-A.4: Atmospheric Water Vapor (2m RH)',
+  NDVI: 'GCOS ECV-T.1: Terrestrial Vegetation Greenness (Planetary STAC 30m/10m)',
+  NDWI: 'GCOS ECV-T.2: Terrestrial Surface Water Index (Planetary STAC 30m/10m)',
+  Compound: 'WCRP Compound Climate Hazard (Copula Bivariate)',
 };
 
 // Detective Case Presets
