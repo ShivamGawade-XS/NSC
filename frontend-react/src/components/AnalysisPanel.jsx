@@ -145,7 +145,13 @@ export default function AnalysisPanel() {
       <div className="p-3 rounded-lg bg-[var(--color-accent-blue)]/10 border border-[var(--color-accent-blue)]/30 flex items-center justify-between gap-3">
         <div>
           <div className="text-xs font-bold text-[var(--color-text-main)] flex items-center gap-1.5 font-['Space_Grotesk']">
-            <span>🕵️ Data Detective Wizard</span>
+            <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+              <path d="M11 8v6" />
+              <path d="M8 11h6" />
+            </svg>
+            <span>Data Detective Wizard</span>
             <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--color-accent-blue)] text-white">3-Step</span>
           </div>
           <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">

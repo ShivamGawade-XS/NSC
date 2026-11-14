@@ -164,7 +164,12 @@ export default function Header() {
             className="interface-btn-secondary !text-xs !py-1.5 !px-3 font-semibold text-[var(--color-accent-blue)] border-[var(--color-accent-blue)]/30 bg-[var(--color-accent-blue)]/5"
             aria-label="Open 3-Step Detective Wizard"
           >
-            <span className="text-sm">🕵️</span>
+            <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+              <path d="M11 8v6" />
+              <path d="M8 11h6" />
+            </svg>
             <span>Detective Wizard</span>
           </button>
 
