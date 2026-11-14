@@ -10,6 +10,7 @@ import SignalsList from '../components/SignalsList';
 import EvidencePanel from '../components/EvidencePanel';
 import ExportButtons from '../components/ExportButtons';
 import CommandPaletteModal from '../components/CommandPaletteModal';
+import DetectiveWizardModal from '../components/DetectiveWizardModal';
 import LatexModal from '../components/LatexModal';
 import CustomDataModal from '../components/CustomDataModal';
 import PreprintModal from '../components/PreprintModal';
@@ -331,6 +332,7 @@ export default function DashboardPage() {
       <div>
         <Header />
         <CommandPaletteModal />
+        <DetectiveWizardModal />
         <LatexModal />
         <CustomDataModal />
         <PreprintModal />

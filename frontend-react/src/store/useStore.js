@@ -63,6 +63,7 @@ const useStore = create((set, get) => ({
   reproducibilityModalOpen: false,
   regionalCompareModalOpen: false,
   discoveryModalOpen: false,
+  detectiveWizardModalOpen: false,
   qualityGateResult: null,
 
   // Actions
@@ -91,44 +92,49 @@ const useStore = create((set, get) => ({
     reproducibilityModalOpen: false,
     regionalCompareModalOpen: false,
     discoveryModalOpen: false,
+    detectiveWizardModalOpen: false,
     isCaseStudyTourOpen: false,
     isJudgeTourActive: false,
   }),
   setNlqModalOpen: (open) => set({
     nlqModalOpen: open,
-    ...(open ? { latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setLatexModalOpen: (open) => set({
     latexModalOpen: open,
-    ...(open ? { nlqModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setCustomDataModalOpen: (open) => set({
     customDataModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setPreprintModalOpen: (open) => set({
     preprintModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setRobustnessModalOpen: (open) => set({
     robustnessModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setQualityProfileModalOpen: (open) => set({
     qualityProfileModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setReproducibilityModalOpen: (open) => set({
     reproducibilityModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setRegionalCompareModalOpen: (open) => set({
     regionalCompareModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setDiscoveryModalOpen: (open) => set({
     discoveryModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setDetectiveWizardModalOpen: (open) => set({
+    detectiveWizardModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   loadCustomGridData: (customData) => set({
     analysisData: customData,

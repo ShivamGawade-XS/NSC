@@ -11,6 +11,7 @@ export default function SignalsList() {
   const selectedCell = useStore((s) => s.selectedCell);
 
   const isCompound = Boolean(analysisData?.isCompound);
+  const contrasts = analysisData?.contrasts || [];
   const compoundHotspots = isCompound && analysisData?.cells
     ? [...analysisData.cells].sort((a, b) => (b.cai || 0) - (a.cai || 0)).slice(0, 3)
     : [];
@@ -174,6 +175,68 @@ export default function SignalsList() {
           })}
         </AnimatePresence>
       </div>
+
+      {/* Opposing Regional Contrasts (NASA Prompt: Opposite Trends Driven by Same Process) */}
+      {contrasts && contrasts.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-[var(--color-border-subtle)] space-y-2">
+          <div className="flex items-center justify-between">
+            <h4 className="text-[11px] font-bold font-['Space_Grotesk'] text-[var(--color-text-main)] flex items-center gap-1">
+              <span>⚖️</span>
+              <span>Opposing Regional Contrasts</span>
+            </h4>
+            <span className="text-[9px] font-mono text-[var(--color-accent-blue)] bg-[var(--color-accent-blue)]/10 px-1.5 py-0.5 rounded border border-[var(--color-accent-blue)]/30 font-semibold">
+              Same Synoptic Process
+            </span>
+          </div>
+          <p className="text-[10px] text-[var(--color-text-secondary)] font-mono leading-tight">
+            Detected geographic cluster pairs with opposite significant trends:
+          </p>
+          <div className="space-y-1.5">
+            {contrasts.slice(0, 2).map((c, i) => (
+              <div
+                key={i}
+                className="p-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] space-y-1 text-xs"
+              >
+                <div className="flex items-center justify-between text-[11px] font-mono font-bold">
+                  <span className="text-rose-600 dark:text-rose-400">
+                    ▲ {c.cluster_1?.type === 'increasing' ? '+' : ''}{c.cluster_1?.mean_slope?.toFixed(2)} ({c.cluster_1?.cell_count} cells)
+                  </span>
+                  <span className="text-[10px] text-[var(--color-text-muted)]">vs</span>
+                  <span className="text-cyan-600 dark:text-cyan-400">
+                    ▼ {c.cluster_2?.mean_slope?.toFixed(2)} ({c.cluster_2?.cell_count} cells)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[9px] font-mono text-[var(--color-text-muted)] pt-0.5">
+                  <span>Δ Divergence: {c.divergence?.toFixed(3)}</span>
+                  <span>Distance: {Math.round(c.distance_km || 0)} km</span>
+                </div>
+                <div className="pt-1 flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(600);
+                      if (c.cluster_1?.center) selectCell(c.cluster_1.center[1], c.cluster_1.center[0]);
+                    }}
+                    className="flex-1 py-1 rounded bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[9px] font-mono text-center text-[var(--color-text-main)] cursor-pointer"
+                  >
+                    Inspect Zone 1 ({c.cluster_1?.center?.[1]}°N)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(600);
+                      if (c.cluster_2?.center) selectCell(c.cluster_2.center[1], c.cluster_2.center[0]);
+                    }}
+                    className="flex-1 py-1 rounded bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[9px] font-mono text-center text-[var(--color-text-main)] cursor-pointer"
+                  >
+                    Inspect Zone 2 ({c.cluster_2?.center?.[1]}°N)
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

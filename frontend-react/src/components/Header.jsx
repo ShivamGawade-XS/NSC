@@ -157,6 +157,19 @@ export default function Header() {
         <div className="hidden lg:flex items-center gap-3">
           <button
             onClick={() => {
+              playTactileClick(750);
+              useStore.getState().setDetectiveWizardModalOpen(true);
+              if (!isDashboard) navigate('/dashboard');
+            }}
+            className="interface-btn-secondary !text-xs !py-1.5 !px-3 font-semibold text-[var(--color-accent-blue)] border-[var(--color-accent-blue)]/30 bg-[var(--color-accent-blue)]/5"
+            aria-label="Open 3-Step Detective Wizard"
+          >
+            <span className="text-sm">🕵️</span>
+            <span>Detective Wizard</span>
+          </button>
+
+          <button
+            onClick={() => {
               playTactileClick(700);
               useStore.getState().setCustomDataModalOpen(true);
               if (!isDashboard) navigate('/dashboard');

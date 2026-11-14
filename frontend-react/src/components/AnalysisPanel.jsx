@@ -9,6 +9,7 @@ export default function AnalysisPanel() {
     dataset, variable, startYear, endYear, bbox, useFdr, isLoading,
     setFormField, setBbox, clearBbox, executeAnalysis, executeCompoundAnalysis, loadPreset,
     setCustomDataModalOpen, setDiscoveryModalOpen, setRegionalCompareModalOpen, setQualityGateResult,
+    setDetectiveWizardModalOpen,
   } = useStore();
 
   const [validationError, setValidationError] = useState('');
@@ -140,6 +141,29 @@ export default function AnalysisPanel() {
 
   return (
     <div className="interface-card p-4 space-y-4">
+      {/* 3-Step Guided Investigation CTA */}
+      <div className="p-3 rounded-lg bg-[var(--color-accent-blue)]/10 border border-[var(--color-accent-blue)]/30 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs font-bold text-[var(--color-text-main)] flex items-center gap-1.5 font-['Space_Grotesk']">
+            <span>🕵️ Data Detective Wizard</span>
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--color-accent-blue)] text-white">3-Step</span>
+          </div>
+          <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
+            Guided hypothesis builder for students & evaluators.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            playTactileClick(750);
+            setDetectiveWizardModalOpen(true);
+          }}
+          className="px-3 py-1.5 rounded bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/90 text-white text-[11px] font-mono font-bold shrink-0 transition-colors shadow-xs cursor-pointer"
+        >
+          Start Q&A →
+        </button>
+      </div>
+
       {/* Quick Preset Ribbon */}
       <div>
         <div className="instrument-heading !text-xs mb-2">
@@ -161,6 +185,7 @@ export default function AnalysisPanel() {
               {key === 'case2' && 'SW Transect'}
               {key === 'case3' && 'CONUS Continental'}
               {key === 'case4' && 'Midwest Ag'}
+              {key === 'case5' && 'Opposing Contrasts'}
             </button>
           ))}
         </div>
@@ -234,6 +259,44 @@ export default function AnalysisPanel() {
               <option key={v.id} value={v.id}>{v.label}</option>
             ))}
           </select>
+
+          {/* Dynamic Detective Variable Guide Card */}
+          {(() => {
+            const activeVarInfo = variables.find((v) => v.id === variable);
+            if (!activeVarInfo) return null;
+            return (
+              <div className="mt-2.5 p-2.5 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-[11px] text-[var(--color-text-main)] flex items-center gap-1">
+                    <span>💡</span>
+                    <span>{activeVarInfo.plainName || activeVarInfo.label}</span>
+                  </span>
+                  <span className="text-[9px] font-mono text-[var(--color-text-muted)] bg-[var(--color-bg-surface)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)]">
+                    {activeVarInfo.domain}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
+                  {activeVarInfo.eli5 || activeVarInfo.description}
+                </p>
+                {activeVarInfo.detectiveClue && (
+                  <div className="text-[10px] font-mono text-[var(--color-accent-blue)] bg-[var(--color-accent-blue)]/5 p-1.5 rounded border border-[var(--color-accent-blue)]/20">
+                    <span className="font-bold">Detective Clue: </span>
+                    <span>{activeVarInfo.detectiveClue}</span>
+                  </div>
+                )}
+                {activeVarInfo.missions && (
+                  <div className="text-[9px] font-mono text-[var(--color-text-muted)]">
+                    Missions: {activeVarInfo.missions}
+                  </div>
+                )}
+                {activeVarInfo.discontinuityWarning && (
+                  <div className="text-[9px] font-mono text-amber-600 dark:text-amber-400">
+                    ⚠️ {activeVarInfo.discontinuityWarning}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Time Range */}
