@@ -172,6 +172,31 @@ export default function CustomDataModal() {
     processJsonContent({ type: 'FeatureCollection', features: sampleFeatures }, 'Amazon_Basin_Hydrological_Deficit.geojson');
   };
 
+  const loadSampleHighResAgriculturalField = () => {
+    playTactileClick(600);
+    const years = Array.from({ length: 24 }, (_, i) => 2000 + i);
+    const sampleFeatures = [];
+    // 0.01° sub-kilometer high-resolution agricultural micro-sensor grid (~1.1 km spacing across Central Valley)
+    for (let lat = 36.50; lat <= 36.54; lat += 0.01) {
+      for (let lon = -119.80; lon <= -119.76; lon += 0.01) {
+        const baseTemp = +(22.5 + (lat - 36.50) * 8.0 - (lon + 119.80) * 5.0).toFixed(2);
+        const microWarming = +(0.42 + (Math.round(lat * 100) % 3) * 0.05).toFixed(2);
+        const values = years.map((y, t) => +(baseTemp + (microWarming * t / 10.0) + (Math.sin(t * 0.8) * 0.25)).toFixed(3));
+        sampleFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [+lon.toFixed(2), +lat.toFixed(2)] },
+          properties: {
+            years,
+            values,
+            slope_units: '°C / decade',
+            resolution: '0.01° (~1.1 km micro-parcel sensor network)'
+          }
+        });
+      }
+    }
+    processJsonContent({ type: 'FeatureCollection', features: sampleFeatures }, 'Central_Valley_Agri_MicroGrid_0.01deg.geojson');
+  };
+
   const handleInject = () => {
     if (!preview) return;
     playTactileClick(850);
@@ -272,6 +297,14 @@ export default function CustomDataModal() {
               className="px-2 py-1 rounded bg-[var(--color-bg-elevated)] text-[#ef4444] hover:bg-[#ef4444]/20 border border-[#ef4444]/30 font-semibold transition-colors"
             >
               Amazon Drought Deficit (.geojson)
+            </button>
+            <button
+              type="button"
+              onClick={loadSampleHighResAgriculturalField}
+              className="px-2 py-1 rounded bg-[var(--color-bg-elevated)] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/30 font-semibold transition-colors"
+              title="Test with 0.01° sub-kilometer agricultural micro-sensor grid (~1.1 km)"
+            >
+              Agri-MicroGrid (0.01° Sub-Km)
             </button>
           </div>
         </div>

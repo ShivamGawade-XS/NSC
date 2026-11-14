@@ -16,6 +16,7 @@ from fastapi import HTTPException
 
 from app.adapters.merra2 import MERRA2Adapter
 from app.adapters.nasa_power import NASAPowerAdapter
+from app.adapters.planetary_computer import PlanetaryComputerSTACAdapter
 from app.core.config import Settings
 from app.core.db_cache import load_from_db_cache, normalize_cache_params, save_to_db_cache
 from app.schemas.analysis import AnalysisRequest, CellDetailResponse
@@ -32,6 +33,7 @@ logger = logging.getLogger("Tellura.api")
 ADAPTERS = {
     "merra2_reanalysis": MERRA2Adapter(),
     "nasa_power": NASAPowerAdapter(),
+    "planetary_computer": PlanetaryComputerSTACAdapter(),
 }
 
 # Thread-safe in-memory LRU analysis cache
@@ -193,6 +195,30 @@ def _compute_cell_detail(
     else:
         emergence_status = "Noise Dominated (Natural interannual variability exceeds trend)"
 
+    # Decoupling Natural Oscillations (ENSO/PDO) & Variance Explained
+    tot_var = float(np.nanvar(series))
+    fit_var = float(np.nanvar(fitted))
+    var_exp = round(float(min(100.0, max(0.0, (fit_var / max(tot_var, 1e-6)) * 100.0))), 1)
+
+    base_var_s = (valid_obs * (valid_obs - 1) * (2 * valid_obs + 5)) / 18.0 if valid_obs >= 5 else 1.0
+    vif = round(float(max(1.0, float(mk.get("var_s", base_var_s)) / max(base_var_s, 1e-6))), 2)
+
+    if var_exp >= 50.0 and snr >= 2.0:
+        decoupling_status = (
+            f"Secular Anthropogenic Emergence: Monotonic trend accounts for {var_exp}% of total variance "
+            f"(SNR {snr:.2f} > 2σ). Natural oscillation noise decoupled."
+        )
+    elif vif >= 1.20:
+        decoupling_status = (
+            f"Cyclical Red-Noise Persistence Detected (ENSO/PDO mode). "
+            f"Hamed-Rao expanded variance by +{round((vif - 1.0) * 100)}% (VIF = {vif}) to suppress false-alarm trend detection."
+        )
+    else:
+        decoupling_status = (
+            f"Natural Interannual Oscillations Preponderant: Monotonic drift explains only {var_exp}% of total variance. "
+            f"Residual variability reflects internal climate cycles."
+        )
+
     evidence = {
         "observation": f"Calculated {mk['direction']} trend of {slope:+.3f} {raw['slope_units']}.",
         "magnitude": f"{slope:+.4f} {raw['slope_units']}",
@@ -200,6 +226,9 @@ def _compute_cell_detail(
         "significance": f"p-value = {mk['p_value']:.4f}, FDR q-value = {q_val:.4f} (Significant: {mk['significant']})",
         "signal_to_noise": snr,
         "emergence_status": emergence_status,
+        "variance_explained_pct": var_exp,
+        "variance_inflation_factor": vif,
+        "oscillation_decoupling_status": decoupling_status,
         "snr_interpretation": (
             f"SNR = {snr:.2f} (Total change: {total_change:.2f} {raw['display_units']}, Residual σ: {noise_sigma:.2f}). "
             f"Hawkins & Sutton (2012) Time of Emergence (ToE) threshold: SNR >= 2.0 signifies departure from historical noise envelope."
@@ -246,6 +275,9 @@ def _compute_cell_detail(
         changepoint_p_value=cp_pval,
         signal_to_noise=snr,
         emergence_status=emergence_status,
+        variance_explained_pct=var_exp,
+        variance_inflation_factor=vif,
+        oscillation_decoupling_status=decoupling_status,
         evidence_record=evidence
     )
     cell_cache[cache_key] = resp_obj

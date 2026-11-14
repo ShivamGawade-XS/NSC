@@ -272,6 +272,9 @@ class CellDetailResponse(BaseModel):
     changepoint_p_value: float | None = None
     signal_to_noise: float | None = None
     emergence_status: str | None = None
+    variance_explained_pct: float | None = None
+    variance_inflation_factor: float | None = None
+    oscillation_decoupling_status: str | None = None
     evidence_record: dict[str, Any]
 
     @model_validator(mode="before")
