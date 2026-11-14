@@ -192,12 +192,12 @@ const DETECTIVE_REGIONS = [
     name: 'North American Continental Domain',
     bbox: [-125.0, 25.0, -65.0, 50.0],
     center: [38.0, -95.0],
-    desc: 'Macro-scale continental synoptic warming and polar-equatorial gradient shifts.',
+    desc: 'Macro-scale continental synoptic warming and polar-equatorial gradient shifts (MERRA-2).',
   },
   {
     id: 'gulf_contrasts',
     name: 'Gulf Coastline & Inland Divergence',
-    bbox: [-104.0, 26.0, -92.0, 36.0],
+    bbox: [-103.0, 26.0, -93.0, 36.0],
     center: [31.0, -98.0],
     desc: 'Opposing synoptic contrasts: intense inland heating vs marine boundary buffering.',
   },
@@ -210,14 +210,14 @@ const DETECTIVE_REGIONS = [
   },
 ];
 
-const DETECTIVE_HORIZONS = [
+const STANDARD_HORIZONS = [
   {
     id: 'modern',
     start: 2000,
     end: 2023,
     label: 'Modern Satellite Era (2000–2023)',
     years: 24,
-    desc: '24 years of high-resolution calibrated CERES, MODIS, and MERRA-2 overpasses.',
+    desc: '24 years of high-resolution calibrated MODIS, GPM, and MERRA-2 overpasses.',
   },
   {
     id: 'deep',
@@ -226,6 +226,25 @@ const DETECTIVE_HORIZONS = [
     label: 'Deep Multi-Decadal Baseline (1980–2023)',
     years: 44,
     desc: '44 years of continuous atmospheric reanalysis tracking long-term climate drift.',
+  },
+];
+
+const SOLAR_HORIZONS = [
+  {
+    id: 'ceres',
+    start: 2001,
+    end: 2023,
+    label: 'CERES Modern Satellite Era (2001–2023)',
+    years: 23,
+    desc: '23 years of calibrated CERES SYN1deg radiometer measurements (Terra/Aqua).',
+  },
+  {
+    id: 'srb',
+    start: 1984,
+    end: 2000,
+    label: 'GEWEX SRB Historical Baseline (1984–2000)',
+    years: 17,
+    desc: '17 years of surface solar radiation budget prior to the 2001 CERES transition.',
   },
 ];
 
@@ -239,7 +258,9 @@ export default function DetectiveWizardModal() {
 
   const [selectedMystery, setSelectedMystery] = useState(DETECTIVE_MYSTERIES[0]);
   const [selectedRegion, setSelectedRegion] = useState(DETECTIVE_REGIONS[0]);
-  const [selectedHorizon, setSelectedHorizon] = useState(DETECTIVE_HORIZONS[0]);
+  const [selectedHorizon, setSelectedHorizon] = useState(STANDARD_HORIZONS[0]);
+
+  const activeHorizons = selectedMystery.variable === 'ALLSKY_SFC_SW_DWN' ? SOLAR_HORIZONS : STANDARD_HORIZONS;
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -255,9 +276,17 @@ export default function DetectiveWizardModal() {
 
   const handleLaunchInvestigation = () => {
     playTactileClick(850);
-    const { dataset, variable, isCompound } = selectedMystery;
-    const { bbox } = selectedRegion;
+    let { dataset, variable, isCompound } = selectedMystery;
+    const { bbox, id: regionId } = selectedRegion;
     const { start, end } = selectedHorizon;
+
+    // Continental domain requires MERRA-2 continental coverage
+    if (regionId === 'continental' && dataset === 'nasa_power') {
+      dataset = 'merra2_reanalysis';
+      if (variable !== 'T2M' && variable !== 'PRECTOT') {
+        variable = 'T2M';
+      }
+    }
 
     // Apply parameters to store
     setFormField('dataset', dataset);
@@ -365,6 +394,11 @@ export default function DetectiveWizardModal() {
                       onClick={() => {
                         playTactileClick(700);
                         setSelectedMystery(m);
+                        if (m.variable === 'ALLSKY_SFC_SW_DWN') {
+                          setSelectedHorizon(SOLAR_HORIZONS[0]);
+                        } else if (selectedHorizon.id === 'ceres' || selectedHorizon.id === 'srb') {
+                          setSelectedHorizon(STANDARD_HORIZONS[0]);
+                        }
                       }}
                       className={`text-left p-3 rounded-lg border transition-all cursor-pointer relative ${
                         isSelected
@@ -475,7 +509,7 @@ export default function DetectiveWizardModal() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {DETECTIVE_HORIZONS.map((h) => {
+                {activeHorizons.map((h) => {
                   const isSelected = selectedHorizon.id === h.id;
                   return (
                     <button

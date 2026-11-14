@@ -4,6 +4,7 @@
  * sensor continuity, temporal sample count, spatial grid intersection.
  */
 import { useState, useEffect, useRef } from 'react';
+import useStore from '../store/useStore';
 import { assessQualityGate } from '../api/client';
 import { playTactileClick } from '../utils/audio';
 
@@ -155,13 +156,32 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
 
       {/* Limitations (always show if blocking) */}
       {!gate.can_execute && gate.limitations?.length > 0 && (
-        <div className="mt-2 space-y-1 text-xs">
+        <div className="mt-2 space-y-1.5 text-xs">
           {gate.limitations.map((lim, i) => (
             <div key={i} className="flex items-start gap-1.5 text-red-800 dark:text-red-300 font-mono text-[11px] leading-tight">
               <span className="shrink-0 text-red-600 dark:text-red-400">▸</span>
               <span>{lim}</span>
             </div>
           ))}
+          {gate.recommended_window && (
+            <div className="pt-2 mt-1 border-t border-rose-300/30 dark:border-rose-800/40 flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-[10px] text-red-700 dark:text-red-300 font-mono">
+                Feasible: {gate.recommended_window[0]}–{gate.recommended_window[1]}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  playTactileClick(700);
+                  useStore.getState().setFormField('startYear', gate.recommended_window[0]);
+                  useStore.getState().setFormField('endYear', gate.recommended_window[1]);
+                }}
+                className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white font-mono text-[10px] font-bold shadow-sm transition-colors cursor-pointer"
+              >
+                Auto-Fix Horizon ({gate.recommended_window[0]}–{gate.recommended_window[1]}) →
+              </button>
+            </div>
+          )}
         </div>
       )}
 

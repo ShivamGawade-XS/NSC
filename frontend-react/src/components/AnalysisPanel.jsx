@@ -41,7 +41,7 @@ export default function AnalysisPanel() {
   const bboxWidth = hasBbox ? Math.abs(parseFloat(bbox.maxLon) - parseFloat(bbox.minLon)) : 0;
   const bboxHeight = hasBbox ? Math.abs(parseFloat(bbox.maxLat) - parseFloat(bbox.minLat)) : 0;
   const bboxArea = hasBbox ? +(bboxWidth * bboxHeight).toFixed(1) : 0;
-  const exceedsQuota = bboxArea > 100.0;
+  const exceedsQuota = dataset === 'nasa_power' && bboxArea > 100.0;
 
   const handleAutoFit100 = () => {
     playTactileClick(600);
@@ -272,7 +272,13 @@ export default function AnalysisPanel() {
             id="variable-select"
             name="variable"
             value={variable}
-            onChange={(e) => setFormField('variable', e.target.value)}
+            onChange={(e) => {
+              const newVar = e.target.value;
+              setFormField('variable', newVar);
+              if (newVar === 'ALLSKY_SFC_SW_DWN' && startYear < 2001) {
+                setFormField('startYear', 2001);
+              }
+            }}
             className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none transition-colors"
           >
             {variables.map((v) => (
@@ -318,6 +324,58 @@ export default function AnalysisPanel() {
                 {activeVarInfo.discontinuityWarning && (
                   <div className="text-[9px] font-mono text-amber-600 dark:text-amber-400">
                     ⚠️ {activeVarInfo.discontinuityWarning}
+                  </div>
+                )}
+
+                {/* One-Click Regime Partition Action Bar for Solar Irradiance */}
+                {variable === 'ALLSKY_SFC_SW_DWN' && (
+                  <div className="pt-2 mt-1 border-t border-[var(--color-border-subtle)] space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-mono">
+                      <span className="font-bold text-amber-700 dark:text-amber-300">Partitioned Satellite Regimes:</span>
+                      <span className={`px-1 rounded text-[9px] font-semibold ${
+                        startYear >= 2001
+                          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                          : startYear <= 2000 && endYear <= 2000
+                          ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                          : 'bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                      }`}>
+                        {startYear >= 2001 ? '✓ CERES SYN1deg' : startYear <= 2000 && endYear <= 2000 ? '✓ GEWEX SRB' : '⚠️ Partition Required'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playTactileClick(700);
+                          setFormField('startYear', 2001);
+                          setFormField('endYear', 2023);
+                        }}
+                        className={`px-2 py-1.5 rounded text-[10px] font-mono font-bold text-center border transition-colors cursor-pointer ${
+                          startYear >= 2001
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                            : 'bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)] hover:border-amber-400'
+                        }`}
+                        title="Analyze calibrated CERES SYN1deg regime (2001–2023)"
+                      >
+                        ☀️ CERES (2001–2023)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playTactileClick(700);
+                          setFormField('startYear', 1984);
+                          setFormField('endYear', 2000);
+                        }}
+                        className={`px-2 py-1.5 rounded text-[10px] font-mono font-bold text-center border transition-colors cursor-pointer ${
+                          startYear <= 2000 && endYear <= 2000
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                            : 'bg-[var(--color-bg-surface)] text-[var(--color-text-secondary)] border-[var(--color-border-subtle)] hover:border-amber-400'
+                        }`}
+                        title="Analyze historical GEWEX SRB regime (1984–2000)"
+                      >
+                        📡 GEWEX SRB (1984–2000)
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
