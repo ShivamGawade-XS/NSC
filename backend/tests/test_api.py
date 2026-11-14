@@ -468,4 +468,32 @@ def test_copilot_parse_query_endpoint():
         assert data["analysis_request"]["end_year"] == 2023
 
 
+def test_copilot_palette_suggestions_all_execute_cleanly():
+    """Verify all 5 frontend query palette sample inquiries parse cleanly without 500s or 422s."""
+    suggestions = [
+        "Warming trends in North America from 1995 to 2022 (high confidence)",
+        "Mediterranean precipitation deficit between 1990 and 2020",
+        "Arctic amplification surface temperature from 2000 to 2024",
+        "Sahel hydrological greening transition trends",
+        "Global surface shortwave downward radiation shifts",
+        "Texas solar irradiance brightening from 2001 to 2023",
+    ]
+    for s in suggestions:
+        res = client.post("/api/v1/copilot/parse-query", json={"query": s})
+        assert res.status_code == 200, f"Query '{s}' failed with status {res.status_code}: {res.text}"
+        data = res.json()
+        req = data["analysis_request"]
+        assert req["variable_id"] in ("T2M", "PRECTOT", "ALLSKY_SFC_SW_DWN", "WS10M", "RH2M")
+        assert req["start_year"] < req["end_year"]
+        if req["bbox"] is not None:
+            assert req["bbox"][2] > req["bbox"][0]
+            assert req["bbox"][3] > req["bbox"][1]
+            assert (req["bbox"][2] - req["bbox"][0]) <= 180.0
+            assert (req["bbox"][3] - req["bbox"][1]) <= 180.0
+        if req["variable_id"] == "ALLSKY_SFC_SW_DWN":
+            # Must not cross 2000/2001 transition boundary
+            assert not (req["start_year"] < 2001 and req["end_year"] >= 2001)
+
+
+
 

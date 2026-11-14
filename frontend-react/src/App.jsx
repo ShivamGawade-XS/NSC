@@ -1,7 +1,9 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import CookieConsentBanner from './components/CookieConsentBanner';
+import CommandPaletteModal from './components/CommandPaletteModal';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -37,7 +39,21 @@ export default function App() {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
+        <CommandPaletteModal />
         <CookieConsentBanner />
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'var(--color-bg-surface, #0f172a)',
+              color: 'var(--color-text-main, #f8fafc)',
+              border: '1px solid var(--color-border-subtle, #334155)',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontFamily: 'monospace',
+            },
+          }}
+        />
       </BrowserRouter>
     </ErrorBoundary>
   );

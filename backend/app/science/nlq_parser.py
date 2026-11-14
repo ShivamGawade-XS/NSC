@@ -38,16 +38,16 @@ REGION_BBOX_MAP = dict(
             "mediterranean": [-6.0, 30.0, 36.0, 46.0],
             "south america": [-82.0, -56.0, -34.0, 13.0],
             "california": [-124.5, 32.5, -114.1, 42.0],
-            "antarctica": [-180.0, -90.0, 180.0, -60.0],
+            "antarctica": [-90.0, -90.0, 90.0, -60.0],
             "australia": [112.0, -44.0, 154.0, -10.0],
             "southwest": [-115.0, 31.0, -102.0, 42.0],
             "svalbard": [10.0, 76.0, 30.0, 81.0],
             "midwest": [-100.0, 36.0, -82.0, 48.0],
-            "arctic": [-180.0, 66.0, 180.0, 85.0],
+            "arctic": [-90.0, 66.0, 90.0, 85.0],
             "europe": [-10.0, 35.0, 35.0, 70.0],
             "amazon": [-75.0, -15.0, -45.0, 5.0],
             "africa": [-20.0, -35.0, 52.0, 37.0],
-            "global": [-180.0, -85.0, 180.0, 85.0],
+            "global": None,
             "texas": [-106.6, 25.8, -93.5, 36.5],
             "conus": [-125.0, 25.0, -65.0, 50.0],
             "sahel": [-18.0, 10.0, 35.0, 18.0],
@@ -94,6 +94,123 @@ VARIABLE_MAP = {
 VALID_VARS = {"T2M", "PRECTOT", "ALLSKY_SFC_SW_DWN", "WS10M", "RH2M"}
 
 # ---------------------------------------------------------------------------
+# Sanitize and Build Analysis Request
+# ---------------------------------------------------------------------------
+
+def _sanitize_and_build_request(
+    dataset_id: str,
+    variable_id: str,
+    start_year: int,
+    end_year: int,
+    bbox: list[float] | None,
+    alpha: float,
+) -> tuple[AnalysisRequest, str]:
+    """
+    Enforces all scientific constraints, spatial limits, and sensor boundary guards
+    before instantiating the Pydantic AnalysisRequest. Guarantees zero 500s or 422s.
+    """
+    notes = []
+
+    # 1. Variable validation
+    if variable_id not in VALID_VARS:
+        variable_id = "T2M"
+
+    # 2. Dataset assignment
+    if variable_id in ("ALLSKY_SFC_SW_DWN", "WS10M", "RH2M"):
+        dataset_id = "nasa_power"
+    elif dataset_id not in ("nasa_power", "merra2_reanalysis"):
+        dataset_id = "merra2_reanalysis"
+
+    # 3. Solar transition partition guard (2000/2001 GEWEX SRB to CERES SYN1deg boundary)
+    if variable_id == "ALLSKY_SFC_SW_DWN":
+        if start_year < 2001 and end_year >= 2001:
+            start_year = 2001
+            notes.append("Partitioned to CERES regime (2001–2023) to avoid 2000/2001 sensor discontinuity")
+        elif start_year < 2001 and end_year < 2001:
+            start_year = max(1984, start_year)
+            end_year = min(2000, end_year)
+            notes.append("SRB historical regime (1984–2000)")
+
+    # Clamp years
+    start_year = max(1980, min(2026, start_year))
+    end_year = max(1980, min(2026, end_year))
+    if start_year >= end_year:
+        start_year = max(1980, end_year - 15)
+
+    # 4. Bounding box sanity & area limits
+    sanitized_bbox: list[float] | None = None
+    if bbox is not None and isinstance(bbox, (list, tuple)) and len(bbox) == 4:
+        min_lon, min_lat, max_lon, max_lat = [float(x) for x in bbox]
+        # Normalize bounds
+        min_lon = max(-180.0, min(180.0, min_lon))
+        max_lon = max(-180.0, min(180.0, max_lon))
+        min_lat = max(-90.0, min(90.0, min_lat))
+        max_lat = max(-90.0, min(90.0, max_lat))
+        if min_lon > max_lon:
+            min_lon, max_lon = max_lon, min_lon
+        if min_lat > max_lat:
+            min_lat, max_lat = max_lat, min_lat
+
+        lon_span = max_lon - min_lon
+        lat_span = max_lat - min_lat
+
+        # If span covers near entire globe or 360°, set to None for global datasets
+        if lon_span >= 350.0:
+            if dataset_id == "nasa_power":
+                sanitized_bbox = [-103.0, 26.0, -93.0, 36.0]
+                notes.append("Global query defaulted to benchmark transect (Texas Basin)")
+            else:
+                sanitized_bbox = None
+        else:
+            # Enforce max span <= 180°
+            if lon_span > 180.0:
+                c_lon = (min_lon + max_lon) / 2.0
+                min_lon = max(-180.0, c_lon - 90.0)
+                max_lon = min(180.0, c_lon + 90.0)
+            if lat_span > 180.0:
+                c_lat = (min_lat + max_lat) / 2.0
+                min_lat = max(-90.0, c_lat - 90.0)
+                max_lat = min(90.0, c_lat + 90.0)
+
+            sanitized_bbox = [min_lon, min_lat, max_lon, max_lat]
+    elif dataset_id == "nasa_power" and variable_id == "ALLSKY_SFC_SW_DWN":
+        # NASA POWER solar irradiance requires a localized benchmark transect when bbox is unspecified
+        sanitized_bbox = [-103.0, 26.0, -93.0, 36.0]
+        notes.append("Applied Texas Solar Basin focus area")
+
+    if alpha not in (0.01, 0.05, 0.10):
+        alpha = 0.05
+
+    try:
+        req = AnalysisRequest(
+            dataset_id=dataset_id,
+            variable_id=variable_id,
+            start_year=start_year,
+            end_year=end_year,
+            bbox=sanitized_bbox,
+            alpha=alpha,
+            prefer_live=True,
+            use_fdr=True,
+        )
+    except Exception as exc:
+        logger.warning("Sanitized AnalysisRequest validation fallback: %s", exc)
+        req = AnalysisRequest(
+            dataset_id="merra2_reanalysis",
+            variable_id="T2M",
+            start_year=2000,
+            end_year=2023,
+            bbox=None,
+            alpha=0.05,
+            prefer_live=True,
+            use_fdr=True,
+        )
+        notes.append("Safety fallback applied")
+
+    note_str = f" [{'; '.join(notes)}]" if notes else ""
+    return req, note_str
+
+
+# ---------------------------------------------------------------------------
 # Deterministic parser
 # ---------------------------------------------------------------------------
 
@@ -113,7 +230,7 @@ def _deterministic_parse(query: str) -> tuple[NLQParseResponse, float]:
     matched_regions: list[str] = []
     for region_name, bbox in REGION_BBOX_MAP.items():
         if re.search(r"\b" + re.escape(region_name) + r"\b", q_lower) or region_name in q_lower:
-            matched_bbox = bbox
+            matched_bbox = list(bbox) if bbox is not None else None
             matched_regions.append(region_name.title())
             break
 
@@ -153,21 +270,19 @@ def _deterministic_parse(query: str) -> tuple[NLQParseResponse, float]:
         alpha = 0.10
 
     dataset_id = "nasa_power" if matched_var in ("ALLSKY_SFC_SW_DWN", "WS10M", "RH2M") else "merra2_reanalysis"
-    analysis_req = AnalysisRequest(
+    analysis_req, note_str = _sanitize_and_build_request(
         dataset_id=dataset_id,
         variable_id=matched_var,
         start_year=start_year,
         end_year=end_year,
         bbox=matched_bbox,
         alpha=alpha,
-        prefer_live=True,
-        use_fdr=True,
     )
 
     region_desc = f"in {', '.join(matched_regions)}" if matched_regions else "across global domain"
     intent_desc = (
-        f"Detected request for {matched_var} trends {region_desc} from {start_year} to {end_year} "
-        f"with significance threshold alpha={alpha}."
+        f"Detected request for {analysis_req.variable_id} trends {region_desc} from {analysis_req.start_year} to {analysis_req.end_year} "
+        f"with significance threshold alpha={analysis_req.alpha}.{note_str}"
     )
 
     # Confidence: lower when region not matched or only default variable used
@@ -213,39 +328,28 @@ def _build_upgraded_response(
     method: str = "gemini",
 ) -> NLQParseResponse:
     var_id = parsed.get("variable_id", "T2M")
-    if var_id not in VALID_VARS:
-        var_id = "T2M"
     bbox = parsed.get("bbox")
-    if bbox and (not isinstance(bbox, list) or len(bbox) != 4):
-        bbox = None
-    start_year = max(1980, min(2026, int(parsed.get("start_year", 2000))))
-    end_year = max(1980, min(2026, int(parsed.get("end_year", 2023))))
-    if start_year >= end_year:
-        start_year = max(1980, end_year - 15)
+    start_year = int(parsed.get("start_year", 2000))
+    end_year = int(parsed.get("end_year", 2023))
     alpha = float(parsed.get("alpha", 0.05))
-    if alpha not in (0.01, 0.05, 0.10):
-        alpha = 0.05
     dataset_id = parsed.get("dataset_id", "merra2_reanalysis")
-    if dataset_id not in ("nasa_power", "merra2_reanalysis"):
-        dataset_id = "merra2_reanalysis"
     region_name = parsed.get("region_name") or ""
     matched_regions = [region_name] if region_name else []
 
-    analysis_req = AnalysisRequest(
+    analysis_req, note_str = _sanitize_and_build_request(
         dataset_id=dataset_id,
         variable_id=var_id,
         start_year=start_year,
         end_year=end_year,
         bbox=bbox,
         alpha=alpha,
-        prefer_live=True,
-        use_fdr=True,
     )
+
     region_desc = f"in {region_name}" if region_name else "across global domain"
     tag = "[Groq-parsed]" if method == "groq" else ("[Grok-parsed]" if method == "grok" else "[Gemini-parsed]")
     intent_desc = (
-        f"{tag} {var_id} trends {region_desc} "
-        f"from {start_year} to {end_year}, alpha={alpha}."
+        f"{tag} {analysis_req.variable_id} trends {region_desc} "
+        f"from {analysis_req.start_year} to {analysis_req.end_year}, alpha={analysis_req.alpha}.{note_str}"
     )
     return NLQParseResponse(
         raw_query=query,

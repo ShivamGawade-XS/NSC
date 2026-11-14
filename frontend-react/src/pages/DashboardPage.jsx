@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Toaster } from 'react-hot-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import StickyMobileCTA from '../components/StickyMobileCTA';
@@ -9,7 +8,6 @@ import AnalysisPanel from '../components/AnalysisPanel';
 import SignalsList from '../components/SignalsList';
 import EvidencePanel from '../components/EvidencePanel';
 import ExportButtons from '../components/ExportButtons';
-import CommandPaletteModal from '../components/CommandPaletteModal';
 import DetectiveWizardModal from '../components/DetectiveWizardModal';
 import LatexModal from '../components/LatexModal';
 import CustomDataModal from '../components/CustomDataModal';
@@ -331,7 +329,6 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[var(--color-bg-deep)] text-[var(--color-text-main)] flex flex-col justify-between transition-colors">
       <div>
         <Header />
-        <CommandPaletteModal />
         <DetectiveWizardModal />
         <LatexModal />
         <CustomDataModal />
@@ -364,19 +361,6 @@ export default function DashboardPage() {
             onClose={() => useStore.getState().setDiscoveryModalOpen(false)}
           />
         )}
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: 'var(--color-bg-surface)',
-              color: 'var(--color-text-main)',
-              border: '1px solid var(--color-border-subtle)',
-              borderRadius: '4px',
-              fontSize: '12px',
-              fontFamily: 'IBM Plex Sans, sans-serif',
-            },
-          }}
-        />
 
         {/* Main Dashboard Container */}
         <main className="pt-16 px-4 sm:px-6 max-w-[1920px] mx-auto pb-12">

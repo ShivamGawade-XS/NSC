@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import useStore from '../store/useStore';
@@ -10,10 +11,11 @@ const SUGGESTIONS = [
   'Mediterranean precipitation deficit between 1990 and 2020',
   'Arctic amplification surface temperature from 2000 to 2024',
   'Sahel hydrological greening transition trends',
-  'Global surface shortwave downward radiation shifts',
+  'Texas solar irradiance brightening from 2001 to 2023',
 ];
 
 export default function CommandPaletteModal() {
+  const navigate = useNavigate();
   const isOpen = useStore((s) => s.nlqModalOpen);
   const setOpen = useStore((s) => s.setNlqModalOpen);
   const [query, setQuery] = useState('');
@@ -22,7 +24,8 @@ export default function CommandPaletteModal() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      const isK = e.key === 'k' || e.key === 'K' || e.code === 'KeyK';
+      if ((e.ctrlKey || e.metaKey) && isK) {
         e.preventDefault();
         playTactileClick(700);
         setOpen(!isOpen);
@@ -75,6 +78,9 @@ export default function CommandPaletteModal() {
 
       setOpen(false);
       setQuery('');
+      if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
+        navigate('/dashboard');
+      }
       useStore.getState().executeAnalysis();
     } catch (err) {
       toast.error(`Query resolution error: ${err.message}`, { id: toastId });
