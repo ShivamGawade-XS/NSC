@@ -257,4 +257,9 @@ export const DETECTIVE_PRESETS = {
     bbox: [-103.0, 26.0, -93.0, 36.0],
     desc: 'Opposing Synoptic Contrasts (Inland Thermal Spikes vs Coastal Marine Buffering)',
   },
+  case6: {
+    dataset: 'nasa_power', variable: 'ALLSKY_SFC_SW_DWN', startYear: 2005, endYear: 2023,
+    bbox: [-92.0, 43.0, -87.0, 47.0],
+    desc: 'Wisconsin Wildfire Smoke & Solar Radiative Dimming (Dr. James Aker GSFC Exemplar)',
+  },
 };

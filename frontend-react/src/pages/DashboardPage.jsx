@@ -245,6 +245,20 @@ export default function DashboardPage() {
         return;
       }
 
+      if (code === 'Digit5' || key === '5') {
+        e.preventDefault();
+        playTactileClick(600);
+        storeState.loadPreset('case5');
+        return;
+      }
+
+      if (code === 'Digit6' || key === '6') {
+        e.preventDefault();
+        playTactileClick(600);
+        storeState.loadPreset('case6');
+        return;
+      }
+
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
         const { analysisData, selectedCell } = storeState;
         if (!analysisData) return;

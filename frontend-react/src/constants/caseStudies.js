@@ -73,4 +73,17 @@ export const CASE_STUDY_HOTSPOTS = [
     mechanism: 'Opposing trends driven by the same synoptic system: intense continental land heating contrasted with marine boundary layer thermal buffering.',
     missionCitation: 'NASA POWER Daily Climatology (GMAO FP-IT & CERES)',
   },
+  {
+    id: 'case_wisconsin_aker',
+    presetKey: 'case6',
+    title: 'Wisconsin Wildfire Smoke & Solar Dimming (GSFC Exemplar)',
+    location: 'Upper Midwest / Wisconsin (45.0°N, 89.5°W)',
+    coords: [45.0, -89.5],
+    zoom: 6,
+    variable: 'ALLSKY_SFC_SW_DWN (Solar Radiative Flux)',
+    rate: '-0.181 MJ/m²/day / decade',
+    significance: 'Non-Parametric Trend Candidate (p = 0.27)',
+    mechanism: 'Dr. James Aker (GSFC) challenge exemplar: tracking atmospheric solar dimming and aerosol optical attenuation from transboundary wildfire smoke transport across the Upper Midwest.',
+    missionCitation: 'NASA Aqua/Terra (MODIS AOD & CERES Solar Budget)',
+  },
 ];

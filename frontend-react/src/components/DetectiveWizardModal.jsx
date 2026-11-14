@@ -208,6 +208,13 @@ const DETECTIVE_REGIONS = [
     center: [40.0, -108.0],
     desc: 'Elevation-Dependent Warming (EDW) & snow-albedo feedback across high-altitude watersheds (Pepin et al. 2015).',
   },
+  {
+    id: 'wisconsin_wildfire',
+    name: 'Wisconsin & Upper Midwest (GSFC Exemplar)',
+    bbox: [-92.0, 43.0, -87.0, 47.0],
+    center: [45.0, -89.5],
+    desc: 'Dr. James Aker (GSFC) challenge exemplar: transboundary wildfire smoke transport, aerosol optical depth, and solar dimming.',
+  },
 ];
 
 const STANDARD_HORIZONS = [

@@ -19,7 +19,7 @@
 5. [The "Earth System Trend Detective" Narrative (ELI5 for Students)](#5-the-earth-system-trend-detective-narrative-eli5-for-students)
 6. [Detective Field Glossary: NASA Variables Demystified](#6-detective-field-glossary-nasa-variables-demystified)
 7. [The Mystery of Opposing Trends from the Same Process](#7-the-mystery-of-opposing-trends-from-the-same-process)
-8. [The 5 Curated Showcase Cases (Live Demo Guide)](#8-the-5-curated-showcase-cases-live-demo-guide)
+8. [The 6 Curated Showcase Cases (Live Demo Guide)](#8-the-6-curated-showcase-cases-live-demo-guide)
 9. [Mathematical & Statistical Formulations Compendium](#9-mathematical--statistical-formulations-compendium)
 10. [System Architecture & Open Science Pipeline](#10-system-architecture--open-science-pipeline)
 11. [10 Toughest Judge Questions & Winning Responses](#11-10-toughest-judge-questions--winning-responses)
@@ -38,6 +38,14 @@ Tellura answers the four fundamental investigative questions posed by NASA:
 2. **WHERE is it changing?** Interactive 2D Leaflet canvas and 3D orthographic globe with arbitrary spatial bounding boxes, continental domains, and regional connected-component clustering.
 3. **HOW MUCH is it changing?** Non-parametric Theil-Sen robust median slope estimation with Gilbert (1987) 95% rank confidence intervals.
 4. **Is it SIGNIFICANT?** Full statistical battery combining Mann-Kendall rank tests, Hamed & Rao (1998) serial autocorrelation variance scaling, Benjamini-Hochberg False Discovery Rate (FDR $q \le 0.05$) grid stippling, and Anselin Local Moran's $I$ (LISA) spatial clustering.
+
+### Direct Alignment with Dr. James Aker's Kickoff Briefing (NASA Goddard Space Flight Center)
+In the official challenge introduction video, Dr. James Aker (GSFC) outlines the exact 5-step investigative workflow for an Earth System Trend Detective:
+1. **Select a data variable for analysis (4:24)** → Tellura's multi-mission catalog spanning GCOS Essential Climate Variables (`T2M`, `PRECTOTCORR`, `ALLSKY_SFC_SW_DWN`, `WS10M`, `RH2M`, `Compound`).
+2. **Choose a specific geographic region (4:29)** → Bounding box selector, 3D orthographic globe, transects, and snap-to-domain presets.
+3. **Define the timeframe for the data series (4:34)** → 1980–2024 multi-decadal observation sliders with WMO climatological baseline checks.
+4. **Create and examine the time series for apparent trends (4:39)** → TimeSeries chart with Theil-Sen median slopes, warming stripes, and acoustic sonification.
+5. **Perform a statistical analysis to determine significance (4:45)** → Dual-layer verification requiring $p < 0.05$ (or Hamed-Rao $p^* < 0.05$) and Benjamini-Hochberg False Discovery Rate control ($q \le 0.05$), accompanied by Dr. Aker's wildfire smoke/solar attenuation exemplar (Wisconsin Case 6).
 
 ---
 
@@ -185,7 +193,7 @@ Consider the Subtropical Gulf Coastline and Inland Texas:
 
 ---
 
-## 8. The 5 Curated Showcase Cases (Live Demo Guide)
+## 8. The 6 Curated Showcase Cases (Live Demo Guide)
 
 ### Case 1: Texas & Southern Plains Heat Acceleration
 - **Dataset / Variable**: NASA POWER • `T2M` (2-Meter Air Temperature)
@@ -216,6 +224,12 @@ Consider the Subtropical Gulf Coastline and Inland Texas:
 - **Coordinates / Time**: `[-104.0, 26.0, -92.0, 36.0]` • `2000–2023`
 - **Empirical Signal**: Spatial Divergence = **$\Delta$ 0.580 °C / decade** across 500 km • $p < 0.001$
 - **Physical Clue**: Opposing trends from the same synoptic high: inland soil heating contrasted with coastal marine boundary thermal buffering.
+
+### Case 6: Wisconsin Wildfire Smoke & Solar Radiative Dimming (Dr. James Aker GSFC Exemplar)
+- **Dataset / Variable**: NASA POWER • `ALLSKY_SFC_SW_DWN` (Downward Solar Irradiance)
+- **Coordinates / Time**: `[-92.0, 43.0, -87.0, 47.0]` • `2005–2023`
+- **Empirical Signal**: Non-parametric Trend Candidate • Sen's Slope = **-0.181 MJ/m²/day / decade** • Solar Dimming
+- **Physical Clue**: Dr. James Aker (Goddard Space Flight Center) challenge kickoff video exemplar: tracking atmospheric solar dimming and aerosol optical depth (AOD) attenuation from transboundary wildfire smoke transport across the Upper Midwest. Demonstrates that candidate trends ($p > 0.05$) offer critical environmental intelligence while illustrating the challenge guideline that some physical signals require longer observational baselines to reach formal asymptotic significance.
 
 ---
 

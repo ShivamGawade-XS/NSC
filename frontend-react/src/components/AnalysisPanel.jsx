@@ -194,6 +194,7 @@ export default function AnalysisPanel() {
               {key === 'case3' && 'CONUS Continental'}
               {key === 'case4' && 'Midwest Ag'}
               {key === 'case5' && 'Opposing Contrasts'}
+              {key === 'case6' && 'Wisconsin Wildfire (GSFC)'}
             </button>
           ))}
         </div>
