@@ -432,11 +432,15 @@ def generate_jupyter_notebook(analysis_record: dict[str, Any]) -> dict[str, Any]
         years_list = list(range(2000, 2024))
 
     if analysis_record.get("time_series") and len(analysis_record["time_series"]) > 0:
-        time_series = [float(v) for v in analysis_record["time_series"]]
+        valid_vals = [float(v) for v in analysis_record["time_series"] if np.isfinite(v)]
+        fill_val = float(np.mean(valid_vals)) if valid_vals else 0.0
+        time_series = [round(float(v), 3) if np.isfinite(v) else round(fill_val, 3) for v in analysis_record["time_series"]]
         if len(years_list) != len(time_series):
             years_list = list(range(2000, 2000 + len(time_series)))
     elif top_cells[0].get("time_series"):
-        time_series = [float(v) for v in top_cells[0]["time_series"]]
+        valid_vals = [float(v) for v in top_cells[0]["time_series"] if np.isfinite(v)]
+        fill_val = float(np.mean(valid_vals)) if valid_vals else 0.0
+        time_series = [round(float(v), 3) if np.isfinite(v) else round(fill_val, 3) for v in top_cells[0]["time_series"]]
         if len(years_list) != len(time_series):
             years_list = list(range(2000, 2000 + len(time_series)))
     else:

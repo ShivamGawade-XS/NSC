@@ -60,7 +60,8 @@ def compute_event_attribution(
             mu_1 = float(np.mean(clean_s[-recent_window:]))
         else:
             mu_1 = float(np.mean(clean_s))
-        sigma = float(np.std(clean_s, ddof=1)) if np.std(clean_s, ddof=1) > 1e-4 else 1.0
+        sample_std = float(np.std(clean_s, ddof=1))
+        sigma = sample_std if sample_std > 1e-4 else 1.0
 
         # Empirical Sen/OLS residual standard error of decadal slope SE(beta)
         n_pts = len(clean_s)
@@ -72,8 +73,8 @@ def compute_event_attribution(
         se_slope = np.sqrt(res_var / max(1e-9, ss_tt))
         scale = max(0.005, float(se_slope))
 
-        # Check skewness and fit GEV if |skew| > 0.5 and len >= 15
-        sk = float(stats.skew(clean_s)) if n_pts >= 3 else 0.0
+        # Check skewness and fit GEV if |skew| > 0.5, sample_std > 1e-4, and len >= 15
+        sk = float(stats.skew(clean_s)) if n_pts >= 3 and sample_std > 1e-4 else 0.0
         if n_pts >= 15 and abs(sk) > 0.5:
             try:
                 c_fit, loc_fit, scale_fit = stats.genextreme.fit(clean_s)

@@ -14,9 +14,11 @@ Zero synthetic numbers: 100% authentic NASA observations and assimilation fields
 
 import hashlib
 import logging
+import os
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -364,8 +366,14 @@ class NASAPowerAdapter(BaseDatasetAdapter):
                     if response.status == 200:
                         content = response.read()
                         if len(content) > 1024 and self._is_valid_netcdf_bytes(content):
-                            with open(cache_target, "wb") as f:
+                            tmp_target = cache_target.with_name(f"{cache_target.stem}_{uuid.uuid4().hex[:8]}.tmp")
+                            with open(tmp_target, "wb") as f:
                                 f.write(content)
+                            try:
+                                if tmp_target.exists():
+                                    os.replace(tmp_target, cache_target)
+                            except OSError:
+                                pass
                             logger.info("Successfully ingested and cached authentic NASA NetCDF (%d bytes).", len(content))
                             return cache_target
                         else:

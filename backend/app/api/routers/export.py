@@ -184,7 +184,10 @@ def export_analysis_notebook(request: Request, analysis_id: str):
         i_idx = np.where(np.isclose(lats_arr, top_cell.lat))[0]
         j_idx = np.where(np.isclose(lons_arr, top_cell.lon))[0]
         if len(i_idx) > 0 and len(j_idx) > 0:
-            top_series = [round(float(v), 3) for v in raw["data"][:, i_idx[0], j_idx[0]]]
+            series_raw = raw["data"][:, i_idx[0], j_idx[0]]
+            valid_vals = [float(v) for v in series_raw if np.isfinite(v)]
+            fill_val = float(np.mean(valid_vals)) if valid_vals else 0.0
+            top_series = [round(float(v), 3) if np.isfinite(v) else round(fill_val, 3) for v in series_raw]
 
     analysis_record = {
         "variable": req.variable_id,
