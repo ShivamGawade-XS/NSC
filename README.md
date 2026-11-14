@@ -1,308 +1,236 @@
 # Tellura
 
-**Spatiotemporal trend detection for NASA Earth observations.**
+**Autonomous Spatiotemporal Climate Trend Discovery System for NASA Earth Observations**
 
-Tellura is a full-stack scientific workstation that detects, maps, and explains statistically significant trends in NASA satellite climate data. It applies non-parametric statistical methods — Mann-Kendall tests with Hamed & Rao autocorrelation correction, Theil-Sen robust slope estimation, Pettitt changepoint detection, and Benjamini-Hochberg false discovery rate control — to gridded reanalysis datasets, then visualizes the results as interactive spatial maps with LISA clustering. Built for the [NASA Space Apps Challenge 2026](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/) "Be an Earth System Trend Detective" challenge.
+Tellura is a scientific analytics workstation and spatial discovery instrument designed for the [NASA Space Apps Challenge 2026](https://www.spaceappschallenge.org/2026/challenges/be-an-earth-system-trend-detective/) (*"Be an Earth System Trend Detective"*). It analyzes gridded reanalysis and satellite observations using non-parametric statistical mechanics — overcoming the statistical fallacies common in linear climate visualization tools.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB.svg?logo=python&logoColor=white)](https://python.org)
-[![CI](https://github.com/ShivamGawade-XS/NSC/actions/workflows/ci.yml/badge.svg)](https://github.com/ShivamGawade-XS/NSC/actions/workflows/ci.yml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
+[![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![SciPy](https://img.shields.io/badge/SciPy-1.12+-8CAAE6.svg?logo=scipy&logoColor=white)](https://scipy.org)
+[![NASA Data](https://img.shields.io/badge/NASA%20Data-MERRA--2%20%7C%20POWER-0B3D91.svg?logo=nasa&logoColor=white)](https://power.larc.nasa.gov)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Production CI](https://github.com/ShivamGawade-XS/NSC/actions/workflows/ci.yml/badge.svg)](https://github.com/ShivamGawade-XS/NSC/actions/workflows/ci.yml)
+[![DevSecOps](https://github.com/ShivamGawade-XS/NSC/actions/workflows/security.yml/badge.svg)](https://github.com/ShivamGawade-XS/NSC/actions/workflows/security.yml)
 
 ---
 
-## Screenshots
+## Visual Interface
 
 <p align="center">
-  <img src="docs/assets/screenshots/landing_fullpage_1440.png" alt="Tellura landing page" width="720" />
+  <img src="docs/assets/screenshots/landing_fullpage_1440.png" alt="Tellura Planetary Intelligence Landing Page" width="800" />
 </p>
 
 <p align="center">
-  <img src="docs/assets/screenshots/dashboard_active_analysis.png" alt="Tellura dashboard with active analysis" width="720" />
+  <img src="docs/assets/screenshots/dashboard_active_analysis.png" alt="Tellura Workstation Active Spatial Trend Analysis" width="800" />
 </p>
 
 <p align="center">
-  <img src="docs/assets/screenshots/command_palette_interface.png" alt="Command palette for natural language queries" width="720" />
+  <img src="docs/assets/screenshots/command_palette_interface.png" alt="Tellura Natural Language Scientific Query Palette" width="800" />
 </p>
 
 ---
 
-## Key Features
+## The Scientific Problem & Empirical Edge
 
-- **Non-parametric trend detection** — Mann-Kendall S test with Hamed & Rao (1998) variance correction for autocorrelated time series, applied per grid cell across the full spatial domain (`backend/app/science/trend.py`)
-- **Robust slope estimation** — Theil-Sen median slope with Gilbert (1987) confidence intervals, resistant to outliers (`backend/app/science/trend.py`)
-- **False discovery rate control** — Benjamini-Hochberg FDR correction across all grid cells, preventing false positives from multiple testing (`backend/app/science/trend.py`)
-- **Pettitt changepoint detection** — Identifies structural breaks in temporal series (`backend/app/science/trend.py`)
-- **Spatial autocorrelation** — Global Moran's I and Local Indicators of Spatial Association (LISA) to identify hot/cold spot clusters (`backend/app/science/spatial.py`)
-- **Compound hazard analysis** — Multi-variable hazard assessment with copula-based joint exceedance modeling (`backend/app/science/compound.py`, `backend/app/science/copula_hazard.py`)
-- **Extreme event attribution** — Fraction of Attributable Risk (FAR) framework based on Stott, Stone & Allen (2004) (`backend/app/science/attribution.py`)
-- **Climate velocity mapping** — Spatial velocity of isotherms following Burrows et al. (Nature, 2011) (`backend/app/science/climate_velocity.py`)
-- **Robustness lab** — Bootstrap resampling, jackknife leave-one-out, and temporal window sweep to stress-test detected trends (`backend/app/science/robustness.py`)
-- **Natural language queries** — Parse plain-English scientific questions into structured analysis parameters (`backend/app/science/nlq_parser.py`)
-- **AI evidence explainer** — Cascading LLM integration (Gemini → xAI Grok → OpenAI → deterministic template) for narrative interpretation of results (`backend/app/science/explainer.py`)
-- **Multi-format export** — CF-1.8 NetCDF-4, GeoJSON, LaTeX statistical reports, and reproducible Jupyter/Colab notebooks (`backend/app/science/export.py`)
-- **Two NASA data sources** — MERRA-2 reanalysis (GMAO) and NASA POWER (Langley), with a pluggable adapter pattern for adding more (`backend/app/adapters/`)
-- **Interactive map workstation** — Leaflet-based spatial visualization with NASA GIBS satellite imagery basemaps, cell-level drilldown, and real-time chart rendering (`frontend-react/src/components/TrendMap.jsx`)
+Most climate dashboards suffer from three fundamental statistical errors:
 
----
+1. **The Linearity Fallacy**: Fitting Ordinary Least Squares (OLS) regressions over decadal climate time series violates Gauss-Markov assumptions. Climate variables exhibit skewed distributions, extreme meteorological events, and non-linear transitions.
+2. **Serial Autocorrelation Ignorance**: Thermal inertia in the atmosphere causes positive lag-1 autocorrelation ($r_1 > 0$). Naive trend tests underestimate variance, resulting in deflated $p$-values and high rates of false-positive detections.
+3. **The Multiplicity Problem across Spatial Grids**: Evaluating trends independently across thousands of spatial cells at $\alpha = 0.05$ produces hundreds of false discoveries purely by chance.
 
-## Tech Stack
+### How Tellura Solves This
 
-### Backend
-| Component | Version | Purpose |
-| :--- | :--- | :--- |
-| Python | 3.12+ | Runtime |
-| FastAPI | ≥ 0.110.0 | REST API framework |
-| Uvicorn | ≥ 0.28.0 | ASGI server |
-| NumPy | ≥ 1.26.0 | Array computation |
-| SciPy | ≥ 1.12.0 | Statistical tests |
-| xarray | ≥ 2024.1.0 | Multidimensional labeled data |
-| netCDF4 + h5netcdf | ≥ 1.6.5 / ≥ 1.3.0 | NetCDF I/O engines |
-| SQLite (WAL mode) | stdlib | L2 persistent cache with HMAC-SHA256 integrity |
-| SlowAPI | ≥ 0.1.9 | Rate limiting |
+Tellura implements an end-to-end non-parametric analytical pipeline:
 
-### Frontend
-| Component | Version | Purpose |
-| :--- | :--- | :--- |
-| React | 19 | UI framework |
-| Vite | 8 | Build tool and dev server |
-| Tailwind CSS | 4 | Utility-first styling |
-| Leaflet | 1.9.4 | Interactive maps |
-| Chart.js + react-chartjs-2 | 4.5 / 5.3 | Time series charts |
-| Framer Motion | 14 | Animations |
-| KaTeX | 0.19 | LaTeX math rendering |
-| Zustand | 5 | State management |
-
-### Tooling
-| Tool | Purpose |
-| :--- | :--- |
-| Ruff | Python linting |
-| Pyright | Python static type checking |
-| Oxlint | JavaScript/JSX linting |
-| Pytest + Hypothesis | Backend testing (352 tests) |
-| Playwright | End-to-end browser testing |
+| Analytical Stage | Standard Dashboard Approach | Tellura Scientific Standard | Implementing Module |
+| :--- | :--- | :--- | :--- |
+| **Trend Significance** | Naive $t$-test / OLS $p$-value | **Mann-Kendall test with Hamed & Rao (1998) variance correction** | `backend/app/science/trend.py` |
+| **Magnitude of Change** | OLS regression slope | **Theil-Sen median slope with Gilbert (1987) 95% confidence intervals** | `backend/app/science/trend.py` |
+| **Spatial Multiplicity** | Unadjusted raw $p < 0.05$ | **Benjamini-Hochberg (1995) False Discovery Rate (FDR) control** | `backend/app/science/trend.py` |
+| **Regime Shifts** | Arbitrary visual inflection | **Pettitt (1979) non-parametric changepoint detection** | `backend/app/science/trend.py` |
+| **Spatial Clustering** | Simple color heatmap | **Local Moran's I (LISA) hotspot and coldspot classification** | `backend/app/science/spatial.py` |
+| **Compound Hazards** | Single-variable analysis | **Archimedean Copula bivariate joint exceedance modeling** | `backend/app/science/copula_hazard.py` |
+| **Extreme Event Attribution** | Descriptive statistics | **Fraction of Attributable Risk (FAR) framework (Stott et al., 2004)** | `backend/app/science/attribution.py` |
+| **Thermal Migration** | Static maps | **Spatial Climate Velocity vectors (Burrows et al., Nature 2011)** | `backend/app/science/climate_velocity.py` |
 
 ---
 
-## Architecture
+## Core Mathematical Formulations
+
+### 1. Mann-Kendall Test with Hamed & Rao (1998) Autocorrelation Correction
+
+The Mann-Kendall statistic $S$ evaluates relative signs of all pairwise differences across $n$ temporal steps:
+
+$$S = \sum_{k=1}^{n-1} \sum_{j=k+1}^n \text{sgn}(x_j - x_k)$$
+
+Where the variance under independent and identically distributed observations is:
+
+$$\text{Var}(S) = \frac{n(n-1)(2n+5) - \sum_{t} t(t-1)(2t+5)}{18}$$
+
+To prevent spurious significance caused by serial autocorrelation, Tellura calculates the non-parametric autocorrelation of detrended ranks across all significant lags $i$, scaling the variance:
+
+$$\text{Var}^*(S) = \text{Var}(S) \cdot \left[ 1 + \frac{2}{n(n-1)(n-2)} \sum_{i=1}^{n-1} (n-i)(n-i-1)(n-i-2) \rho_S^*(i) \right]$$
+
+The standardized test statistic $Z$ is then computed against $\text{Var}^*(S)$:
+
+$$Z = \begin{cases} \frac{S - 1}{\sqrt{\text{Var}^*(S)}} & \text{if } S > 0 \\ 0 & \text{if } S = 0 \\ \frac{S + 1}{\sqrt{\text{Var}^*(S)}} & \text{if } S < 0 \end{cases}$$
+
+### 2. Theil-Sen Robust Slope & Gilbert 95% Confidence Intervals
+
+The magnitude of temporal change is determined by the median of pairwise slopes:
+
+$$\beta = \text{median}\left( \frac{x_j - x_k}{j - k} \right) \quad \forall \; 1 \le k < j \le n$$
+
+This estimator possesses a 29% breakdown bound, remaining unaffected by extreme climate outliers. Gilbert (1987) two-sided 95% rank confidence bounds are derived directly from the sorted pairwise slopes.
+
+### 3. Spatial Autocorrelation & Anselin LISA
+
+Spatial clustering is evaluated via Global Moran's $I$:
+
+$$I = \frac{N}{W} \frac{\sum_{i=1}^N \sum_{j=1}^N w_{ij} (z_i - \bar{z})(z_j - \bar{z})}{\sum_{i=1}^N (z_i - \bar{z})^2}$$
+
+Grid cells are classified into spatial regimes:
+- **High-High (Hotspots)**: Significant positive rate of change surrounded by similar rapid warming.
+- **Low-Low (Coldspots)**: Statistically cooling/stable cells surrounded by stable cells.
+- **High-Low / Low-High (Spatial Outliers)**: Microclimatic divergence from regional baselines.
+
+---
+
+## Tech Stack & Architecture
+
+### Technology Stack
+- **Backend**: Python 3.12+, FastAPI, Uvicorn, NumPy, SciPy, xarray, netCDF4, h5netcdf, SQLite (WAL mode with HMAC-SHA256 cache signing), SlowAPI rate limiter.
+- **Frontend**: React 19, Vite 8, Tailwind CSS v4, Leaflet 1.9.4, Chart.js, Framer Motion, KaTeX, Zustand.
+- **Testing & Verification**: Pytest, Hypothesis (property testing), Ruff, Pyright, Oxlint, Playwright (real browser E2E), Trivy container scanning.
+
+### System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Frontend["Frontend (React 19 + Vite 8)"]
-        LP["LandingPage"]
-        DP["DashboardPage"]
-        TM["TrendMap (Leaflet)"]
-        TSC["TimeSeriesChart"]
-        EP["EvidencePanel"]
-        CMD["CommandPalette (NLQ)"]
-        EXP["ExportButtons"]
+    subgraph Client["Frontend Client (React 19 + Vite 8 SPA)"]
+        UI_MAP["Interactive Leaflet Map (NASA GIBS)"]
+        UI_CHART["Time Series & Warming Stripes (Chart.js)"]
+        UI_NLQ["Natural Language Query Palette"]
+        UI_STORE["Zustand Reactive State & LRU Cache"]
     end
 
-    subgraph API["FastAPI REST API"]
-        AR["Analysis Router"]
-        DR["Datasets Router"]
-        CR["Copilot Router"]
-        ER["Export Router"]
-        ATR["Attribution Router"]
-        SR["System Router"]
+    subgraph Gateway["API Gateway & Middleware (FastAPI)"]
+        GW_SEC["Security Headers & Host Filtering"]
+        GW_CORS["CORS & Rate Limiter (SlowAPI)"]
+        GW_CACHE_CHECK["HMAC Cache Interceptor"]
+        GW_GZIP["GZip Compression (>1KB)"]
     end
 
-    subgraph Science["Science Engine (NumPy + SciPy)"]
-        MK["Mann-Kendall + Theil-Sen + FDR"]
-        LISA["Moran's I + LISA Clustering"]
-        ATTR["FAR Attribution"]
-        CV["Climate Velocity"]
-        CH["Compound Hazard + Copula"]
-        ROB["Robustness Lab"]
-        NLQ["NLQ Parser"]
-        EXPL["AI Explainer"]
-        EXPO["Export Engine"]
+    subgraph Routers["Domain Routers"]
+        R_ANALYSIS["/api/v1/analysis (Trend & Cells)"]
+        R_COMPOUND["/api/v1/analysis/compound (Copula)"]
+        R_ATTRIBUTION["/api/v1/analysis/attribution (FAR)"]
+        R_COPILOT["/api/v1/copilot & /explain (LLM Cascade)"]
+        R_EXPORT["/api/v1/export (NetCDF-4 / GeoJSON / Colab)"]
+        R_SYSTEM["/api/v1/health & /ready & /metrics"]
     end
 
-    subgraph Data["Data Layer"]
-        MERRA["MERRA-2 Adapter"]
-        POWER["NASA POWER Adapter"]
-        CACHE["SQLite B-Tree Cache (WAL)"]
-        LRU["L1 In-Memory LRU"]
+    subgraph Compute["Scientific Compute Engine (Pure Python / NumPy / SciPy)"]
+        SC_MK["Mann-Kendall + Hamed-Rao + FDR"]
+        SC_SEN["Theil-Sen Robust Slope & CI"]
+        SC_LISA["Moran's I & Anselin LISA"]
+        SC_COP["Archimedean Copulas (Clayton/Gumbel)"]
+        SC_VEL["Climate Velocity Vectors"]
     end
 
-    subgraph External["External Services"]
-        NASA_API["NASA POWER API"]
-        NASA_ED["NASA Earthdata (MERRA-2)"]
-        LLM["LLM APIs (Gemini / Grok / OpenAI)"]
+    subgraph Data["Persistence & Ingestion Layer"]
+        ADAPT_M2["NASA MERRA-2 Adapter (xarray/NetCDF)"]
+        ADAPT_POW["NASA POWER Reanalysis Adapter"]
+        L2_SQLITE["SQLite WAL Database (B-Tree Indexed)"]
+        L1_MEM["L1 In-Memory LRU Cache"]
     end
 
-    LP --> DP
-    DP --> TM & TSC & EP & CMD & EXP
-    TM --> AR
-    TSC --> AR
-    CMD --> CR
-    EXP --> ER
+    UI_MAP & UI_CHART & UI_NLQ --> UI_STORE
+    UI_STORE --> GW_SEC --> GW_CORS --> GW_CACHE_CHECK --> GW_GZIP
+    GW_GZIP --> R_ANALYSIS & R_COMPOUND & R_ATTRIBUTION & R_COPILOT & R_EXPORT & R_SYSTEM
 
-    AR --> MK & LISA & CV & CH & ROB
-    CR --> NLQ & EXPL
-    ER --> EXPO
-    ATR --> ATTR
-    DR --> MERRA & POWER
+    R_ANALYSIS --> SC_MK & SC_SEN & SC_LISA & SC_VEL
+    R_COMPOUND --> SC_COP
+    R_ATTRIBUTION --> Compute
 
-    MK --> CACHE & LRU
-    MERRA --> NASA_ED
-    POWER --> NASA_API
-    EXPL --> LLM
-```
-
-The frontend is a single-page React application that communicates with the FastAPI backend through a versioned REST API (`/api/v1/`). In development, Vite proxies API requests to the backend on port 8000. In production, FastAPI serves the built SPA directly alongside the API from a single process.
-
-The science engine is a set of pure-function modules that take NumPy arrays as input and return structured results. The data layer abstracts over two NASA data sources through a common adapter interface, with a two-tier cache (in-memory LRU + SQLite with HMAC-signed entries) to avoid redundant computation.
-
----
-
-## Project Structure
-
-```
-.
-├── backend/
-│   ├── app/
-│   │   ├── adapters/          # NASA data source adapters (MERRA-2, POWER)
-│   │   ├── api/
-│   │   │   ├── endpoints.py   # Router aggregator (façade)
-│   │   │   ├── routers/       # Modular route handlers by domain
-│   │   │   └── shared.py      # Shared state, caches, helpers
-│   │   ├── core/              # Config, auth, caching, rate limiting, logging
-│   │   ├── schemas/           # Pydantic request/response models
-│   │   ├── science/           # Statistical engines (12 modules)
-│   │   └── main.py            # FastAPI application entry point
-│   ├── data/fixtures/         # Baseline NetCDF test fixtures
-│   ├── tests/                 # 352 backend tests
-│   ├── requirements.in        # Abstract dependencies
-│   └── requirements.txt       # Pinned dependencies
-├── frontend-react/
-│   ├── src/
-│   │   ├── components/        # 26 React components
-│   │   ├── pages/             # 6 page components
-│   │   ├── store/             # Zustand state management
-│   │   ├── utils/             # Helpers, analytics, audio, storage
-│   │   ├── workers/           # Web Worker for off-main-thread computation
-│   │   └── api/client.js      # API client with LRU cache
-│   ├── public/                # Static assets, favicons, manifest
-│   └── vite.config.js         # Vite config with API proxy
-├── notebooks/                 # 6 reproducible Colab notebooks
-├── scripts/                   # Operational and test scripts
-├── tests/e2e/                 # 12 Playwright E2E test specs
-├── monitoring/                # Prometheus alerts + Grafana dashboard
-├── docs/                      # 23 documentation files
-├── Dockerfile                 # Multi-stage production build
-├── docker-compose.yml         # Container orchestration
-└── .github/workflows/         # CI + Security pipelines
+    SC_MK & SC_SEN & SC_LISA --> L1_MEM --> L2_SQLITE
+    R_ANALYSIS --> ADAPT_M2 & ADAPT_POW
 ```
 
 ---
 
-## Getting Started
+## Supported NASA Datasets
+
+Tellura integrates data from NASA Earth Science Division missions and models via two standard adapters:
+
+1. **NASA MERRA-2 Atmospheric Reanalysis (GMAO)**
+   - Atmospheric assimilation from 1980 to present.
+   - Variables: `T2M` (2-Meter Air Temperature), `PRECTOT` (Total Precipitation).
+   - Baseline Fixture Coverage: North American regional transect (1980–2023).
+2. **NASA POWER Project (Langley Research Center)**
+   - Satellite-derived surface solar and meteorological parameters.
+   - Variables: `T2M` (Air Temperature), `PRECTOTCORR` (Precipitation Corrected), `ALLSKY_SFC_SW_DWN` (Shortwave Solar Irradiance), `RH2M` (Relative Humidity), `WS10M` (10-Meter Wind Speed).
+
+---
+
+## Quickstart
 
 ### Prerequisites
+- **Python 3.12+**
+- **Node.js 20+**
+- **pip** and **npm**
 
-- **Python 3.12+** — [python.org/downloads](https://www.python.org/downloads/)
-- **Node.js 22+** — [nodejs.org](https://nodejs.org/)
-- **pip** (included with Python)
-- **npm** (included with Node.js)
-
-No database server, Docker, or external API keys are required to run locally. Tellura ships with built-in MERRA-2 fixture data and operates in "Verified Local Fixture Mode" by default.
-
-### Install
+### Option A: Local Development (Native)
 
 ```bash
-# Clone the repository
+# 1. Clone repository
 git clone https://github.com/ShivamGawade-XS/NSC.git
 cd NSC
 
-# Install backend dependencies
+# 2. Install backend dependencies
 pip install -r backend/requirements.txt
 
-# Install frontend dependencies
+# 3. Install frontend dependencies
 npm ci --prefix frontend-react
-```
 
-### Set up environment (optional)
-
-```bash
-cp .env.example .env
-# Edit .env to add API keys for AI copilot, NASA Earthdata, etc.
-# All variables are optional — the app runs without any of them.
-```
-
-### Run (development)
-
-Start the backend and frontend in two terminals:
-
-```bash
-# Terminal 1: Start the FastAPI backend (port 8000)
+# 4. Start FastAPI backend (Terminal 1)
 python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000 --reload
 
-# Terminal 2: Start the Vite dev server (port 3000, proxies /api to backend)
+# 5. Start Vite frontend (Terminal 2)
 npm run --prefix frontend-react dev
 ```
-
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Run (production build)
+### Option B: Production Single-Process Mode
 
 ```bash
-# Build the frontend
+# Build the frontend bundle
 npm run --prefix frontend-react build
 
-# Start the server (serves both API and SPA)
+# Serve both API and static frontend from FastAPI
 python -m uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port 8000
 ```
+Open [http://localhost:8000](http://localhost:8000).
 
+### Option C: Docker Compose
+
+```bash
+docker compose up --build
+```
 Open [http://localhost:8000](http://localhost:8000).
 
 ---
 
-## Environment Variables
+## API Reference & Usage
 
-All variables are optional for local development. The app runs with sensible defaults.
+Interactive OpenAPI documentation is accessible at `/docs` (Swagger UI) and `/redoc` in development mode.
 
-| Variable | Purpose | Default |
-| :--- | :--- | :--- |
-| `GEMINI_API_KEY` | Google Gemini API key for AI copilot | _(falls through to next provider)_ |
-| `XAI_API_KEY` | xAI Grok API key (fallback) | _(falls through)_ |
-| `OPENAI_API_KEY` | OpenAI API key (fallback) | _(deterministic template)_ |
-| `DAILY_LLM_CALL_LIMIT` | Max external LLM calls per day | `200` |
-| `EARTHDATA_USERNAME` | NASA Earthdata Login username | _(uses local fixtures)_ |
-| `EARTHDATA_PASSWORD` | NASA Earthdata Login password | _(uses local fixtures)_ |
-| `EARTHDATA_TOKEN` | NASA Earthdata bearer token | _(uses local fixtures)_ |
-| `SMTP_HOST` | SMTP server for contact form | `smtp.gmail.com` |
-| `SMTP_PORT` | SMTP port | `587` |
-| `SMTP_USER` | SMTP sender address | — |
-| `SMTP_PASSWORD` | SMTP password / app password | _(falls back to local JSON inbox)_ |
-| `CONTACT_RECIPIENT_EMAIL` | Contact form recipient | — |
-| `ENVIRONMENT` | `development` or `production` | `development` |
-| `SECRET_KEY` | HMAC-SHA256 key for cache integrity (≥32 chars in production) | Dev fallback provided |
-| `TELLURA_DB_PATH` | SQLite cache file path | OS-specific default |
-| `CACHE_MAX_SIZE` | Max L1 in-memory cache entries | `256` |
-| `MAX_BBOX_DEGREES` | Maximum bounding box span per axis | `180.0` |
-| `DEFAULT_FDR_ALPHA` | FDR significance threshold | `0.05` |
-| `HOST` | Server bind address | `127.0.0.1` |
-| `PORT` | Server port | `8000` |
-| `STRICT_ZERO_SYNTHETIC` | Block synthetic data generation | `true` |
-| `VITE_API_URL` | Frontend API base URL override | Auto-detected from `window.location` |
-
-See [`.env.example`](.env.example) for the full annotated template.
-
----
-
-## Usage
-
-### API Overview
-
-All endpoints are available under `/api/v1/`. Interactive API documentation is at [`/docs`](http://localhost:8000/docs) (Swagger UI) and [`/redoc`](http://localhost:8000/redoc) in development mode.
-
-### Health Check
-
+### 1. Health Verification
 ```bash
 curl http://localhost:8000/api/v1/health
 ```
-
 ```json
 {
   "status": "healthy",
@@ -313,21 +241,7 @@ curl http://localhost:8000/api/v1/health
 }
 ```
 
-### List Datasets
-
-```bash
-curl http://localhost:8000/api/v1/datasets
-```
-
-```json
-[
-  { "dataset_id": "merra2_reanalysis", "name": "NASA MERRA-2 Atmospheric Reanalysis" },
-  { "dataset_id": "nasa_power", "name": "NASA POWER Climate Reanalysis (NASA Langley)" }
-]
-```
-
-### Run a Trend Analysis
-
+### 2. Execute Spatiotemporal Trend Analysis
 ```bash
 curl -X POST http://localhost:8000/api/v1/analysis \
   -H "Content-Type: application/json" \
@@ -341,7 +255,6 @@ curl -X POST http://localhost:8000/api/v1/analysis \
     "use_fdr": true
   }'
 ```
-
 ```json
 {
   "analysis_id": "ana_merra2_reanalysis_T2M_2000_2020_b-100_30_-90_40_a50",
@@ -365,93 +278,97 @@ curl -X POST http://localhost:8000/api/v1/analysis \
 }
 ```
 
-### Key Endpoints
+### 3. Key Endpoints Summary
 
-| Method | Endpoint | Description |
+| Method | Path | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/v1/health` | Health check |
-| `GET` | `/api/v1/datasets` | List available datasets |
-| `GET` | `/api/v1/variables` | List all climate variables |
-| `POST` | `/api/v1/analysis` | Run trend analysis on a region |
-| `GET` | `/api/v1/analysis/{id}` | Retrieve analysis results |
-| `GET` | `/api/v1/analysis/{id}/map` | Get spatial map grid data |
-| `GET` | `/api/v1/analysis/{id}/cell` | Get cell-level timeseries |
-| `GET` | `/api/v1/analysis/{id}/velocity` | Get climate velocity field |
-| `GET` | `/api/v1/analysis/{id}/signals` | Get candidate trend signals |
-| `GET` | `/api/v1/analysis/{id}/contrasts` | Get period contrasts |
-| `POST` | `/api/v1/analysis/compound` | Run compound hazard analysis |
-| `POST` | `/api/v1/analysis/attribution` | Run extreme event attribution |
-| `POST` | `/api/v1/analysis/compare` | Compare two locations |
-| `POST` | `/api/v1/analysis/compare-regions` | Compare distinct regions |
-| `POST` | `/api/v1/analysis/discover-trends` | Autonomous multi-variable discovery |
-| `POST` | `/api/v1/analysis/{id}/robustness` | Run robustness stress tests |
-| `GET` | `/api/v1/analysis/{id}/export/geojson` | Export as GeoJSON |
-| `GET` | `/api/v1/analysis/{id}/export/netcdf` | Export as CF-1.8 NetCDF-4 |
-| `GET` | `/api/v1/analysis/{id}/export/latex` | Export as LaTeX report |
-| `GET` | `/api/v1/analysis/{id}/export/notebook` | Export as Jupyter notebook |
-| `GET` | `/api/v1/analysis/{id}/export/colab` | Get Google Colab launcher link |
-| `POST` | `/api/v1/explain` | AI-powered evidence explanation |
-| `POST` | `/api/v1/copilot/parse-query` | Natural language query parsing |
-| `POST` | `/api/v1/contact` | Submit contact form |
+| `GET` | `/api/v1/health` | Service health and registered adapters |
+| `GET` | `/api/v1/datasets` | List active NASA datasets and bounds |
+| `GET` | `/api/v1/variables` | List available climate variables across datasets |
+| `POST` | `/api/v1/analysis` | Run full gridded trend analysis across spatial bounds |
+| `GET` | `/api/v1/analysis/{id}/map` | Retrieve spatial GeoJSON grid with LISA clustering |
+| `GET` | `/api/v1/analysis/{id}/cell` | Fetch temporal timeseries, Mann-Kendall S, and changepoints for a specific cell |
+| `POST` | `/api/v1/analysis/compound` | Compute bivariate compound hazard index with Archimedean copula |
+| `POST` | `/api/v1/analysis/attribution` | Fraction of Attributable Risk (FAR) calculation |
+| `POST` | `/api/v1/analysis/{id}/robustness` | Run bootstrap, jackknife, and temporal window robustness sweeps |
+| `GET` | `/api/v1/analysis/{id}/export/netcdf` | Export analysis field as CF-1.8 NetCDF-4 binary |
+| `GET` | `/api/v1/analysis/{id}/export/geojson` | Export analysis grid as standard GeoJSON FeatureCollection |
+| `GET` | `/api/v1/analysis/{id}/export/colab` | Generate 1-click Google Colab reproducibility notebook link |
+| `POST` | `/api/v1/explain` | Generate scientific interpretation via AI Copilot cascade |
 
 ---
 
-## Scripts and Testing
+## Environment Variables
 
-### Linting
+All variables are optional for local development. The workstation defaults to local verified fixtures.
 
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `ENVIRONMENT` | Deployment environment (`development` / `production`) | `development` |
+| `SECRET_KEY` | HMAC-SHA256 signing key for cache integrity (≥32 chars in production) | Automatic development fallback |
+| `HOST` | Server host binding | `127.0.0.1` |
+| `PORT` | Server port binding | `8000` |
+| `DEFAULT_FDR_ALPHA` | False Discovery Rate significance alpha threshold | `0.05` |
+| `MAX_BBOX_DEGREES` | Maximum spatial bounding box span permitted per axis | `180.0` |
+| `STRICT_ZERO_SYNTHETIC` | Enforce NASA empirical data standard; reject synthetic generation | `true` |
+| `EARTHDATA_USERNAME` | NASA Earthdata Login username for direct cloud streaming | Optional |
+| `EARTHDATA_PASSWORD` | NASA Earthdata Login password for direct cloud streaming | Optional |
+| `GEMINI_API_KEY` | Primary AI Copilot provider key (Google Gemini) | Optional (falls through cascade) |
+| `XAI_API_KEY` | Secondary AI Copilot provider key (xAI Grok) | Optional (falls through cascade) |
+| `OPENAI_API_KEY` | Tertiary AI Copilot provider key (OpenAI) | Optional (deterministic fallback) |
+| `DAILY_LLM_CALL_LIMIT` | Rate limit cap on external LLM calls per day | `200` |
+| `SMTP_HOST` | Outbound SMTP relay for contact form inquiries | `smtp.gmail.com` |
+| `SMTP_PORT` | Outbound SMTP relay port | `587` |
+| `SMTP_USER` | Outbound SMTP authentication username | Optional (inbox JSON fallback) |
+| `SMTP_PASSWORD` | Outbound SMTP authentication password | Optional (inbox JSON fallback) |
+| `VITE_API_URL` | Frontend API base URL override | Auto-detected from `window.location` |
+
+See [`.env.example`](.env.example) for the full configuration template.
+
+---
+
+## Quality, Testing & Security Audits
+
+### Automated Testing
+The repository maintains comprehensive test coverage verified across 352 test cases:
 ```bash
-# Backend (Python)
-python -m ruff check backend/
-
-# Backend type checking
-npx pyright backend/
-
-# Frontend (JavaScript/JSX)
-npm run --prefix frontend-react lint
-```
-
-### Tests
-
-```bash
-# Run all 352 backend tests
+# Run backend pytest suite
 python -m pytest backend/tests/ -q
 
-# Run with coverage
-python -m pytest backend/tests/ --cov=backend/app --cov-report=term-missing
+# Run frontend oxlint
+npm run --prefix frontend-react lint
 
-# Run security audit
-npm run test:security
+# Run backend ruff linter
+python -m ruff check backend/
+
+# Run backend static type checker
+npx pyright backend/
 ```
 
-### Available npm scripts (root)
-
-| Script | Command |
-| :--- | :--- |
-| `npm run dev` | Start frontend dev server |
-| `npm run build` | Production build |
-| `npm run lint` | Lint frontend |
-| `npm run backend` | Start backend with hot reload |
-| `npm run test:backend` | Run pytest |
-| `npm run test:security` | Run security red team audit |
+### Security & Hardening Controls
+- **Least-Privilege Containerization**: Dockerfile enforces non-root execution (`USER 10001:10001`), read-only root filesystems, and `CAP_DROP: ALL`.
+- **Cache Tamper Protection**: L2 SQLite cache rows are signed with HMAC-SHA256 tokens using `SECRET_KEY`, preventing deserialization tampering.
+- **Compute Guardrails**: Spatial queries enforce `MAX_BBOX_DEGREES` bounding box limits and cell-timestep complexity caps ($C \le 500{,}000$) to prevent resource exhaustion attacks.
+- **Dependency CVE Auditing**: Continuous CI pipeline enforces `pip-audit`, Bandit AST security scanning, and Trivy container vulnerability analysis.
 
 ---
 
 ## Contributing
 
-1. Fork the repository and create a feature branch from `main`
-2. Make your changes
-3. Ensure all checks pass:
+1. Fork the repository and create your branch from `main`.
+2. Write clean, tested code following non-parametric empirical guidelines.
+3. Verify that all linters, type checks, and tests pass:
    ```bash
    python -m ruff check backend/
    npx pyright backend/
    npm run --prefix frontend-react lint
    python -m pytest backend/tests/ -q
    ```
-4. Open a pull request. CI runs backend tests, linting, and security scanning automatically on push and PR.
+4. Submit a Pull Request. GitHub Actions will run automated CI and security validation gates.
 
 ---
 
 ## License
 
-[MIT](LICENSE) — Copyright (c) 2026 Shivam_Gawade
+Tellura is released under the [MIT License](LICENSE).  
+Copyright (c) 2026 Shivam_Gawade.

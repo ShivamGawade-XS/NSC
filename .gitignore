@@ -70,6 +70,7 @@ Thumbs.db
 
 # Internal Agent Planning & Scratch
 .planning/
+.impeccable/
 *PROMPT*
 *DOSSIER*
 03_PROMPTS.md
