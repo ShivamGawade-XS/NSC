@@ -1,0 +1,28 @@
+# Render Blueprint — Tellura Climate Trend Analysis Workstation
+# https://docs.render.com/blueprint-spec
+
+services:
+  - type: web
+    name: tellura
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Free tier
+    plan: free
+    # Render auto-detects EXPOSE 8000 from Dockerfile
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true      # Render generates a 64-char random string
+      - key: ALLOWED_ORIGINS
+        sync: false               # Must be set manually after first deploy
+      - key: GEMINI_API_KEY
+        sync: false               # Optional: set in dashboard if using AI explainer
+      - key: EARTHDATA_USERNAME
+        sync: false               # Optional: NASA Earthdata credentials
+      - key: EARTHDATA_PASSWORD
+        sync: false               # Optional: NASA Earthdata credentials
+    healthCheckPath: /api/v1/health
+    # Auto-deploy from main branch
+    autoDeploy: true
+

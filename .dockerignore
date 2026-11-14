@@ -12,3 +12,10 @@ frontend-react/node_modules
 frontend-react/dist
 .DS_Store
 *.log
+*.md
+!README.md
+docs/
+render.yaml
+.env*
+*.db
+.agents/
