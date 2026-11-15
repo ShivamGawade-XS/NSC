@@ -180,154 +180,236 @@ export default function AnalysisPanel() {
         <div className="instrument-heading !text-xs mb-2">
           {workstationMode === 'detective' ? 'Curated Climate Mysteries' : workstationMode === 'policy' ? 'Municipal Jurisdictions & Basins' : L.presetsLabel}
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {Object.entries(DETECTIVE_PRESETS).map(([key, preset]) => (
-            <button
-              key={key}
-              onClick={() => {
-                setValidationError('');
-                playTactileClick(700);
-                loadPreset(key);
-              }}
-              className="preset-pill font-mono text-[10px]"
-              title={preset.desc}
-            >
-              {workstationMode === 'detective' ? (
-                key === 'case1' ? 'Case 1: Texas Heatwave' :
-                key === 'case2' ? 'Case 2: SW Megadrought' :
-                key === 'case3' ? 'Case 3: Continental US' :
-                key === 'case4' ? 'Case 4: Midwest Crops' :
-                key === 'case5' ? 'Case 5: Opposing Dipoles' :
-                'Case 6: Wildfire Dimming'
-              ) : workstationMode === 'policy' ? (
-                key === 'case1' ? 'Travis County (TX)' :
-                key === 'case2' ? 'Colorado River Basin' :
-                key === 'case3' ? 'US Continental Grid' :
-                key === 'case4' ? 'Upper Midwest Ag' :
-                key === 'case5' ? 'Inter-Mountain Basin' :
-                'Northern Smoke Belt'
-              ) : (
-                key === 'case1' ? 'Texas Basin' :
-                key === 'case2' ? 'SW Transect' :
-                key === 'case3' ? 'CONUS Continental' :
-                key === 'case4' ? 'Midwest Ag' :
-                key === 'case5' ? 'Opposing Contrasts' :
-                'Wisconsin Wildfire (GSFC)'
-              )}
-            </button>
-          ))}
-        </div>
+        {workstationMode === 'detective' ? (
+          <div className="grid grid-cols-1 gap-1.5">
+            {[
+              { key: 'case1', title: 'Case 1: The Texas Heat Mystery', subtitle: 'Why did Austin break heat records 3 years in a row?', badge: '☀️ Heatwave' },
+              { key: 'case2', title: 'Case 2: Shrinking Lake Mead Reservoir', subtitle: 'Where did the Colorado River water go?', badge: '💧 Megadrought' },
+              { key: 'case3', title: 'Case 3: The Vanishing Winter', subtitle: 'Where in America is snow disappearing fastest?', badge: '❄️ Winter Shift' },
+              { key: 'case4', title: 'Case 4: Midwestern Flash Drought', subtitle: 'Can rain clouds trick farmers while soil turns to dust?', badge: '🌽 Crops' },
+              { key: 'case5', title: 'Case 5: Opposing Regional Climates', subtitle: 'One side wets while the other side burns.', badge: '⚖️ Dipole' },
+              { key: 'case6', title: 'Case 6: Wildfire Sunlight Dimming', subtitle: 'How smoke dimmed solar panels 1,000 miles away.', badge: '🌲 Smoke Plume' },
+            ].map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => {
+                  setValidationError('');
+                  playTactileClick(700);
+                  loadPreset(item.key);
+                }}
+                className="text-left p-2 rounded-lg bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-hover)] border border-[var(--color-border-subtle)] hover:border-[var(--color-accent-blue)] transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="text-[11px] font-bold font-['Space_Grotesk'] text-[var(--color-text-main)] group-hover:text-[var(--color-accent-blue)]">
+                    {item.title}
+                  </span>
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[var(--color-accent-blue)]/10 text-[var(--color-accent-blue)] font-medium">
+                    {item.badge}
+                  </span>
+                </div>
+                <p className="text-[10px] text-[var(--color-text-secondary)] leading-tight line-clamp-1">
+                  {item.subtitle}
+                </p>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {Object.entries(DETECTIVE_PRESETS).map(([key, preset]) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setValidationError('');
+                  playTactileClick(700);
+                  loadPreset(key);
+                }}
+                className="preset-pill font-mono text-[10px]"
+                title={preset.desc}
+              >
+                {workstationMode === 'policy' ? (
+                  key === 'case1' ? 'Travis County (TX)' :
+                  key === 'case2' ? 'Colorado River Basin' :
+                  key === 'case3' ? 'US Continental Grid' :
+                  key === 'case4' ? 'Upper Midwest Ag' :
+                  key === 'case5' ? 'Inter-Mountain Basin' :
+                  'Northern Smoke Belt'
+                ) : (
+                  key === 'case1' ? 'Texas Basin' :
+                  key === 'case2' ? 'SW Transect' :
+                  key === 'case3' ? 'CONUS Continental' :
+                  key === 'case4' ? 'Midwest Ag' :
+                  key === 'case5' ? 'Opposing Contrasts' :
+                  'Wisconsin Wildfire (GSFC)'
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="w-full h-px bg-[var(--color-border-subtle)]" />
 
       {/* Dataset Selection */}
       <div className="space-y-3.5">
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="form-label" htmlFor="data-stream-select">
-              {L.dataStreamLabel}
-            </label>
-            <button
-              type="button"
-              onClick={() => {
-                playTactileClick(700);
-                setCustomDataModalOpen(true);
-              }}
-              className="text-[10px] text-[var(--color-accent-blue)] hover:underline font-mono flex items-center gap-1 cursor-pointer"
-              title="Upload your own GeoJSON/JSON dataset"
-            >
-              <span>+ Ingest Data</span>
-            </button>
-          </div>
-          <select
-            id="data-stream-select"
-            name="dataset"
-            value={dataset}
-            onChange={(e) => {
-              setFormField('dataset', e.target.value);
-              const vars = DATASET_VARIABLES[e.target.value];
-              if (vars?.[0]) setFormField('variable', vars[0].id);
-            }}
-            className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none transition-colors"
-          >
-            <option value="nasa_power">NASA POWER (Global Live Streaming)</option>
-            <option value="merra2_reanalysis">MERRA-2 Reanalysis (North America Continental)</option>
-            <option value="planetary_computer">Microsoft Planetary Computer STAC (Global Offer 2026)</option>
-          </select>
-          <p className="text-[9px] text-[var(--color-text-muted)] mt-1 font-mono">
-            {dataset === 'nasa_power'
-              ? 'NASA Langley Research Center • Global Live Stream • DOI: 10.5067/POWER/10.0.0'
-              : dataset === 'planetary_computer'
-              ? 'Microsoft Planetary Computer STAC • Landsat 8/9 & Sentinel-2 • NASA Global Collaborator 2026'
-              : 'NASA GMAO Atmospheric • Pre-cached North America • DOI: 10.5067/A7F0JNNUTWOB'}
-          </p>
-          {dataset === 'planetary_computer' && (
-            <div className="mt-2 p-2 rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-[10px] text-emerald-900 dark:text-emerald-200 leading-relaxed font-sans">
-              <div className="font-semibold flex items-center gap-1 text-emerald-950 dark:text-emerald-100 mb-0.5">
-                <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-                </svg>
-                NASA Space Apps 2026 Global Collaborator
-              </div>
-              Direct STAC query to Landsat 8/9 (30m) &amp; Sentinel-2 (10–20m) multispectral indices across the Microsoft Planetary Computer open catalog.
+        {workstationMode === 'detective' ? (
+          <div className="p-2.5 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] space-y-1">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="font-bold text-[var(--color-text-main)] flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>NASA POWER Satellite Stream</span>
+              </span>
+              <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-mono">
+                Verified
+              </span>
             </div>
-          )}
-          {dataset === 'merra2_reanalysis' && (
-            <div className="mt-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-[10px] text-blue-900 dark:text-blue-200 leading-relaxed font-sans space-y-1.5">
-              <div className="font-semibold flex items-center justify-between text-blue-950 dark:text-blue-100">
-                <span className="flex items-center gap-1">
-                  <svg className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                  </svg>
-                  NASA GES DISC Continental Domain
-                </span>
-                <span className="text-[9px] font-mono bg-blue-500/20 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold">
-                  [-170°W to -50°W]
-                </span>
-              </div>
-              <p>
-                Offline assimilation covers the North America domain. For instant zero-latency exploration, snap to the verified Continental transect:
-              </p>
+            <p className="text-[10px] text-[var(--color-text-secondary)] leading-relaxed">
+              Streaming 44 years of continuous NASA Langley satellite &amp; atmospheric observations (1981–2024).
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="form-label" htmlFor="data-stream-select">
+                {L.dataStreamLabel}
+              </label>
               <button
                 type="button"
                 onClick={() => {
                   playTactileClick(700);
-                  setBbox({ minLon: '-102.0', minLat: '31.0', maxLon: '-94.0', maxLat: '39.0' });
+                  setCustomDataModalOpen(true);
                 }}
-                className="w-full py-1 px-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-mono text-[10px] font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                className="text-[10px] text-[var(--color-accent-blue)] hover:underline font-mono flex items-center gap-1 cursor-pointer"
+                title="Upload your own GeoJSON/JSON dataset"
               >
-                <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <circle cx="12" cy="12" r="9" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3m-9-9h3m12 0h3" />
-                </svg>
-                <span>Snap Coordinates to Central US Transect</span>
+                <span>+ Ingest Data</span>
               </button>
             </div>
-          )}
-        </div>
+            <select
+              id="data-stream-select"
+              name="dataset"
+              value={dataset}
+              onChange={(e) => {
+                setFormField('dataset', e.target.value);
+                const vars = DATASET_VARIABLES[e.target.value];
+                if (vars?.[0]) setFormField('variable', vars[0].id);
+              }}
+              className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none transition-colors"
+            >
+              <option value="nasa_power">NASA POWER (Global Live Streaming)</option>
+              <option value="merra2_reanalysis">MERRA-2 Reanalysis (North America Continental)</option>
+              <option value="planetary_computer">Microsoft Planetary Computer STAC (Global Offer 2026)</option>
+            </select>
+            <p className="text-[9px] text-[var(--color-text-muted)] mt-1 font-mono">
+              {dataset === 'nasa_power'
+                ? 'NASA Langley Research Center • Global Live Stream • DOI: 10.5067/POWER/10.0.0'
+                : dataset === 'planetary_computer'
+                ? 'Microsoft Planetary Computer STAC • Landsat 8/9 & Sentinel-2 • NASA Global Collaborator 2026'
+                : 'NASA GMAO Atmospheric • Pre-cached North America • DOI: 10.5067/A7F0JNNUTWOB'}
+            </p>
+            {dataset === 'planetary_computer' && (
+              <div className="mt-2 p-2 rounded bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-[10px] text-emerald-900 dark:text-emerald-200 leading-relaxed font-sans">
+                <div className="font-semibold flex items-center gap-1 text-emerald-950 dark:text-emerald-100 mb-0.5">
+                  <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                  </svg>
+                  NASA Space Apps 2026 Global Collaborator
+                </div>
+                Direct STAC query to Landsat 8/9 (30m) &amp; Sentinel-2 (10–20m) multispectral indices across the Microsoft Planetary Computer open catalog.
+              </div>
+            )}
+            {dataset === 'merra2_reanalysis' && (
+              <div className="mt-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/50 text-[10px] text-blue-900 dark:text-blue-200 leading-relaxed font-sans space-y-1.5">
+                <div className="font-semibold flex items-center justify-between text-blue-950 dark:text-blue-100">
+                  <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
+                    NASA GES DISC Continental Domain
+                  </span>
+                  <span className="text-[9px] font-mono bg-blue-500/20 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-bold">
+                    [-170°W to -50°W]
+                  </span>
+                </div>
+                <p>
+                  Offline assimilation covers the North America domain. For instant zero-latency exploration, snap to the verified Continental transect:
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playTactileClick(700);
+                    setBbox({ minLon: '-102.0', minLat: '31.0', maxLon: '-94.0', maxLat: '39.0' });
+                  }}
+                  className="w-full py-1 px-2 rounded bg-blue-600 hover:bg-blue-500 text-white font-mono text-[10px] font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3m-9-9h3m12 0h3" />
+                  </svg>
+                  <span>Snap Coordinates to Central US Transect</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="form-label block mb-1.5" htmlFor="variable-select">
             {L.variableLabel}
           </label>
-          <select
-            id="variable-select"
-            name="variable"
-            value={variable}
-            onChange={(e) => {
-              const newVar = e.target.value;
-              setFormField('variable', newVar);
-              if (newVar === 'ALLSKY_SFC_SW_DWN' && startYear < 2001) {
-                setFormField('startYear', 2001);
-              }
-            }}
-            className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none transition-colors"
-          >
-            {variables.map((v) => (
-              <option key={v.id} value={v.id}>{v.label}</option>
-            ))}
-          </select>
+          {workstationMode === 'detective' ? (
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                { id: 'T2M', label: 'Temperature', icon: '☀️', desc: 'Heatwaves & Warming' },
+                { id: 'PRECTOTCORR', label: 'Rain & Snow', icon: '🌧️', desc: 'Drought vs Rain' },
+                { id: 'ALLSKY_SFC_SW_DWN', label: 'Sunlight', icon: '⚡', desc: 'Solar Energy & Dimming' },
+                { id: 'RH2M', label: 'Air Moisture', icon: '💧', desc: 'Humidity & Dryness' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    playTactileClick(600);
+                    setFormField('variable', item.id);
+                    if (item.id === 'ALLSKY_SFC_SW_DWN' && startYear < 2001) {
+                      setFormField('startYear', 2001);
+                    }
+                  }}
+                  className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
+                    variable === item.id
+                      ? 'bg-[var(--color-accent-blue)]/15 border-[var(--color-accent-blue)] text-[var(--color-text-main)] font-semibold shadow-xs'
+                      : 'bg-[var(--color-bg-elevated)] border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold font-mono">
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </div>
+                  <div className="text-[9px] text-[var(--color-text-muted)] font-mono mt-0.5">
+                    {item.desc}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <select
+              id="variable-select"
+              name="variable"
+              value={variable}
+              onChange={(e) => {
+                const newVar = e.target.value;
+                setFormField('variable', newVar);
+                if (newVar === 'ALLSKY_SFC_SW_DWN' && startYear < 2001) {
+                  setFormField('startYear', 2001);
+                }
+              }}
+              className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-3 py-2 text-xs text-[var(--color-text-main)] focus:border-[var(--color-accent-blue)] focus:outline-none transition-colors"
+            >
+              {variables.map((v) => (
+                <option key={v.id} value={v.id}>{v.label}</option>
+              ))}
+            </select>
+          )}
 
           {/* Dynamic Detective Variable Guide Card */}
           {(() => {
@@ -441,43 +523,65 @@ export default function AnalysisPanel() {
         </div>
 
         {/* Time Range */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div>
-            <label className="form-label block mb-1" htmlFor="start-year-input">Start Year</label>
-            <input
-              id="start-year-input"
-              name="startYear"
-              type="number"
-              min="1981"
-              max="2026"
-              value={startYear}
-              onChange={(e) => {
-                setValidationError('');
-                setFormField('startYear', parseInt(e.target.value, 10));
-              }}
-              className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium focus:border-[var(--color-accent-blue)] focus:outline-none"
-            />
+        {workstationMode === 'detective' ? (
+          <div className="p-2.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] space-y-1">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="font-bold text-[var(--color-text-main)] flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Observation Window</span>
+              </span>
+              <span className="text-[10px] font-mono text-[var(--color-accent-blue)] font-bold">
+                {startYear}–{endYear} ({yearCount} yrs)
+              </span>
+            </div>
+            <p className="text-[10px] text-[var(--color-text-secondary)] font-mono">
+              Continuous multi-decadal satellite baseline. Calibrated for instant mystery solving.
+            </p>
           </div>
+        ) : (
           <div>
-            <label className="form-label block mb-1" htmlFor="end-year-input">End Year</label>
-            <input
-              id="end-year-input"
-              name="endYear"
-              type="number"
-              min="1981"
-              max="2026"
-              value={endYear}
-              onChange={(e) => {
-                setValidationError('');
-                setFormField('endYear', parseInt(e.target.value, 10));
-              }}
-              className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium focus:border-[var(--color-accent-blue)] focus:outline-none"
-            />
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="form-label block mb-1" htmlFor="start-year-input">Start Year</label>
+                <input
+                  id="start-year-input"
+                  name="startYear"
+                  type="number"
+                  min="1981"
+                  max="2026"
+                  value={startYear}
+                  onChange={(e) => {
+                    setValidationError('');
+                    setFormField('startYear', parseInt(e.target.value, 10));
+                  }}
+                  className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium focus:border-[var(--color-accent-blue)] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="form-label block mb-1" htmlFor="end-year-input">End Year</label>
+                <input
+                  id="end-year-input"
+                  name="endYear"
+                  type="number"
+                  min="1981"
+                  max="2026"
+                  value={endYear}
+                  onChange={(e) => {
+                    setValidationError('');
+                    setFormField('endYear', parseInt(e.target.value, 10));
+                  }}
+                  className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium focus:border-[var(--color-accent-blue)] focus:outline-none"
+                />
+              </div>
+            </div>
+            <p className="text-[9px] text-[var(--color-text-muted)] font-mono mt-1">
+              {yearCount} consecutive annual observations
+            </p>
           </div>
-        </div>
-        <p className="text-[9px] text-[var(--color-text-muted)] font-mono">
-          {yearCount} consecutive annual observations
-        </p>
+        )}
 
         {/* BBox Section */}
         {workstationMode === 'detective' ? (

@@ -682,11 +682,16 @@ export default function DashboardPage({ forcedMode }) {
               <div className="interface-card p-3.5">
                 <div className="flex items-center justify-between mb-1.5">
                   <h2 className="instrument-heading">
-                    Temporal Trajectory & Theil-Sen Estimator
+                    {workstationMode === 'detective'
+                      ? '44-Year Climate Timeline & True Direction'
+                      : workstationMode === 'policy'
+                      ? 'Decadal Trajectory & Baseline Divergence'
+                      : 'Temporal Trajectory & Theil-Sen Estimator'}
                   </h2>
                   {selectedCell && (
                     <span className="text-xs text-[var(--color-text-secondary)] font-mono tabular-nums font-medium">
-                      Sen's Slope: <strong className="text-[var(--color-text-main)] font-bold">{selectedCell.slope > 0 ? '+' : ''}{selectedCell.slope?.toFixed(4)}</strong> <span className="text-[10px] text-[var(--color-text-muted)]">{selectedCell.slope_units}</span>
+                      {workstationMode === 'detective' ? 'Trend Speed: ' : workstationMode === 'policy' ? 'Rate of Change: ' : "Sen's Slope: "}
+                      <strong className="text-[var(--color-text-main)] font-bold">{selectedCell.slope > 0 ? '+' : ''}{selectedCell.slope?.toFixed(4)}</strong> <span className="text-[10px] text-[var(--color-text-muted)]">{selectedCell.slope_units}</span>
                     </span>
                   )}
                 </div>

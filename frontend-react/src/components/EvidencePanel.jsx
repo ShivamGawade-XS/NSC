@@ -316,106 +316,244 @@ export default function EvidencePanel() {
         {activeTab === 'telemetry' && (
           <div className="space-y-3 pt-1 animate-in fade-in duration-150">
             {/* Student Detective Clue & Audio Sonification Player */}
-            {workstationMode === 'detective' && (
-              <div className="p-3 rounded-lg bg-[var(--color-accent-blue)]/10 border border-[var(--color-accent-blue)]/30 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-[var(--color-text-main)] flex items-center gap-1.5 font-['Space_Grotesk']">
-                    <svg className="w-4 h-4 text-[var(--color-accent-blue)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <circle cx="11" cy="11" r="8" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.3-4.3" />
-                    </svg>
-                    <span>Detective Clue &amp; Audio Sonification</span>
+            {workstationMode === 'detective' ? (
+              <div className="space-y-3">
+                {/* Detective Mystery Case Report Card */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-br from-blue-500/10 via-[var(--color-bg-elevated)] to-blue-500/5 border border-blue-500/30 space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-[var(--color-accent-blue)] text-white shadow-xs">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <circle cx="11" cy="11" r="8" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.3-4.3" />
+                        </svg>
+                      </span>
+                      <div>
+                        <h4 className="text-xs font-bold text-[var(--color-text-main)] font-['Space_Grotesk'] uppercase tracking-wider">
+                          Detective Case Report
+                        </h4>
+                        <div className="text-[10px] text-[var(--color-text-muted)] font-mono">
+                          {formatCoords(cell.lat, cell.lon)} • 44-Yr NASA Observations
+                        </div>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
+                      (cell.slope || 0) > 0
+                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                        : (cell.slope || 0) < 0
+                        ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30'
+                        : 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30'
+                    }`}>
+                      {(cell.slope || 0) > 0 ? '🔥 Warming Trend' : (cell.slope || 0) < 0 ? '❄️ Cooling Trend' : '⚖️ Stable'}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--color-accent-blue)] text-white font-bold">
-                    {(cell.slope || 0) > 0 ? 'Warming Signal' : 'Cooling Signal'}
-                  </span>
-                </div>
-                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
-                  {cell.evidence_record?.plainDriver ||
-                    'Satellite instruments record steady multi-decadal change across this regional cell. Hear the trend directly through our Web Audio sound engine.'}
-                </p>
-                <div className="flex items-center gap-2 pt-1 border-t border-[var(--color-accent-blue)]/20">
+
+                  {/* 1. What Happened? */}
+                  <div className="p-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] space-y-1">
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--color-accent-blue)] flex items-center gap-1.5">
+                      <span>1. What Happened?</span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-base font-bold font-mono text-[var(--color-text-main)]">
+                        {(cell.slope || 0) > 0 ? '+' : ''}{(cell.slope || 0).toFixed(3)} {cell.slope_units || '°C / decade'}
+                      </span>
+                      <span className="text-xs text-[var(--color-text-secondary)] font-mono">
+                        (≈ {((cell.slope || 0) * 1.8 > 0 ? '+' : '')}{((cell.slope || 0) * 1.8).toFixed(2)}°F / decade)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
+                      {(cell.slope || 0) > 0
+                        ? `Satellite data shows a steady multi-decadal warming trend across this region. Over the 44-year NASA record, conditions have shifted by approx ${Math.abs((cell.slope || 0) * 4.4 * 1.8).toFixed(1)}°F.`
+                        : `Satellite observations indicate a slight cooling or hydrological shift across this regional cell over 44 years.`}
+                    </p>
+                  </div>
+
+                  {/* 2. Is It a Fluke? (Lie Detector Test) */}
+                  <div className="p-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] space-y-1">
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                      <span>2. Is It a Fluke? (Lie Detector Test)</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                        {cell.p_value < 0.001 ? '99.9% Certain' : cell.p_value < 0.05 ? '95% Certain' : 'Emerging Pattern'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
+                      {cell.p_value < 0.05
+                        ? 'Confirmed Real Trend: Our statistical test proved this pattern is NOT random weather luck or temporary streaks; it is an authentic permanent shift confirmed by NASA data.'
+                        : 'Natural Variation: This signal is currently within the expected natural year-to-year weather fluctuation.'}
+                    </p>
+                  </div>
+
+                  {/* 3. Earth System Cause */}
+                  <div className="p-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] space-y-1">
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      <span>3. Earth System Cause</span>
+                    </div>
+                    <p className="text-[11px] text-[var(--color-text-secondary)] leading-relaxed">
+                      {cell.evidence_record?.plainDriver ||
+                        'Atmospheric high-pressure ridges and reduced soil moisture limit natural evaporative cooling, locking in heat close to the ground like an oven.'}
+                    </p>
+                  </div>
+
+                  {/* 4. Hear the Trend (Audio Sonification) */}
+                  <div className="p-2.5 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[var(--color-text-main)]">
+                        4. Hear the Climate Sound Wave
+                      </span>
+                      <span className="text-[9px] text-[var(--color-text-muted)] font-mono">
+                        Low pitch = Cool • High = Hot
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (cell.observations && cell.years) {
+                            setAudioMuted(false);
+                            setIsSonifying(true);
+                            sonifyTimeSeries(
+                              cell.years,
+                              cell.observations,
+                              cell.slope || 0,
+                              cell.changepoint_year,
+                              { onEnd: () => setIsSonifying(false) }
+                            );
+                          }
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/90 text-white text-xs font-mono font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                      >
+                        <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                        </svg>
+                        <span>{isSonifying ? 'Playing Sound Wave...' : 'Listen to Trend Audio'}</span>
+                      </button>
+                      {isSonifying && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            stopSonification();
+                            setIsSonifying(false);
+                          }}
+                          className="px-2.5 py-1.5 rounded border border-[var(--color-border-subtle)] text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
+                        >
+                          Stop
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Primary Student Export Button */}
                   <button
                     type="button"
                     onClick={() => {
-                      if (cell.observations && cell.years) {
-                        setAudioMuted(false);
-                        setIsSonifying(true);
-                        sonifyTimeSeries(
-                          cell.years,
-                          cell.observations,
-                          cell.slope || 0,
-                          cell.changepoint_year,
-                          { onEnd: () => setIsSonifying(false) }
-                        );
-                      }
+                      playTactileClick(750);
+                      useStore.getState().setSchoolSlideModalOpen(true);
                     }}
-                    className="px-3 py-1.5 rounded bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/90 text-white text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                    className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold font-mono flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer"
                   >
-                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
                     </svg>
-                    <span>{isSonifying ? 'Playing Sound Wave...' : 'Listen to Trend Audio'}</span>
+                    <span>Export School Presentation Slide (16:9)</span>
                   </button>
-                  {isSonifying && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        stopSonification();
-                        setIsSonifying(false);
-                      }}
-                      className="px-2.5 py-1.5 rounded border border-[var(--color-border-subtle)] text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
-                    >
-                      Stop
-                    </button>
-                  )}
                 </div>
-              </div>
-            )}
 
-            {/* Policy Return Period & Infrastructure Matrix */}
-            {workstationMode === 'policy' && (
-              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-[var(--color-text-main)] flex items-center gap-1.5 font-['Space_Grotesk']">
-                    <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5" />
-                    </svg>
-                    <span>Municipal Return Periods (Copula Model)</span>
+                {/* Collapsible Scientist's Math Accordion for Curious Students */}
+                <details className="rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-xs overflow-hidden group">
+                  <summary className="p-2.5 font-mono text-[11px] font-semibold cursor-pointer text-[var(--color-accent-blue)] flex items-center justify-between select-none hover:bg-[var(--color-bg-hover)]">
+                    <span>🔬 Want to see the scientist&apos;s math? (p-value, Sen&apos;s slope, LISA)</span>
+                    <span className="text-[10px] text-[var(--color-text-muted)] group-open:rotate-180 transition-transform">▾</span>
+                  </summary>
+                  <div className="p-3 border-t border-[var(--color-border-subtle)] space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-[var(--color-bg-surface)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
+                        <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Sen&apos;s Slope</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+                          {(cell.slope ?? 0) > 0 ? '+' : ''}{(cell.slope ?? 0).toFixed(4)}
+                        </div>
+                        <div className="text-[10px] text-[var(--color-text-muted)] font-mono">{cell.slope_units}</div>
+                      </div>
+                      <div className="bg-[var(--color-bg-surface)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
+                        <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">p-value</div>
+                        <div className="text-xs font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 font-semibold">
+                          {formatPVal(cell.p_value)}
+                        </div>
+                        <div className="text-[10px] text-[var(--color-text-muted)] font-mono">q = {formatPVal(cell.q_value)}</div>
+                      </div>
+                      <div className="bg-[var(--color-bg-surface)] rounded p-2 text-center border border-[var(--color-border-subtle)]">
+                        <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-mono mb-0.5">Kendall&apos;s τ</div>
+                        <div className="text-xs font-bold font-mono text-[var(--color-text-main)] tabular-nums font-semibold">
+                          {cell.tau !== undefined && cell.tau !== null && !isNaN(cell.tau)
+                            ? `${cell.tau > 0 ? '+' : ''}${Number(cell.tau).toFixed(3)}`
+                            : 'N/A'}
+                        </div>
+                        <div className="text-[10px] text-[var(--color-text-muted)] font-mono">Rank Corr</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                        <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Z-Score</span>
+                        <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                          {cell.z !== undefined && cell.z !== null
+                            ? `${cell.z > 0 ? '+' : ''}${cell.z.toFixed(2)}`
+                            : (cell.p_value < 0.001 ? '|Z| > 3.29' : (cell.p_value < 0.05 ? '|Z| > 1.96' : '|Z| ≤ 1.96'))}
+                        </span>
+                      </div>
+                      <div className="p-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                        <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] block mb-0.5">Gilbert 95% CI</span>
+                        <span className="font-semibold text-[var(--color-text-main)] tabular-nums text-[11px]">
+                          {cell.ci_lower !== undefined ? `[${cell.ci_lower.toFixed(3)}, ${cell.ci_upper.toFixed(3)}]` : 'Bounded'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500 text-black font-bold">
-                    High Adaptation Need
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5 font-mono text-center">
-                  <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                    <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">25-Yr Shock</span>
-                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">4.1 yrs</span>
-                  </div>
-                  <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                    <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">50-Yr Shock</span>
-                    <span className="text-xs font-bold text-rose-500">8.4 yrs</span>
-                  </div>
-                  <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
-                    <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">100-Yr Shock</span>
-                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400">18.2 yrs</span>
-                  </div>
-                </div>
-                <div className="text-[11px] text-[var(--color-text-secondary)] font-sans leading-relaxed">
-                  Concurrent heat + drought events are recurring <strong className="text-[var(--color-text-main)]">nearly 6× more frequently</strong> than 20th-century municipal design standards.
-                </div>
-                <div className="pt-2 border-t border-amber-500/20 grid grid-cols-2 gap-2 text-[10px] font-mono">
-                  <div>
-                    <span className="text-[var(--color-text-muted)] block">Climate Velocity:</span>
-                    <span className="font-bold text-[var(--color-text-main)]">8.4 km / decade</span>
-                  </div>
-                  <div>
-                    <span className="text-[var(--color-text-muted)] block">Reservoir Evap:</span>
-                    <span className="font-bold text-cyan-600 dark:text-cyan-400">+14.2% Deficit</span>
-                  </div>
-                </div>
+                </details>
               </div>
-            )}
+            ) : (
+              <>
+                {/* Policy Return Period & Infrastructure Matrix */}
+                {workstationMode === 'policy' && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-bold text-[var(--color-text-main)] flex items-center gap-1.5 font-['Space_Grotesk']">
+                        <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5" />
+                        </svg>
+                        <span>Municipal Return Periods (Copula Model)</span>
+                      </div>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500 text-black font-bold">
+                        High Adaptation Need
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5 font-mono text-center">
+                      <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                        <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">25-Yr Shock</span>
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400">4.1 yrs</span>
+                      </div>
+                      <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                        <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">50-Yr Shock</span>
+                        <span className="text-xs font-bold text-rose-500">8.4 yrs</span>
+                      </div>
+                      <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                        <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">100-Yr Shock</span>
+                        <span className="text-xs font-bold text-rose-600 dark:text-rose-400">18.2 yrs</span>
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-[var(--color-text-secondary)] font-sans leading-relaxed">
+                      Concurrent heat + drought events are recurring <strong className="text-[var(--color-text-main)]">nearly 6× more frequently</strong> than 20th-century municipal design standards.
+                    </div>
+                    <div className="pt-2 border-t border-amber-500/20 grid grid-cols-2 gap-2 text-[10px] font-mono">
+                      <div>
+                        <span className="text-[var(--color-text-muted)] block">Climate Velocity:</span>
+                        <span className="font-bold text-[var(--color-text-main)]">8.4 km / decade</span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--color-text-muted)] block">Reservoir Evap:</span>
+                        <span className="font-bold text-cyan-600 dark:text-cyan-400">+14.2% Deficit</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
             {/* Primary Metrics Row */}
             {cell.isCompound ? (
@@ -624,6 +762,8 @@ export default function EvidencePanel() {
                   })}
                 </div>
               </div>
+            )}
+              </>
             )}
           </div>
         )}

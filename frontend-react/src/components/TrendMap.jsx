@@ -718,7 +718,7 @@ function inferGridStep(grid) {
                   : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
               }`}
             >
-              Significant Only
+              {maskSigOnly ? '✓ Real Trends Only' : 'Filter Flukes'}
             </button>
             <button
               type="button"
@@ -831,7 +831,7 @@ function inferGridStep(grid) {
                   : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
               }`}
             >
-              Significant Only
+              {maskSigOnly ? '✓ Real Trends Only' : 'Filter Flukes'}
             </button>
             <button
               type="button"
@@ -1171,11 +1171,19 @@ function inferGridStep(grid) {
                     background: 'linear-gradient(to right, #06b6d4 0%, #38bdf8 25%, #64748b 50%, #f59e0b 75%, #ef4444 100%)'
                   }}
                 />
-                <div className="flex items-center justify-between text-[9px] text-[var(--color-text-secondary)] font-mono tabular-nums">
-                  <span>{analysisData.summary?.min_slope !== undefined ? `${analysisData.summary.min_slope > 0 ? '+' : ''}${analysisData.summary.min_slope.toFixed(2)}` : '-0.50'}</span>
-                  <span className="text-[var(--color-text-muted)]">0.00</span>
-                  <span>{analysisData.summary?.max_slope !== undefined ? `+${analysisData.summary.max_slope.toFixed(2)}` : '+0.50'}</span>
-                </div>
+                {workstationMode === 'detective' ? (
+                  <div className="flex items-center justify-between text-[9px] text-[var(--color-text-secondary)] font-mono font-medium">
+                    <span>❄️ Cooling</span>
+                    <span className="text-[var(--color-text-muted)]">Normal</span>
+                    <span>Heating Up 🔥</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between text-[9px] text-[var(--color-text-secondary)] font-mono tabular-nums">
+                    <span>{analysisData.summary?.min_slope !== undefined ? `${analysisData.summary.min_slope > 0 ? '+' : ''}${analysisData.summary.min_slope.toFixed(2)}` : '-0.50'}</span>
+                    <span className="text-[var(--color-text-muted)]">0.00</span>
+                    <span>{analysisData.summary?.max_slope !== undefined ? `+${analysisData.summary.max_slope.toFixed(2)}` : '+0.50'}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
