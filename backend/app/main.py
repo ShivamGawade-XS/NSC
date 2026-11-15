@@ -400,8 +400,8 @@ def get_prometheus_metrics(request: Request):
     return Response(content=payload, media_type=content_type)
 
 
-@app.get("/ready")
-@app.get("/api/v1/ready")
+@app.api_route("/ready", methods=["GET", "HEAD"])
+@app.api_route("/api/v1/ready", methods=["GET", "HEAD"])
 @limiter.limit("120/minute")
 def readiness_check(request: Request):
     """Kubernetes / Cloud readiness probe."""
@@ -433,7 +433,7 @@ if react_dist_dir.exists() and (react_dist_dir / "index.html").exists():
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="react_assets")
 
-    @app.get("/{full_path:path}")
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
     async def serve_react_app(full_path: str):
         if full_path == "api" or full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="API endpoint not found")

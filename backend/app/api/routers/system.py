@@ -23,7 +23,7 @@ logger = logging.getLogger("Tellura.api.system")
 router = APIRouter(tags=["System"])
 
 
-@router.get("/health")
+@router.api_route("/health", methods=["GET", "HEAD"])
 @limiter.limit("60/minute")
 async def health_check(request: Request) -> dict[str, Any]:
     """Lightweight public API health and engine status probe."""
