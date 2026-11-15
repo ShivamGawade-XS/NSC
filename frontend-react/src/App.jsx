@@ -14,6 +14,9 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function RedirectWithQuery({ to }) {
   const location = useLocation();
+  if (location.pathname === to) {
+    return null;
+  }
   return <Navigate to={{ pathname: to, search: location.search, hash: location.hash }} replace />;
 }
 
@@ -58,13 +61,6 @@ export default function App() {
             <Route path="/student" element={<RedirectWithQuery to="/investigate" />} />
             <Route path="/overview" element={<RedirectWithQuery to="/" />} />
             <Route path="/home" element={<RedirectWithQuery to="/" />} />
-
-            {/* Trailing Slash Aliases */}
-            <Route path="/dashboard/" element={<RedirectWithQuery to="/dashboard" />} />
-            <Route path="/investigate/" element={<RedirectWithQuery to="/investigate" />} />
-            <Route path="/policy/" element={<RedirectWithQuery to="/policy" />} />
-            <Route path="/workspace/" element={<RedirectWithQuery to="/dashboard" />} />
-            <Route path="/app/" element={<RedirectWithQuery to="/dashboard" />} />
 
             {/* Scientific 404 Fallback */}
             <Route path="*" element={<NotFoundPage />} />
