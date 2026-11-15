@@ -6,7 +6,7 @@
 **Official Tagline:** *"Find the changes worth investigating."*  
 **Repository:** [https://github.com/ShivamGawade-XS/NSC](https://github.com/ShivamGawade-XS/NSC)  
 **Primary Author & Lead:** Shivam Gawade (`Shivam_Gawade <CertXchange@gmail.com>`)  
-**Status:** Production-Ready | 352/352 Automated Tests Passing (100% Green CI)  
+**Status:** Production-Ready | 353/353 Automated Tests Passing (100% Green CI)  
 
 ---
 
@@ -73,7 +73,7 @@ Key Capabilities:
 ### Mandatory AI Usage Disclosure (Space Apps Rule)
 `Artificial Intelligence was utilized responsibly during the development of Tellura as an engineering acceleration tool:
 1. Natural Language Interface: An NLP parsing module (powered by LLM extraction with deterministic regex fallback) translates conversational user queries (e.g., "California heatwave trends from 2000 to 2023") into structured JSON spatial bounding boxes, variables, and date ranges.
-2. Code Review & Test Harness Automation: AI assisted in drafting unit test fixtures across 352 automated tests in Pytest and Vite, ensuring complete mathematical coverage.
+2. Code Review & Test Harness Automation: AI assisted in drafting unit test fixtures across 353 automated tests in Pytest and Vite, ensuring complete mathematical coverage.
 3. Core Science Engine Integrity: All statistical computations (Mann-Kendall, Hamed-Rao, Theil-Sen, Pettitt, LISA, Copulas) are 100% deterministic algorithms implemented in NumPy and SciPy. AI never estimates, hallucinates, or modifies any climate values.`
 
 ### Mandatory Resource Citations & DOIs (Space Apps Rule)
@@ -145,7 +145,7 @@ Narrator:
 | :--- | :--- | :--- |
 | **1. 🌍 Impact** | Prevents false alarms and false complacency in civic climate planning. Informs municipal water reserves, wildfire zoning, and agricultural planting dates with audit-proof statistics instead of distorted linear regressions. | `backend/app/science/attribution.py`<br>`frontend-react/src/constants/caseStudies.js` |
 | **2. 💡 Creativity** | Goes far beyond standard GIS viewers: includes Web Audio acoustic sonification, Archimedean Copula compound hazard modeling, an autonomous Contrasting Trends detector, and an interactive 3D orthographic globe. | `frontend-react/src/utils/sonification.js`<br>`backend/app/science/copula_hazard.py`<br>`backend/app/science/contrasts.py` |
-| **3. 🔬 Validity** | Zero mathematical hand-waving. 100% authentic NASA observations. Full suite of peer-reviewed statistical tests with 352 automated passing tests and OWASP ASVS Level 2 security hardening. | `backend/tests/` (352 passing tests)<br>`backend/app/science/trend.py` |
+| **3. 🔬 Validity** | Zero mathematical hand-waving. 100% authentic NASA observations. Full suite of peer-reviewed statistical tests with 353 automated passing tests and OWASP ASVS Level 2 security hardening. | `backend/tests/` (353 passing tests)<br>`backend/app/science/trend.py` |
 | **4. 🎯 Relevance** | Built strictly for *"Be An Earth System Trend Detective!"*. Integrates NASA POWER, MERRA-2, GIBS satellite layers (MODIS/VIIRS), and complies with CF-1.8 metadata conventions. | `backend/app/adapters/nasa_power.py`<br>`backend/app/adapters/merra2.py` |
 | **5. 🎤 Presentation** | Pristine scientific workstation UI with dark/light themes, keyboard navigation (Ctrl+K, arrow keys), 3-Step Detective Wizard, word-for-word pitch scripts, and complete reproducibility. | `frontend-react/src/components/DetectiveWizardModal.jsx`<br>`HACKATHON_MASTER_DOSSIER.md` |
 
@@ -336,7 +336,7 @@ flowchart TD
 > *"For NASA POWER, Tellura streams real-time data globally directly from the NASA Langley API with automatic in-memory and SQLite caching. For MERRA-2, continental fixtures are pre-cached, and global arbitrary queries connect directly to NASA GES DISC using Earthdata credentials."*
 
 #### Q9: "What security and reliability standards does Tellura meet?"
-> *"Tellura meets OWASP ASVS Level 2 standards. It implements strict Content Security Policies, constant-time HMAC authentication, distributed rate limiting with SlowAPI, a 2MB maximum payload ceiling, automated sensitive data log scrubbers, and passes 352 automated unit and integration tests with zero failures."*
+> *"Tellura meets OWASP ASVS Level 2 standards. It implements strict Content Security Policies, constant-time HMAC authentication, distributed rate limiting with SlowAPI, a 2MB maximum payload ceiling, automated sensitive data log scrubbers, and passes 353 automated unit and integration tests with zero failures."*
 
 #### Q10: "What makes Tellura creative compared to other hackathon submissions?"
 > *"Most submissions are simple map viewers that plot basic graphs. Tellura is an investigative intelligence instrument: it pairs acoustic data sonification, Archimedean Copulas for compound heat-drought hazards, climate velocity vectors for ecological displacement, and automated regional contrast detection—creating an end-to-end scientific workbench."*
@@ -348,7 +348,7 @@ flowchart TD
 ### Slide 1: Title & The Detective Call
 - **Headline**: Tellura: Planetary Trend Detective
 - **Sub-headline**: Autonomous Spatiotemporal Climate Trend Discovery System for NASA Earth Observations
-- **Visual**: Dark-mode screenshot of Tellura's 3D globe and interactive cartography.
+- **Visual**: Interactive 3D globe and cartographic UI layout with dual-panel workstation architecture.
 - **Presenter Note**: *"Judges, when you look at 40 years of Earth satellite observations, how do you prove what is changing and whether it is truly significant?"*
 
 ### Slide 2: The Problem: Three Climate Data Fallacies
@@ -359,7 +359,7 @@ flowchart TD
 
 ### Slide 3: The Solution: Tellura's 3-Step Detective Experience
 - **Feature**: 3-Step Detective Wizard designed for students and evaluators.
-- **Visual**: Screenshot of `DetectiveWizardModal` showing Mystery -> Region -> Horizon.
+- **Visual**: Interactive `DetectiveWizardModal` workflow showing Mystery -> Region -> Horizon.
 - **Presenter Note**: *"Anyone can investigate Earth science without being a statistician."*
 
 ### Slide 4: Empirical Engine: Rigor in Action
@@ -382,7 +382,7 @@ flowchart TD
 
 ### Slide 7: 100% Open Science & Reproducibility
 - **Exports**: CF-1.8 NetCDF-4 • RFC 7946 GeoJSON • Google Colab Notebooks • AGU LaTeX Memorandums.
-- **Integrity**: 352 automated tests passing • Zero synthetic data in production.
+- **Integrity**: 353 automated tests passing • Zero synthetic data in production.
 - **Visual**: Icons of Google Colab, NetCDF, and LaTeX with checkmarks.
 
 ### Slide 8: The Vision & Impact

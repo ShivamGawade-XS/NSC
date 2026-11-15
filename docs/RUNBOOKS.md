@@ -24,7 +24,7 @@
    ```
 2. **Check In-Flight Concurrency**:
    - Query `/metrics` (Keyed tier or internal loopback): check `database_cache` and memory RSS.
-   - Prometheus metric `earthsift_http_requests_in_flight`.
+   - Prometheus metric `tellura_active_requests`.
 3. **Scale Capacity**:
    - If CPU is saturated by legitimate analysis traffic, adjust `COMPUTE_MAX_CONCURRENT` in `.env`:
      ```env
@@ -107,7 +107,7 @@ Tellura ships with automated hot-backup and restore tooling:
 ### System Behavior
 - Tellura's `DailyLLMBudgetTracker` halts outbound calls to Gemini/OpenAI automatically.
 - `/api/v1/explain` gracefully degrades to the deterministic, peer-reviewed scientific template. Zero 500 errors are returned to users.
-- Metric: `earthsift_llm_calls_total` plateaus at `DAILY_LLM_CALL_LIMIT`.
+- Metric: `tellura_llm_calls_total` plateaus at `DAILY_LLM_CALL_LIMIT`.
 
 ### Operator Procedure
 1. Check current status:

@@ -13,9 +13,9 @@ groups:
 
       - alert: TelluraHigh5xxErrorRate
         expr: >
-          sum(rate(earthsift_http_requests_total{status_code=~"5.."}[5m]))
+          sum(rate(tellura_http_requests_total{status_code=~"5.."}[5m]))
           /
-          sum(rate(earthsift_http_requests_total[5m])) > 0.01
+          sum(rate(tellura_http_requests_total[5m])) > 0.01
         for: 3m
         labels:
           severity: critical
@@ -26,7 +26,7 @@ groups:
 
       - alert: TelluraLatencyP95Degraded
         expr: >
-          histogram_quantile(0.95, sum(rate(earthsift_http_request_duration_seconds_bucket[5m])) by (le)) > 0.500
+          histogram_quantile(0.95, sum(rate(tellura_http_request_duration_seconds_bucket[5m])) by (le)) > 0.500
         for: 5m
         labels:
           severity: warning
@@ -36,7 +36,7 @@ groups:
           description: "95th percentile request latency is {{ $value | humanizeDuration }} over the past 5 minutes."
 
       - alert: TelluraMemorySaturationRisk
-        expr: earthsift_process_memory_rss_bytes > 1610612736  # 1.5 GB (75% of 2GB Docker container limit)
+        expr: tellura_process_memory_rss_bytes > 1610612736  # 1.5 GB (75% of 2GB Docker container limit)
         for: 2m
         labels:
           severity: warning
@@ -46,7 +46,7 @@ groups:
           description: "Container is approaching 2GB limit (current: {{ $value | humanize1024 }}B). Risk of kernel OOM killer termination."
 
       - alert: TelluraRateLimitSpike
-        expr: sum(rate(earthsift_http_requests_total{status_code="429"}[5m])) > 10
+        expr: sum(rate(tellura_http_requests_total{status_code="429"}[5m])) > 10
         for: 2m
         labels:
           severity: info

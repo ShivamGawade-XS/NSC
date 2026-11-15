@@ -17,19 +17,21 @@ Tellura is a scientific analytics workstation and spatial discovery instrument d
 
 ---
 
-## Visual Interface
+## Workstation UI & Feature Map
 
-<p align="center">
-  <img src="docs/assets/screenshots/landing_fullpage_1440.png" alt="Tellura Planetary Intelligence Landing Page" width="800" />
-</p>
-
-<p align="center">
-  <img src="docs/assets/screenshots/dashboard_active_analysis.png" alt="Tellura Workstation Active Spatial Trend Analysis" width="800" />
-</p>
-
-<p align="center">
-  <img src="docs/assets/screenshots/command_palette_interface.png" alt="Tellura Natural Language Scientific Query Palette" width="800" />
-</p>
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 TELLURA WORKSTATION UI MAP                             │
+├──────────────────────────┬──────────────────────────────┬──────────────────────────────┤
+│ 1. HEADER & CONTROLS     │ 2. INTERACTIVE CANVAS (LEFT) │ 3. SCIENTIFIC EVIDENCE (RIGHT│
+│ • Adaptive Persona Modes │ • Leaflet 2D Tile Canvas     │ • Empirical Time Series      │
+│   (Detective/Policy/Pro) │ • Photorealistic 3D Globe    │ • Theil-Sen Median Rate      │
+│ • 3-Step Guided Wizard   │ • Dynamic Split Curtain      │ • Gilbert 95% Confidence Band│
+│ • Natural Language (⌘K)  │ • Anselin LISA Hotspots      │ • Pettitt Regime Changepoint │
+│ • 1-Click Export Suite   │ • Climate Velocity Vectors   │ • Hawkins Warming Stripes    │
+│ • Case Study Ribbons 1-6 │ • NASA EOSDIS GIBS Layers    │ • Web Audio Sonification     │
+└──────────────────────────┴──────────────────────────────┴──────────────────────────────┘
+```
 
 ---
 

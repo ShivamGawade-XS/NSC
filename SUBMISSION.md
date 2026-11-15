@@ -266,3 +266,4 @@ Because the submission portal requires your team login, here are the steps you m
     * Click **Save Progress**.
     * Review your preview.
     * Click **Submit for Judging**.
+

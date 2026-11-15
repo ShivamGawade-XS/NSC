@@ -158,7 +158,7 @@ def run_e2e_chaos_suite():
         expect(chart_canvas.first).to_be_visible()
 
         # Verify real backend observations
-        store_state = page.evaluate("() => window.__earthsift_store__ ? window.__earthsift_store__.getState() : null")
+        store_state = page.evaluate("() => (window.__Tellura_store__ || window.__earthsift_store__) ? (window.__Tellura_store__ || window.__earthsift_store__).getState() : null")
         if store_state and store_state.get("selectedCell"):
             cell = store_state["selectedCell"]
             obs_temp = cell.get("observations_temp") or cell.get("observations")
