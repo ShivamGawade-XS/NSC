@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
-import { playTactileClick } from '../utils/audio';
+import { isAudioMuted, playTactileClick, toggleAudio } from '../utils/audio';
 import { safeStorage } from '../utils/safeStorage';
 import ContactModal from './ContactModal';
 
@@ -39,6 +39,21 @@ export default function Header() {
       document.documentElement.classList.remove('dark');
       safeStorage.setItem('tellura_theme', 'light');
     }
+  };
+
+  const [audioMuted, setAudioMutedState] = useState(() => isAudioMuted());
+
+  useEffect(() => {
+    const handleAudioToggle = (e) => {
+      setAudioMutedState(e.detail?.muted ?? isAudioMuted());
+    };
+    window.addEventListener('tellura-audio-toggle', handleAudioToggle);
+    return () => window.removeEventListener('tellura-audio-toggle', handleAudioToggle);
+  }, []);
+
+  const handleToggleAudio = () => {
+    const nextMuted = toggleAudio();
+    setAudioMutedState(nextMuted);
   };
 
   useEffect(() => {
@@ -287,7 +302,7 @@ export default function Header() {
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] transition-colors"
+            className="p-2 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] transition-colors cursor-pointer"
             title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             aria-label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
           >
@@ -300,6 +315,32 @@ export default function Header() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
               </svg>
             )}
+          </button>
+
+          {/* Audio Mute/Unmute Control */}
+          <button
+            type="button"
+            onClick={handleToggleAudio}
+            className={`p-2 rounded border transition-colors flex items-center gap-1.5 cursor-pointer ${
+              audioMuted
+                ? 'bg-[var(--color-bg-elevated)] border-[var(--color-border-subtle)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                : 'bg-[var(--color-accent-blue)]/15 border-[var(--color-accent-blue)]/40 text-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/25'
+            }`}
+            title={audioMuted ? "Audio: Muted (Click to enable sound effects & sonification)" : "Audio: Enabled (Click to mute all audio)"}
+            aria-label={audioMuted ? "Audio is muted. Click to enable sound." : "Audio is enabled. Click to mute sound."}
+          >
+            {audioMuted ? (
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4 shrink-0 text-[var(--color-accent-blue)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+              </svg>
+            )}
+            <span className="hidden sm:inline font-mono text-[11px] font-medium">
+              {audioMuted ? 'Muted' : 'Sound'}
+            </span>
           </button>
 
           {/* Provenance Integrity Status */}
@@ -529,6 +570,16 @@ export default function Header() {
               className="w-full interface-btn-secondary !text-xs !py-2 justify-center font-mono"
             >
               Query Palette (Ctrl+K)
+            </button>
+            <button
+              onClick={handleToggleAudio}
+              className={`w-full !text-xs !py-2 justify-center font-mono flex items-center gap-2 rounded border transition-colors cursor-pointer ${
+                audioMuted
+                  ? 'bg-[var(--color-bg-elevated)] border-[var(--color-border-subtle)] text-[var(--color-text-muted)]'
+                  : 'bg-[var(--color-accent-blue)]/15 border-[var(--color-accent-blue)] text-[var(--color-accent-blue)] font-bold'
+              }`}
+            >
+              <span>{audioMuted ? '🔇 Audio is Muted (Click to Enable)' : '🔊 Audio is Enabled (Click to Mute)'}</span>
             </button>
           </div>
 

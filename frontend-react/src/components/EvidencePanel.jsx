@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import useStore from '../store/useStore';
 import { formatCoords, formatPVal, LISA_LABELS, GCOS_ECV_MAP } from '../utils/helpers';
 import { getLabels, shouldSimplify } from '../utils/modeLabels';
 import * as api from '../api/client';
-import { playTactileClick, playTelemetryChime } from '../utils/audio';
+import { playTactileClick, playTelemetryChime, setAudioMuted } from '../utils/audio';
 import { sonifyTimeSeries, stopSonification } from '../utils/sonification';
 
 function getDecadalExtremes(cell) {
@@ -140,6 +140,12 @@ export default function EvidencePanel() {
   const [showAi, setShowAi] = useState(false);
   const [activeTab, setActiveTab] = useState('telemetry');
   const [isSonifying, setIsSonifying] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      stopSonification();
+    };
+  }, []);
 
   if (!selectedCell) {
     return (
@@ -332,8 +338,8 @@ export default function EvidencePanel() {
                   <button
                     type="button"
                     onClick={() => {
-                      playTactileClick(700);
                       if (cell.observations && cell.years) {
+                        setAudioMuted(false);
                         setIsSonifying(true);
                         sonifyTimeSeries(
                           cell.years,

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import useStore from '../store/useStore';
 import { getLabels } from '../utils/modeLabels';
 import { sonifyTimeSeries, stopSonification } from '../utils/sonification';
-import { playTactileClick } from '../utils/audio';
+import { playTactileClick, setAudioMuted } from '../utils/audio';
 
 Chart.register(...registerables);
 
@@ -142,7 +142,7 @@ export default function TimeSeriesChart() {
       return;
     }
 
-    playTactileClick(700);
+    setAudioMuted(false);
     setIsPlayingAudio(true);
 
     sonifyTimeSeries(

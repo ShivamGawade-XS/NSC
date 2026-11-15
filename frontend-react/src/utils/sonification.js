@@ -5,12 +5,15 @@
  * Fully offline, Section 508 accessibility compliant, zero dependencies.
  */
 
-import { isAudioMuted } from './audio';
+import { isAudioMuted, registerAudioStopper } from './audio';
 
 let activeTimeouts = [];
 let activeGainNodes = [];
 let audioCtx = null;
 let masterCompressor = null;
+
+// Register stopSonification with the master audio stopper in audio.js
+registerAudioStopper(() => stopSonification());
 
 function getAudioContext(forceResume = false) {
   if (typeof window === 'undefined') return null;
@@ -63,17 +66,15 @@ export function stopSonification() {
     activeGainNodes.forEach((gain) => {
       try {
         gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(gain.gain.value, now);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
-        setTimeout(() => {
-          try {
-            gain.disconnect();
-          } catch {}
-        }, 60);
-      } catch {
-        // Safe cleanup
-      }
+        gain.gain.setValueAtTime(0, now);
+        gain.disconnect();
+      } catch {}
     });
+    try {
+      if (audioCtx.state === 'running') {
+        audioCtx.suspend().catch(() => {});
+      }
+    } catch {}
   }
   activeGainNodes = [];
 }

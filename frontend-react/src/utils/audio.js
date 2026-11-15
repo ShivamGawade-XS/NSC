@@ -2,12 +2,39 @@
  * NASA JPL Mission Control Synthesized Audio Feedback
  * Creates subtle, micro-tactile acoustic confirmation using Web Audio API.
  * Never requires external audio files; 100% offline and low-latency.
+ * Defaults to MUTED to ensure zero unsolicited audio across workstations.
  */
 
 import { safeStorage } from './safeStorage';
 
 let audioCtx = null;
-let soundEnabled = true;
+let soundEnabled = false; // Muted by default
+const stopCallbacks = new Set();
+
+/**
+ * Register a sub-system audio stopper (e.g. data sonification).
+ */
+export function registerAudioStopper(fn) {
+  stopCallbacks.add(fn);
+  return () => stopCallbacks.delete(fn);
+}
+
+/**
+ * Stop all playing Web Audio nodes, sonifications, and suspend audio context.
+ */
+export function stopAllAudio() {
+  stopCallbacks.forEach((fn) => {
+    try {
+      fn();
+    } catch {}
+  });
+
+  if (audioCtx && audioCtx.state === 'running') {
+    try {
+      audioCtx.suspend().catch(() => {});
+    } catch {}
+  }
+}
 
 export function isAudioMuted() {
   if (typeof window === 'undefined') return true;
@@ -17,12 +44,7 @@ export function isAudioMuted() {
     return stored === 'true' || stored === '1';
   }
 
-  try {
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return true;
-    }
-  } catch {}
-
+  // Audio defaults to MUTED unless explicitly enabled by user
   return !soundEnabled;
 }
 
@@ -34,12 +56,32 @@ export function toggleAudio() {
   const nextMuted = !isAudioMuted();
   soundEnabled = !nextMuted;
   safeStorage.setItem('Tellura_audio_muted', String(nextMuted));
+
+  if (nextMuted) {
+    stopAllAudio();
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('tellura-audio-toggle', { detail: { muted: nextMuted } })
+    );
+  }
   return !nextMuted;
 }
 
 export function setAudioMuted(muted) {
   soundEnabled = !muted;
   safeStorage.setItem('Tellura_audio_muted', String(muted));
+
+  if (muted) {
+    stopAllAudio();
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('tellura-audio-toggle', { detail: { muted: Boolean(muted) } })
+    );
+  }
 }
 
 function getAudioContext(forceResume = false) {
@@ -91,7 +133,7 @@ export function playTactileClick(freq = 600, duration = 0.04) {
 export function playTelemetryChime() {
   if (isAudioMuted()) return;
   try {
-    const ctx = getAudioContext();
+    const ctx = getAudioContext(true);
     if (!ctx) return;
     const now = ctx.currentTime;
     [523.25, 659.25, 783.99].forEach((freq, idx) => {
@@ -115,4 +157,13 @@ export function playTelemetryChime() {
       osc.stop(now + idx * 0.06 + 0.15);
     });
   } catch {}
+}
+
+// Stop audio automatically when window is blurred or backgrounded
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopAllAudio();
+    }
+  });
 }
