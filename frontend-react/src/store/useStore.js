@@ -61,6 +61,8 @@ const useStore = create((set, get) => ({
   colabData: null,
   customDataModalOpen: false,
   preprintModalOpen: false,
+  schoolSlideModalOpen: false,
+  policyMemoModalOpen: false,
   robustnessModalOpen: false,
   qualityProfileModalOpen: false,
   reproducibilityModalOpen: false,
@@ -116,6 +118,8 @@ const useStore = create((set, get) => ({
     latexModalOpen: false,
     customDataModalOpen: false,
     preprintModalOpen: false,
+    schoolSlideModalOpen: false,
+    policyMemoModalOpen: false,
     robustnessModalOpen: false,
     qualityProfileModalOpen: false,
     reproducibilityModalOpen: false,
@@ -139,7 +143,15 @@ const useStore = create((set, get) => ({
   }),
   setPreprintModalOpen: (open) => set({
     preprintModalOpen: open,
-    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, schoolSlideModalOpen: false, policyMemoModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setSchoolSlideModalOpen: (open) => set({
+    schoolSlideModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, policyMemoModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
+  }),
+  setPolicyMemoModalOpen: (open) => set({
+    policyMemoModalOpen: open,
+    ...(open ? { nlqModalOpen: false, latexModalOpen: false, customDataModalOpen: false, preprintModalOpen: false, schoolSlideModalOpen: false, robustnessModalOpen: false, qualityProfileModalOpen: false, reproducibilityModalOpen: false, regionalCompareModalOpen: false, discoveryModalOpen: false, detectiveWizardModalOpen: false, isCaseStudyTourOpen: false, isJudgeTourActive: false } : {})
   }),
   setRobustnessModalOpen: (open) => set({
     robustnessModalOpen: open,

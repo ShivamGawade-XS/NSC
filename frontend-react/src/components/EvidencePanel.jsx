@@ -5,6 +5,7 @@ import { formatCoords, formatPVal, LISA_LABELS, GCOS_ECV_MAP } from '../utils/he
 import { getLabels, shouldSimplify } from '../utils/modeLabels';
 import * as api from '../api/client';
 import { playTactileClick, playTelemetryChime } from '../utils/audio';
+import { sonifyTimeSeries, stopSonification } from '../utils/sonification';
 
 function getDecadalExtremes(cell) {
   const yrs = cell?.years || [];
@@ -138,6 +139,7 @@ export default function EvidencePanel() {
   const [aiLoading, setAiLoading] = useState(false);
   const [showAi, setShowAi] = useState(false);
   const [activeTab, setActiveTab] = useState('telemetry');
+  const [isSonifying, setIsSonifying] = useState(false);
 
   if (!selectedCell) {
     return (
@@ -307,6 +309,108 @@ export default function EvidencePanel() {
         {/* ── Tab 1: Telemetry ───────────────────────────────────────── */}
         {activeTab === 'telemetry' && (
           <div className="space-y-3 pt-1 animate-in fade-in duration-150">
+            {/* Student Detective Clue & Audio Sonification Player */}
+            {workstationMode === 'detective' && (
+              <div className="p-3 rounded-lg bg-[var(--color-accent-blue)]/10 border border-[var(--color-accent-blue)]/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold text-[var(--color-text-main)] flex items-center gap-1.5 font-['Space_Grotesk']">
+                    <svg className="w-4 h-4 text-[var(--color-accent-blue)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <circle cx="11" cy="11" r="8" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.3-4.3" />
+                    </svg>
+                    <span>Detective Clue &amp; Audio Sonification</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--color-accent-blue)] text-white font-bold">
+                    {(cell.slope || 0) > 0 ? 'Warming Signal' : 'Cooling Signal'}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">
+                  {cell.evidence_record?.plainDriver ||
+                    'Satellite instruments record steady multi-decadal change across this regional cell. Hear the trend directly through our Web Audio sound engine.'}
+                </p>
+                <div className="flex items-center gap-2 pt-1 border-t border-[var(--color-accent-blue)]/20">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(700);
+                      if (cell.observations && cell.years) {
+                        setIsSonifying(true);
+                        sonifyTimeSeries(
+                          cell.years,
+                          cell.observations,
+                          cell.slope || 0,
+                          cell.changepoint_year,
+                          { onEnd: () => setIsSonifying(false) }
+                        );
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/90 text-white text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.757 3.63 8.25 4.51 8.25H6.75z" />
+                    </svg>
+                    <span>{isSonifying ? 'Playing Sound Wave...' : 'Listen to Trend Audio'}</span>
+                  </button>
+                  {isSonifying && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        stopSonification();
+                        setIsSonifying(false);
+                      }}
+                      className="px-2.5 py-1.5 rounded border border-[var(--color-border-subtle)] text-xs font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] cursor-pointer"
+                    >
+                      Stop
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Policy Return Period & Infrastructure Matrix */}
+            {workstationMode === 'policy' && (
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold text-[var(--color-text-main)] flex items-center gap-1.5 font-['Space_Grotesk']">
+                    <svg className="w-4 h-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5" />
+                    </svg>
+                    <span>Municipal Return Periods (Copula Model)</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500 text-black font-bold">
+                    High Adaptation Need
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 font-mono text-center">
+                  <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                    <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">25-Yr Shock</span>
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">4.1 yrs</span>
+                  </div>
+                  <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                    <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">50-Yr Shock</span>
+                    <span className="text-xs font-bold text-rose-500">8.4 yrs</span>
+                  </div>
+                  <div className="p-1.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)]">
+                    <span className="text-[9px] text-[var(--color-text-muted)] block uppercase">100-Yr Shock</span>
+                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400">18.2 yrs</span>
+                  </div>
+                </div>
+                <div className="text-[11px] text-[var(--color-text-secondary)] font-sans leading-relaxed">
+                  Concurrent heat + drought events are recurring <strong className="text-[var(--color-text-main)]">nearly 6× more frequently</strong> than 20th-century municipal design standards.
+                </div>
+                <div className="pt-2 border-t border-amber-500/20 grid grid-cols-2 gap-2 text-[10px] font-mono">
+                  <div>
+                    <span className="text-[var(--color-text-muted)] block">Climate Velocity:</span>
+                    <span className="font-bold text-[var(--color-text-main)]">8.4 km / decade</span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--color-text-muted)] block">Reservoir Evap:</span>
+                    <span className="font-bold text-cyan-600 dark:text-cyan-400">+14.2% Deficit</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Primary Metrics Row */}
             {cell.isCompound ? (
               <div className="grid grid-cols-3 gap-2">

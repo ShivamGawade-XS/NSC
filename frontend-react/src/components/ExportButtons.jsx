@@ -6,6 +6,7 @@ import { playTactileClick } from '../utils/audio';
 
 export default function ExportButtons() {
   const analysisId = useStore((s) => s.analysisId);
+  const workstationMode = useStore((s) => s.workstationMode);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -55,29 +56,61 @@ export default function ExportButtons() {
     <div className="interface-card p-3 space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="instrument-heading !text-xs">
-          Artifacts & Exports
+          {workstationMode === 'detective' ? 'Class Project Exports' : workstationMode === 'policy' ? 'Policy Decision Deliverables' : 'Artifacts & Exports'}
         </h3>
         <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
-          CF-1.8 & Open Science
+          {workstationMode === 'detective' ? 'Student & STEM Slides' : workstationMode === 'policy' ? 'Municipal Risk & Governance' : 'CF-1.8 & Open Science'}
         </span>
       </div>
 
       {/* Primary Action Row with Split Export Menu */}
       <div className="flex items-center gap-1.5" ref={dropdownRef}>
-        {/* Primary Gold-Standard Download: NetCDF-4 */}
-        <button
-          type="button"
-          onClick={() => handleExport(api.exportNetCDF, 'NetCDF-4')}
-          className="flex-1 interface-btn-secondary !py-1.5 !px-2.5 !text-xs font-mono justify-center flex items-center gap-1.5 hover:border-[var(--color-accent-blue)]/50"
-          title="Download CF-1.8 compliant NetCDF-4 scientific grid"
-        >
-          <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-            <ellipse cx="12" cy="5" rx="9" ry="3" />
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-          </svg>
-          <span className="truncate">NetCDF-4</span>
-        </button>
+        {/* Tier-Tailored Primary Export Deliverable */}
+        {workstationMode === 'detective' ? (
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(750);
+              useStore.getState().setSchoolSlideModalOpen(true);
+            }}
+            className="flex-1 interface-btn-primary !py-1.5 !px-2.5 !text-xs font-mono justify-center flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Open 16:9 School Science Presentation Slide"
+          >
+            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+            </svg>
+            <span className="truncate font-bold">Presentation Slide</span>
+          </button>
+        ) : workstationMode === 'policy' ? (
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(750);
+              useStore.getState().setPolicyMemoModalOpen(true);
+            }}
+            className="flex-1 interface-btn-secondary !bg-amber-600/15 hover:!bg-amber-600/25 !border-amber-500/40 !text-amber-600 dark:!text-amber-300 !py-1.5 !px-2.5 !text-xs font-mono justify-center flex items-center gap-1.5 cursor-pointer"
+            title="Generate Municipal Climate Risk Memorandum"
+          >
+            <svg className="w-3.5 h-3.5 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <span className="truncate font-bold">Executive Risk Memo</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => handleExport(api.exportNetCDF, 'NetCDF-4')}
+            className="flex-1 interface-btn-secondary !py-1.5 !px-2.5 !text-xs font-mono justify-center flex items-center gap-1.5 hover:border-[var(--color-accent-blue)]/50"
+            title="Download CF-1.8 compliant NetCDF-4 scientific grid"
+          >
+            <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+              <ellipse cx="12" cy="5" rx="9" ry="3" />
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+            </svg>
+            <span className="truncate">NetCDF-4</span>
+          </button>
+        )}
 
         {/* Dropdown Trigger for Other Formats */}
         <div className="relative">
@@ -101,8 +134,51 @@ export default function ExportButtons() {
           {dropdownOpen && (
             <div className="absolute left-0 sm:left-auto right-0 top-full mt-1.5 z-50 w-56 bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-md shadow-xl py-1 text-xs font-mono animate-in fade-in duration-150">
               <div className="px-2.5 py-1 text-[9px] uppercase font-bold text-[var(--color-text-muted)] border-b border-[var(--color-border-subtle)] tracking-wider">
-                Scientific Export Suite
+                Cross-Tier Deliverable Suite
               </div>
+
+              <MenuItem
+                icon={
+                  <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+                  </svg>
+                }
+                label="Presentation Slide"
+                sub="16:9 School PDF"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  playTactileClick(750);
+                  useStore.getState().setSchoolSlideModalOpen(true);
+                }}
+              />
+
+              <MenuItem
+                icon={
+                  <svg className="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                }
+                label="Policy Risk Memo"
+                sub="City Council Format"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  playTactileClick(750);
+                  useStore.getState().setPolicyMemoModalOpen(true);
+                }}
+              />
+
+              <MenuItem
+                icon={
+                  <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                  </svg>
+                }
+                label="NetCDF-4 Binary"
+                sub="CF-1.8 Compliant"
+                onClick={() => handleExport(api.exportNetCDF, 'NetCDF-4')}
+              />
 
               <MenuItem
                 icon={

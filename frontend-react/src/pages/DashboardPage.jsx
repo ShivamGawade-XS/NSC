@@ -12,6 +12,8 @@ import DetectiveWizardModal from '../components/DetectiveWizardModal';
 import LatexModal from '../components/LatexModal';
 import CustomDataModal from '../components/CustomDataModal';
 import PreprintModal from '../components/PreprintModal';
+import SchoolSlideModal from '../components/SchoolSlideModal';
+import PolicyMemoModal from '../components/PolicyMemoModal';
 import RobustnessLabModal from '../components/RobustnessLabModal';
 import RegionalCompareModal from '../components/RegionalCompareModal';
 import DataQualityModal from '../components/DataQualityModal';
@@ -24,14 +26,15 @@ import { playTactileClick } from '../utils/audio';
 import { stopSonification } from '../utils/sonification';
 import { usePageMetadata } from '../utils/usePageMetadata';
 
-export default function DashboardPage() {
+export default function DashboardPage({ forcedMode }) {
   const isLoading = useStore((s) => s.isLoading);
   const error = useStore((s) => s.error);
   const analysisData = useStore((s) => s.analysisData);
   const selectedCell = useStore((s) => s.selectedCell);
   const analysisId = useStore((s) => s.analysisId);
   const workstationMode = useStore((s) => s.workstationMode);
-  const L = getLabels(workstationMode);
+  const activeMode = forcedMode || workstationMode || 'pro';
+  const L = getLabels(activeMode);
   const robustnessModalOpen = useStore((s) => s.robustnessModalOpen);
   const qualityProfileModalOpen = useStore((s) => s.qualityProfileModalOpen);
   const reproducibilityModalOpen = useStore((s) => s.reproducibilityModalOpen);
@@ -41,20 +44,40 @@ export default function DashboardPage() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'controls' | 'evidence'
 
-  usePageMetadata({
-    title: 'Analysis Workspace — Tellura Scientific Workbench',
-    description: 'Interactive spatiotemporal climate trend detective workspace. Real-time Mann-Kendall statistics, Sen slope, Anselin LISA clustering, and CF-1.8 NetCDF downloads.',
-    canonicalPath: '/dashboard',
-  });
+  // Route-aware metadata
+  const pageMeta = activeMode === 'detective'
+    ? {
+        title: 'Earth System Detective — Tellura Student STEM Workbench',
+        description: 'Guided climate mystery investigations for students and citizen scientists. 3-step hypothesis builder, audio sonification, and NASA POWER streaming.',
+        canonicalPath: '/investigate',
+      }
+    : activeMode === 'policy'
+    ? {
+        title: 'Climate Risk & Resilience — Tellura Municipal Decision Cockpit',
+        description: 'Decision intelligence cockpit for city planners and infrastructure authorities. Compound heatwave + drought aridification, Copula return periods, and climate velocity.',
+        canonicalPath: '/policy',
+      }
+    : {
+        title: 'Analysis Workspace — Tellura Scientific Research Workbench',
+        description: 'Interactive spatiotemporal climate trend detective workspace. Real-time Mann-Kendall statistics, Sen slope, Anselin LISA clustering, and CF-1.8 NetCDF downloads.',
+        canonicalPath: '/dashboard',
+      };
+
+  usePageMetadata(pageMeta);
 
   useEffect(() => {
-    trackPageView('Analysis Workspace');
+    trackPageView(pageMeta.title);
     window.scrollTo(0, 0);
+
+    // Sync forced route mode into store if specified
+    if (forcedMode && forcedMode !== useStore.getState().workstationMode) {
+      useStore.getState().setWorkstationMode(forcedMode);
+    }
 
     return () => {
       stopSonification();
     };
-  }, []);
+  }, [forcedMode, pageMeta.title]);
 
   // Initialize from URL parameters on first load (sanitizing corrupted or malformed parameters)
   useEffect(() => {
@@ -142,6 +165,8 @@ export default function DashboardPage() {
           storeState.latexModalOpen ||
           storeState.customDataModalOpen ||
           storeState.preprintModalOpen ||
+          storeState.schoolSlideModalOpen ||
+          storeState.policyMemoModalOpen ||
           storeState.robustnessModalOpen ||
           storeState.qualityProfileModalOpen ||
           storeState.reproducibilityModalOpen ||
@@ -350,6 +375,8 @@ export default function DashboardPage() {
         <LatexModal />
         <CustomDataModal />
         <PreprintModal />
+        <SchoolSlideModal />
+        <PolicyMemoModal />
         {robustnessModalOpen && (
           <RobustnessLabModal
             analysisId={analysisId}
@@ -414,9 +441,19 @@ export default function DashboardPage() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-[var(--color-border-subtle)]">
               <div>
                 <h1 className="font-['Space_Grotesk'] text-lg sm:text-xl font-bold tracking-tight text-[var(--color-text-main)] flex flex-wrap items-center gap-2">
-                  <span>Analysis Workspace</span>
+                  <span>
+                    {workstationMode === 'detective'
+                      ? 'Earth System Detective Workbench'
+                      : workstationMode === 'policy'
+                      ? 'Municipal Climate Resilience Cockpit'
+                      : 'Open-Science Research Workstation'}
+                  </span>
                   <span className="text-[11px] font-mono font-normal text-[var(--color-text-muted)] border-l border-[var(--color-border-subtle)] pl-2">
-                    Spatiotemporal Trend Discovery System
+                    {workstationMode === 'detective'
+                      ? 'Curiosity-Driven STEM Learning & Clue Discovery'
+                      : workstationMode === 'policy'
+                      ? 'Decadal Risk Management & Infrastructure Decision Support'
+                      : 'Non-Parametric Mann-Kendall & Anselin LISA Battery'}
                   </span>
                   {workstationMode === 'detective' && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1">

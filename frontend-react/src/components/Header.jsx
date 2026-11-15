@@ -53,10 +53,20 @@ export default function Header() {
     return () => clearInterval(id);
   }, []);
 
-  const isDashboard = location.pathname === '/dashboard';
+  const isWorkspace = ['/dashboard', '/investigate', '/policy'].includes(location.pathname);
+  const isDashboard = isWorkspace;
   const workstationMode = useStore((s) => s.workstationMode);
   const backendOffline = useStore((s) => s.backendOffline);
   const setBackendOffline = useStore((s) => s.setBackendOffline);
+
+  const handleSwitchTrack = (track) => {
+    playTactileClick(600);
+    useStore.getState().launchPersona(track);
+    const targetUrl = track === 'detective' ? '/investigate' : track === 'policy' ? '/policy' : '/dashboard';
+    if (location.pathname !== targetUrl) {
+      navigate(targetUrl);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -157,19 +167,17 @@ export default function Header() {
         {/* Center/Right: Action Buttons, Theme Toggle, & Telemetry */}
         <div className="hidden lg:flex items-center gap-2.5">
           {/* Persona Workstation Mode Selector */}
-          <div className="flex items-center p-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] font-mono text-[11px]">
+          {/* Evaluator Adaptive Track Switcher */}
+          <div className="flex items-center p-0.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] font-mono text-[11px]" title="Evaluator Adaptive Persona Switcher">
             <button
               type="button"
-              onClick={() => {
-                playTactileClick(600);
-                useStore.getState().setWorkstationMode('detective');
-              }}
+              onClick={() => handleSwitchTrack('detective')}
               className={`px-2 py-1 rounded transition-all flex items-center gap-1 cursor-pointer ${
                 workstationMode === 'detective'
                   ? 'bg-[var(--color-accent-blue)] text-white font-semibold shadow-xs'
                   : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
               }`}
-              title="Student & Citizen Detective: Simplified labels, guided clues, and audio sonification"
+              title="Student & Citizen Detective: Simplified clues, audio sonification, and guided hypothesis wizard"
             >
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
@@ -179,16 +187,13 @@ export default function Header() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                playTactileClick(600);
-                useStore.getState().setWorkstationMode('policy');
-              }}
+              onClick={() => handleSwitchTrack('policy')}
               className={`px-2 py-1 rounded transition-all flex items-center gap-1 cursor-pointer ${
                 workstationMode === 'policy'
                   ? 'bg-amber-600 text-white font-semibold shadow-xs'
                   : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)]'
               }`}
-              title="City Planner & Policy: Compound hazards, joint return periods, and climate velocity"
+              title="City Planner & Policy: Compound hazards, joint Copula return periods, and climate velocity"
             >
               <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5" />
@@ -197,10 +202,7 @@ export default function Header() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                playTactileClick(600);
-                useStore.getState().setWorkstationMode('pro');
-              }}
+              onClick={() => handleSwitchTrack('pro')}
               className={`px-2 py-1 rounded transition-all flex items-center gap-1 cursor-pointer ${
                 workstationMode === 'pro'
                   ? 'bg-emerald-600 text-white font-semibold shadow-xs'

@@ -32,7 +32,9 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/investigate" element={<DashboardPage forcedMode="detective" />} />
+            <Route path="/policy" element={<DashboardPage forcedMode="policy" />} />
+            <Route path="/dashboard" element={<DashboardPage forcedMode="pro" />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/thank-you" element={<ThankYouPage />} />

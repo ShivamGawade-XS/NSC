@@ -223,7 +223,8 @@ export default function LandingPage() {
   const handleLaunchPersona = (personaKey) => {
     playTactileClick(800);
     useStore.getState().launchPersona(personaKey);
-    navigate('/dashboard');
+    const targetUrl = personaKey === 'detective' ? '/investigate' : personaKey === 'policy' ? '/policy' : '/dashboard';
+    navigate(targetUrl);
   };
 
   return (

@@ -178,7 +178,7 @@ export default function AnalysisPanel() {
       {/* Quick Preset Ribbon */}
       <div>
         <div className="instrument-heading !text-xs mb-2">
-          {L.presetsLabel}
+          {workstationMode === 'detective' ? 'Curated Climate Mysteries' : workstationMode === 'policy' ? 'Municipal Jurisdictions & Basins' : L.presetsLabel}
         </div>
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(DETECTIVE_PRESETS).map(([key, preset]) => (
@@ -192,12 +192,28 @@ export default function AnalysisPanel() {
               className="preset-pill font-mono text-[10px]"
               title={preset.desc}
             >
-              {key === 'case1' && 'Texas Basin'}
-              {key === 'case2' && 'SW Transect'}
-              {key === 'case3' && 'CONUS Continental'}
-              {key === 'case4' && 'Midwest Ag'}
-              {key === 'case5' && 'Opposing Contrasts'}
-              {key === 'case6' && 'Wisconsin Wildfire (GSFC)'}
+              {workstationMode === 'detective' ? (
+                key === 'case1' ? 'Case 1: Texas Heatwave' :
+                key === 'case2' ? 'Case 2: SW Megadrought' :
+                key === 'case3' ? 'Case 3: Continental US' :
+                key === 'case4' ? 'Case 4: Midwest Crops' :
+                key === 'case5' ? 'Case 5: Opposing Dipoles' :
+                'Case 6: Wildfire Dimming'
+              ) : workstationMode === 'policy' ? (
+                key === 'case1' ? 'Travis County (TX)' :
+                key === 'case2' ? 'Colorado River Basin' :
+                key === 'case3' ? 'US Continental Grid' :
+                key === 'case4' ? 'Upper Midwest Ag' :
+                key === 'case5' ? 'Inter-Mountain Basin' :
+                'Northern Smoke Belt'
+              ) : (
+                key === 'case1' ? 'Texas Basin' :
+                key === 'case2' ? 'SW Transect' :
+                key === 'case3' ? 'CONUS Continental' :
+                key === 'case4' ? 'Midwest Ag' :
+                key === 'case5' ? 'Opposing Contrasts' :
+                'Wisconsin Wildfire (GSFC)'
+              )}
             </button>
           ))}
         </div>
@@ -463,79 +479,104 @@ export default function AnalysisPanel() {
           {yearCount} consecutive annual observations
         </p>
 
-        {/* BBox */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="form-label">
-              {L.bboxLabel}
-            </span>
+        {/* BBox Section */}
+        {workstationMode === 'detective' ? (
+          <div className="p-2.5 rounded bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-[var(--color-text-main)] flex items-center gap-1.5 font-mono text-[11px]">
+                <svg className="w-3.5 h-3.5 text-[var(--color-accent-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                <span>Investigation Region</span>
+              </span>
+              <span className="text-[9px] font-mono text-[var(--color-accent-blue)] bg-[var(--color-accent-blue)]/10 px-1.5 py-0.5 rounded font-bold">
+                NASA Calibrated Grid
+              </span>
+            </div>
+            <p className="text-[11px] text-[var(--color-text-secondary)] font-mono">
+              {hasBbox ? `${bbox.minLat}°N to ${bbox.maxLat}°N • ${bbox.minLon}°W to ${bbox.maxLon}°W` : 'Calibrated Regional Focus Area'}
+            </p>
+            <div className="text-[10px] text-[var(--color-text-muted)] font-mono pt-1 border-t border-[var(--color-border-subtle)]">
+              Click any case above or tap on the map to inspect another region.
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="form-label">
+                {workstationMode === 'policy' ? 'Jurisdiction Boundaries (Lat/Lon)' : L.bboxLabel}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(500);
+                  setValidationError('');
+                  clearBbox();
+                }}
+                className="text-[9px] font-mono text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ['minLon', 'Min Lon', 'Longitude: -180 to +180'],
+                ['minLat', 'Min Lat', 'Latitude: -90 to +90'],
+                ['maxLon', 'Max Lon', 'Longitude: -180 to +180'],
+                ['maxLat', 'Max Lat', 'Latitude: -90 to +90'],
+              ].map(([field, label, title]) => (
+                <input
+                  key={field}
+                  id={`bbox-${field}`}
+                  name={field}
+                  aria-label={label}
+                  type="number"
+                  step="0.1"
+                  placeholder={label}
+                  title={title}
+                  value={bbox[field]}
+                  onChange={(e) => handleBboxChange(field, e.target.value)}
+                  className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+                />
+              ))}
+            </div>
+            {hasBbox && (
+              <div className="mt-1.5 flex items-center justify-between text-[10px] font-mono">
+                <span className={`flex items-center gap-1 ${exceedsQuota ? 'text-amber-700 dark:text-amber-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
+                  <span>Area: {bboxArea} deg²</span>
+                  {exceedsQuota ? <span>(Exceeds NASA 100 deg² limit)</span> : <span>• Within NASA limit</span>}
+                </span>
+                {exceedsQuota && (
+                  <button
+                    type="button"
+                    onClick={handleAutoFit100}
+                    className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 font-bold transition-colors cursor-pointer"
+                    title="Center and fit to NASA POWER 10.0° x 10.0° focus region"
+                  >
+                    Auto-Fit 100 deg² Focus
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FDR Toggle (Hidden in Student Detective mode) */}
+        {workstationMode !== 'detective' && (
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs text-[var(--color-text-secondary)] font-mono">{L.fdrLabel}</span>
             <button
               type="button"
               onClick={() => {
-                playTactileClick(500);
-                setValidationError('');
-                clearBbox();
+                playTactileClick(600);
+                setFormField('useFdr', !useFdr);
               }}
-              className="text-[9px] font-mono text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] transition-colors"
-            >
-              Clear
-            </button>
+              className={`toggle-switch ${useFdr ? 'active' : ''}`}
+              aria-label="Toggle Benjamini-Hochberg False Discovery Rate Correction"
+            />
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              ['minLon', 'Min Lon', 'Longitude: -180 to +180'],
-              ['minLat', 'Min Lat', 'Latitude: -90 to +90'],
-              ['maxLon', 'Max Lon', 'Longitude: -180 to +180'],
-              ['maxLat', 'Max Lat', 'Latitude: -90 to +90'],
-            ].map(([field, label, title]) => (
-              <input
-                key={field}
-                id={`bbox-${field}`}
-                name={field}
-                aria-label={label}
-                type="number"
-                step="0.1"
-                placeholder={label}
-                title={title}
-                value={bbox[field]}
-                onChange={(e) => handleBboxChange(field, e.target.value)}
-                className="bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-main)] font-mono font-medium placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-accent-blue)] focus:outline-none"
-              />
-            ))}
-          </div>
-          {hasBbox && (
-            <div className="mt-1.5 flex items-center justify-between text-[10px] font-mono">
-              <span className={`flex items-center gap-1 ${exceedsQuota ? 'text-amber-700 dark:text-amber-400 font-semibold' : 'text-[var(--color-text-muted)]'}`}>
-                <span>Area: {bboxArea} deg²</span>
-                {exceedsQuota ? <span>(Exceeds NASA 100 deg² limit)</span> : <span>• Within NASA limit</span>}
-              </span>
-              {exceedsQuota && (
-                <button
-                  type="button"
-                  onClick={handleAutoFit100}
-                  className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 font-bold transition-colors cursor-pointer"
-                  title="Center and fit to NASA POWER 10.0° x 10.0° focus region"
-                >
-                  Auto-Fit 100 deg² Focus
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* FDR Toggle */}
-        <div className="flex items-center justify-between pt-1">
-          <span className="text-xs text-[var(--color-text-secondary)] font-mono">{L.fdrLabel}</span>
-          <button
-            type="button"
-            onClick={() => {
-              playTactileClick(600);
-              setFormField('useFdr', !useFdr);
-            }}
-            className={`toggle-switch ${useFdr ? 'active' : ''}`}
-            aria-label="Toggle Benjamini-Hochberg False Discovery Rate Correction"
-          />
-        </div>
+        )}
       </div>
 
       {/* Inline Form Validation Error Alert */}
@@ -568,30 +609,79 @@ export default function AnalysisPanel() {
 
       {/* Action Buttons with Spam Protection / Cooldown */}
       <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => handleExecute(false)}
-          disabled={isLoading || isCooldown || gateResult?.can_execute === false}
-          className="w-full interface-btn-primary !py-2.5 !text-xs !tracking-wider uppercase font-semibold disabled:opacity-50 disabled:cursor-not-allowed justify-center"
-        >
-          {isLoading ? (
-            <span className="flex items-center gap-2">
-              <span className="loading-spinner !w-3.5 !h-3.5 !border-2" />
-              <span className="text-[11px] font-mono tracking-normal capitalize">
-                {loadingStep === 0 && 'Connecting to NASA Gateway...'}
-                {loadingStep === 1 && 'Streaming CF-1.8 raster...'}
-                {loadingStep >= 2 && 'Computing Mann-Kendall & regimes...'}
-              </span>
-            </span>
-          ) : (
-            <span className="flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-              </svg>
-              <span>{isCooldown ? 'Cooldown Active...' : (gateResult?.can_execute === false ? 'Execution Blocked by Gate' : L.executeBtn)}</span>
-            </span>
-          )}
-        </button>
+        {workstationMode === 'policy' ? (
+          <>
+            <button
+              type="button"
+              onClick={() => handleExecute(true)}
+              disabled={isLoading || isCooldown || gateResult?.can_execute === false}
+              className="w-full interface-btn-primary !py-2.5 !text-xs font-mono font-bold justify-center !bg-amber-600 hover:!bg-amber-500 text-white shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="loading-spinner !w-3.5 !h-3.5 !border-2" />
+                  <span>Evaluating Compound Aridification (Heat + Drought)...</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+                  </svg>
+                  <span>Evaluate Compound Risk (Heat + Drought)</span>
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExecute(false)}
+              disabled={isLoading || isCooldown || gateResult?.can_execute === false}
+              className="w-full interface-btn-secondary !py-2 !text-xs font-mono justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Run Single-Variable Baseline
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => handleExecute(false)}
+              disabled={isLoading || isCooldown || gateResult?.can_execute === false}
+              className="w-full interface-btn-primary !py-2.5 !text-xs !tracking-wider uppercase font-semibold disabled:opacity-50 disabled:cursor-not-allowed justify-center"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="loading-spinner !w-3.5 !h-3.5 !border-2" />
+                  <span className="text-[11px] font-mono tracking-normal capitalize">
+                    {loadingStep === 0 && 'Connecting to NASA Gateway...'}
+                    {loadingStep === 1 && 'Streaming CF-1.8 raster...'}
+                    {loadingStep >= 2 && 'Computing Mann-Kendall & regimes...'}
+                  </span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                  </svg>
+                  <span>{isCooldown ? 'Cooldown Active...' : (gateResult?.can_execute === false ? 'Execution Blocked by Gate' : (workstationMode === 'detective' ? 'Investigate Climate Trend' : L.executeBtn))}</span>
+                </span>
+              )}
+            </button>
+
+            {workstationMode !== 'detective' && (
+              <button
+                type="button"
+                onClick={() => handleExecute(true)}
+                disabled={isLoading || isCooldown || gateResult?.can_execute === false}
+                className="w-full interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-amber-400 dark:hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+                </svg>
+                <span>{L.compoundBtn}</span>
+              </button>
+            )}
+          </>
+        )}
 
         {isLoading && (
           <p className="text-[10px] text-[var(--color-text-muted)] font-mono text-center pt-0.5 animate-pulse leading-snug">
@@ -599,49 +689,39 @@ export default function AnalysisPanel() {
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={() => handleExecute(true)}
-          disabled={isLoading || isCooldown || gateResult?.can_execute === false}
-          className="w-full interface-btn-secondary !py-2 !text-xs font-mono justify-center hover:border-amber-400 dark:hover:border-amber-500/40 hover:text-amber-700 dark:hover:text-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className="w-3.5 h-3.5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
-          </svg>
-          <span>{L.compoundBtn}</span>
-        </button>
-
-        {/* Tellura 2.0 Exploratory Launchers */}
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <button
-            type="button"
-            onClick={() => {
-              playTactileClick(700);
-              setDiscoveryModalOpen(true);
-            }}
-            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[var(--color-accent-blue)]/50 flex items-center gap-1.5"
-            title="Launch autonomous multi-variable trend discovery scan"
-          >
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <span>Discovery Scan</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              playTactileClick(700);
-              setRegionalCompareModalOpen(true);
-            }}
-            className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-amber-500/40 flex items-center gap-1.5"
-            title="Side-by-side regional trend detective with hypothesis test"
-          >
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
-            </svg>
-            <span>Compare Regions</span>
-          </button>
-        </div>
+        {/* Exploratory Launchers - shown for Pro & Policy */}
+        {workstationMode !== 'detective' && (
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(700);
+                setDiscoveryModalOpen(true);
+              }}
+              className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-[var(--color-accent-blue)]/50 flex items-center gap-1.5"
+              title="Launch autonomous multi-variable trend discovery scan"
+            >
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <span>Discovery Scan</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(700);
+                setRegionalCompareModalOpen(true);
+              }}
+              className="interface-btn-secondary !py-1.5 !text-[11px] font-mono justify-center hover:border-amber-500/40 flex items-center gap-1.5"
+              title="Side-by-side regional trend detective with hypothesis test"
+            >
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+              </svg>
+              <span>Compare Regions</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
