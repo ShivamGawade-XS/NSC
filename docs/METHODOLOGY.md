@@ -35,13 +35,13 @@ Standard Mann-Kendall variance assumes independent, identically distributed (i.i
 
 Tellura implements the **Hamed & Rao (1998)** modified variance:
 1. The series is first detrended using Sen's slope: $e_t = y_t - \beta \cdot t$.
-2. The empirical autocorrelation $\rho^*(k)$ of the ranks of residuals is computed for lags $k = 1, \dots, \min(n-4, 10)$ to avoid noisy high-order lag estimation on finite sample records.
+2. The empirical autocorrelation $\rho^{\ast}(k)$ of the ranks of residuals is computed for lags $k = 1, \dots, \min(n-4, 10)$ to avoid noisy high-order lag estimation on finite sample records.
 3. Significant autocorrelation coefficients exceeding the two-tailed 95% confidence bounds ($\pm 1.96 / \sqrt{n}$) adjust the variance:
 
-$$\text{Var}^*(S) = \text{Var}(S) \times \left[ 1 + \frac{2}{n(n-1)(n-2)} \sum_{k=1}^{n-1} (n-k)(n-k-1)(n-k-2) \rho^*(k) \right]$$
+$$\operatorname{Var}^{\ast}(S) = \operatorname{Var}(S) \times \left[ 1 + \frac{2}{n(n-1)(n-2)} \sum_{k=1}^{n-1} (n-k)(n-k-1)(n-k-2) \rho^{\ast}(k) \right]$$
 
 The standardized test statistic $Z$ is calculated with continuity correction:
-$$Z = \begin{cases} \frac{S - 1}{\sqrt{\text{Var}^*(S)}} & \text{if } S > 0 \\ 0 & \text{if } S = 0 \\ \frac{S + 1}{\sqrt{\text{Var}^*(S)}} & \text{if } S < 0 \end{cases}$$
+$$Z = \begin{cases} \frac{S - 1}{\sqrt{\operatorname{Var}^{\ast}(S)}} & \text{if } S > 0 \\ 0 & \text{if } S = 0 \\ \frac{S + 1}{\sqrt{\operatorname{Var}^{\ast}(S)}} & \text{if } S < 0 \end{cases}$$
 
 Two-tailed p-value:
 $$p = 2 \cdot \left[1 - \Phi(|Z|)\right]$$

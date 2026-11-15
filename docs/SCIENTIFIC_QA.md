@@ -23,8 +23,8 @@ Scientific software must calculate, never hallucinate. To guarantee mathematical
 - **Problem Statement:** An $AR(1)$ red noise process ($x_t = 0.6 \cdot x_{t-1} + \epsilon_t$) generates persistence that causes standard uncorrected Mann-Kendall to produce false-positive trend detections ($p = 0.0076$, rejecting $H_0$ falsely).
 - **Verification:**
   - The series was detrended via Sen's slope ($e_t = y_t - \beta \cdot t$).
-  - Rank autocorrelation $\rho^*(1) = 0.589$ was identified as statistically significant ($> 1.96 / \sqrt{40} = 0.310$).
-  - The variance was corrected: $\text{Var}^*(S) = 27,812.08$ vs uncorrected $7,366.67$ (a $3.77\times$ adjustment).
+  - Rank autocorrelation $\rho^{\ast}(1) = 0.589$ was identified as statistically significant ($> 1.96 / \sqrt{40} = 0.310$).
+  - The variance was corrected: $\operatorname{Var}^{\ast}(S) = 27,812.08$ vs uncorrected $7,366.67$ (a $3.77\times$ adjustment).
   - The corrected test statistic yielded $Z = -1.373$, $p = 0.1697$, successfully accepting the true null hypothesis ($H_0$: no monotonic trend).
   - **Verdict:** PASS — Proven prevention of false positive detections on persistent climate series.
 

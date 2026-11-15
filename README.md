@@ -54,7 +54,7 @@ Tellura implements an end-to-end non-parametric analytical pipeline:
 | **Spatial Multiplicity** | Unadjusted raw $p < 0.05$ | **Benjamini-Hochberg (1995) False Discovery Rate (FDR) control** | `backend/app/science/trend.py` |
 | **Field Significance** | Misrepresented stippling | **Wilks (2016) False Discovery Rate field significance verification** | `backend/app/api/routers/analysis.py` |
 | **Signal-to-Noise Emergence** | Unbounded slope magnitude | **Hawkins & Sutton (2012) Time of Emergence (ToE) SNR ($\ge 2.0$)** | `backend/app/api/shared.py` |
-| **Oscillation Decoupling** | Mistaking ENSO for secular trend | **Hamed-Rao VIF ($\eta$) & Monotonic-to-Total Variance Explained ($R^2$)** | `backend/app/api/shared.py` |
+| **Oscillation Decoupling** | Mistaking ENSO for secular trend | **Hamed-Rao VIF ($\eta$) & Monotonic-to-Total Variance Explained ($R^{2}$)** | `backend/app/api/shared.py` |
 | **Regime Shifts** | Arbitrary visual inflection | **Pettitt (1979) non-parametric changepoint detection** | `backend/app/science/trend.py` |
 | **Spatial Clustering** | Simple color heatmap | **Local Moran's I (LISA) hotspot and coldspot classification** | `backend/app/science/spatial.py` |
 | **Compound Hazards** | Single-variable analysis | **Archimedean Copula bivariate joint exceedance modeling** | `backend/app/science/copula_hazard.py` |
@@ -70,19 +70,19 @@ Tellura implements an end-to-end non-parametric analytical pipeline:
 
 The Mann-Kendall statistic $S$ evaluates relative signs of all pairwise differences across $n$ temporal steps:
 
-$$S = \sum_{k=1}^{n-1} \sum_{j=k+1}^n \text{sgn}(x_j - x_k)$$
+$$S = \sum_{k=1}^{n-1} \sum_{j=k+1}^{n} \text{sgn}(x_j - x_k)$$
 
 Where the variance under independent and identically distributed observations is:
 
-$$\text{Var}(S) = \frac{n(n-1)(2n+5) - \sum_{t} t(t-1)(2t+5)}{18}$$
+$$\operatorname{Var}(S) = \frac{n(n-1)(2n+5) - \sum_{t} t(t-1)(2t+5)}{18}$$
 
 To prevent spurious significance caused by serial autocorrelation, Tellura calculates the non-parametric autocorrelation of detrended ranks across all significant lags $i$, scaling the variance:
 
-$$\text{Var}^*(S) = \text{Var}(S) \cdot \left[ 1 + \frac{2}{n(n-1)(n-2)} \sum_{i=1}^{n-1} (n-i)(n-i-1)(n-i-2) \rho_S^*(i) \right]$$
+$$\operatorname{Var}^{\ast}(S) = \operatorname{Var}(S) \cdot \left[ 1 + \frac{2}{n(n-1)(n-2)} \sum_{i=1}^{n-1} (n-i)(n-i-1)(n-i-2) \rho_{S}^{\ast}(i) \right]$$
 
-The standardized test statistic $Z$ is then computed against $\text{Var}^*(S)$:
+The standardized test statistic $Z$ is then computed against $\operatorname{Var}^{\ast}(S)$:
 
-$$Z = \begin{cases} \frac{S - 1}{\sqrt{\text{Var}^*(S)}} & \text{if } S > 0 \\ 0 & \text{if } S = 0 \\ \frac{S + 1}{\sqrt{\text{Var}^*(S)}} & \text{if } S < 0 \end{cases}$$
+$$Z = \begin{cases} \frac{S - 1}{\sqrt{\operatorname{Var}^{\ast}(S)}} & \text{if } S > 0 \\ 0 & \text{if } S = 0 \\ \frac{S + 1}{\sqrt{\operatorname{Var}^{\ast}(S)}} & \text{if } S < 0 \end{cases}$$
 
 ### 2. Theil-Sen Robust Slope & Gilbert 95% Confidence Intervals
 
@@ -96,7 +96,7 @@ This estimator possesses a 29% breakdown bound, remaining unaffected by extreme 
 
 Spatial clustering is evaluated via Global Moran's $I$:
 
-$$I = \frac{N}{W} \frac{\sum_{i=1}^N \sum_{j=1}^N w_{ij} (z_i - \bar{z})(z_j - \bar{z})}{\sum_{i=1}^N (z_i - \bar{z})^2}$$
+$$I = \frac{N}{W} \frac{\sum_{i=1}^N \sum_{j=1}^N w_{ij} (z_i - \bar{z})(z_j - \bar{z})}{\sum_{i=1}^N (z_i - \bar{z})^{2}}$$
 
 Grid cells are classified into spatial regimes:
 - **High-High (Hotspots)**: Significant positive rate of change surrounded by similar rapid warming.
@@ -107,7 +107,7 @@ Grid cells are classified into spatial regimes:
 
 To determine whether an observed trend represents a true anthropogenic departure from internal climate variability, Tellura evaluates the Hawkins & Sutton (2012) Signal-to-Noise Ratio:
 
-$$\text{SNR} = \frac{|\Delta y|}{\sigma_{\text{residuals}}} = \frac{|\beta \cdot (t_n - t_1)|}{\sqrt{\frac{1}{n-2} \sum_{i=1}^n (y_i - \hat{y}_i)^2}}$$
+$$\text{SNR} = \frac{|\Delta y|}{\sigma_{\text{residuals}}} = \frac{|\beta \cdot (t_n - t_1)|}{\sqrt{\frac{1}{n-2} \sum_{i=1}^{n} (y_i - \hat{y}_i)^{2}}}$$
 
 Where $\hat{y}_i = \beta \cdot (t_i - t_1) + y_0$. Trends are classified into 3 empirical regimes:
 - **Emergent Signal ($\text{SNR} \ge 2.0$)**: The secular trajectory has permanently cleared the $2\sigma$ natural variability envelope (IPCC AR6 Time of Emergence standard).
@@ -118,11 +118,11 @@ Where $\hat{y}_i = \beta \cdot (t_i - t_1) + y_0$. Trends are classified into 3 
 
 Decadal climate modes (El Niño Southern Oscillation, Pacific Decadal Oscillation) create red-noise persistence in observational records. Tellura computes two metrics to decouple natural cycles from anthropogenic forcing:
 
-1. **Monotonic-to-Total Variance Ratio ($R^2_{\text{trend}}$)**:
-   $$R^2_{\text{trend}} = \frac{\text{Var}(\hat{y})}{\text{Var}(y)} \times 100\%$$
+1. **Monotonic-to-Total Variance Ratio ($R^{2}_{\text{trend}}$)**:
+   $$R^{2}_{\text{trend}} = \frac{\operatorname{Var}(\hat{y})}{\operatorname{Var}(y)} \times 100\%$$
    Identifies what percentage of total decadal variability is explained by continuous monotonic forcing vs. oscillatory climate cycles.
 2. **Hamed-Rao Variance Inflation Factor ($\eta$)**:
-   $$\eta = \frac{\text{Var}^*(S)}{\text{Var}_0(S)}$$
+   $$\eta = \frac{\operatorname{Var}^{\ast}(S)}{\operatorname{Var}_{0}(S)}$$
    Directly measures the variance expansion required to neutralize temporal autocorrelation, ensuring cyclical persistence is never misdiagnosed as secular climate drift.
 
 ---

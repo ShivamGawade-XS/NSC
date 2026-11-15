@@ -56,7 +56,7 @@ Tellura is structured as a decoupled scientific computing platform with a high-p
 | **Multi-LLM Synthesis** | Google Gemini / Groq / xAI Grok / OpenAI | REST APIs | Multi-tier AI explainer & NLQ copilot cascade with deterministic offline fallback and daily spend tracker. |
 | **Configuration** | python-dotenv | >=1.0.1 | Type-safe environment variable resolution across development and production containers. |
 | **System Metrics** | psutil | >=5.9.0 | Hardware resource monitoring (RAM, CPU, disk) for system readiness checks. |
-| **Test Suite** | pytest | >=8.0.0 (9.0.3) | Complete test suite (337 tests passing in 71s) covering unit math, security hardening, cache concurrency, and API integrity. |
+| **Test Suite** | pytest | >=8.0.0 (9.0.3) | Complete test suite (353 tests passing in 85s) covering unit math, security hardening, cache concurrency, and API integrity. |
 | **HTTP Client** | HTTPX | >=0.27.0 (0.28.1) | Synchronous and asynchronous ASGI test client for endpoint validation. |
 
 ---

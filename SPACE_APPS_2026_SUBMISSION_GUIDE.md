@@ -45,7 +45,7 @@ In the official challenge introduction video, Dr. James Aker (GSFC) outlines the
 2. **Choose a specific geographic region (4:29)** → Bounding box selector, 3D orthographic globe, transects, and snap-to-domain presets.
 3. **Define the timeframe for the data series (4:34)** → 1980–2024 multi-decadal observation sliders with WMO climatological baseline checks.
 4. **Create and examine the time series for apparent trends (4:39)** → TimeSeries chart with Theil-Sen median slopes, warming stripes, and acoustic sonification.
-5. **Perform a statistical analysis to determine significance (4:45)** → Dual-layer verification requiring $p < 0.05$ (or Hamed-Rao $p^* < 0.05$) and Benjamini-Hochberg False Discovery Rate control ($q \le 0.05$), accompanied by Dr. Aker's wildfire smoke/solar attenuation exemplar (Wisconsin Case 6).
+5. **Perform a statistical analysis to determine significance (4:45)** → Dual-layer verification requiring $p < 0.05$ (or Hamed-Rao $p^{\ast} < 0.05$) and Benjamini-Hochberg False Discovery Rate control ($q \le 0.05$), accompanied by Dr. Aker's wildfire smoke/solar attenuation exemplar (Wisconsin Case 6).
 
 ---
 
@@ -240,15 +240,15 @@ $$S = \sum_{k=1}^{n-1} \sum_{j=k+1}^n \text{sgn}(x_j - x_k)$$
 $$\text{sgn}(\theta) = \begin{cases} +1 & \theta > 0 \\ 0 & \theta = 0 \\ -1 & \theta < 0 \end{cases}$$
 
 ### 2. Hamed & Rao (1998) Serial Autocorrelation Variance Scaling
-$$\text{Var}^*(S) = \text{Var}(S) \cdot \left[ 1 + \frac{2}{n(n-1)(n-2)} \sum_{i=1}^{n-1} (n-i)(n-i-1)(n-i-2) \rho_S^*(i) \right]$$
-Where $\rho_S^*(i)$ is the rank autocorrelation of the detrended series at lag $i$.
+$$\operatorname{Var}^{\ast}(S) = \operatorname{Var}(S) \cdot \left[ 1 + \frac{2}{n(n-1)(n-2)} \sum_{i=1}^{n-1} (n-i)(n-i-1)(n-i-2) \rho_{S}^{\ast}(i) \right]$$
+Where $\rho_{S}^{\ast}(i)$ is the rank autocorrelation of the detrended series at lag $i$.
 
 ### 3. Theil-Sen Robust Median Slope Estimator ($\beta$)
 $$\beta = \text{median}\left( \frac{x_j - x_k}{j - k} \right) \quad \forall \; 1 \le k < j \le n$$
 Breakdown bound is $\approx 29\%$, completely immune to single-year extreme weather anomalies.
 
 ### 4. Gilbert (1987) 95% Two-Sided Confidence Intervals
-$$M_1 = \frac{N' - Z_{1-\alpha/2}\sqrt{\text{Var}^*(S)}}{2}, \quad M_2 = \frac{N' + Z_{1-\alpha/2}\sqrt{\text{Var}^*(S)}}{2}$$
+$$M_1 = \frac{N' - Z_{1-\alpha/2}\sqrt{\operatorname{Var}^{\ast}(S)}}{2}, \quad M_2 = \frac{N' + Z_{1-\alpha/2}\sqrt{\operatorname{Var}^{\ast}(S)}}{2}$$
 Where $N' = \frac{n(n-1)}{2}$, bounding the sorted pairwise slope array.
 
 ### 5. Benjamini-Hochberg (1995) False Discovery Rate (FDR)
