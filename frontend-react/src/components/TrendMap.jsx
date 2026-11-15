@@ -44,6 +44,7 @@ export default function TrendMap() {
   const domainBoundsRef = useRef(null);
   const gibsLayerRef = useRef(null);
   const selectionLayerRef = useRef(null);
+  const gisToolsRef = useRef(null);
 
   const [mapReady, setMapReady] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
@@ -76,6 +77,18 @@ export default function TrendMap() {
   const [showGlobe3D, setShowGlobe3D] = useState(false);
   const [isLegendCollapsed, setIsLegendCollapsed] = useState(false);
   const [gisToolsOpen, setGisToolsOpen] = useState(false);
+
+  // Click-outside listener to auto-dismiss Instruments dropdown
+  useEffect(() => {
+    if (!gisToolsOpen) return;
+    const handleClickOutside = (e) => {
+      if (gisToolsRef.current && !gisToolsRef.current.contains(e.target)) {
+        setGisToolsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [gisToolsOpen]);
 
   const effectiveBbox = useMemo(() => {
     if (storeBbox?.minLon !== '' && storeBbox?.minLat !== '' && storeBbox?.maxLon !== '' && storeBbox?.maxLat !== '' &&
@@ -890,7 +903,7 @@ function inferGridStep(grid) {
             </button>
 
             {/* GIS Instruments Popover Menu for Pro Mode */}
-            <div className="relative">
+            <div className="relative" ref={gisToolsRef}>
               <button
                 type="button"
                 onClick={() => {
@@ -923,6 +936,7 @@ function inferGridStep(grid) {
                     onClick={() => {
                       playTactileClick(650);
                       useStore.getState().toggleGibs();
+                      setGisToolsOpen(false);
                     }}
                     className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors cursor-pointer ${
                       showGibs ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-text-main)] font-semibold' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'
@@ -940,6 +954,7 @@ function inferGridStep(grid) {
                     onClick={() => {
                       playTactileClick(700);
                       useStore.getState().toggleVelocityMode();
+                      setGisToolsOpen(false);
                     }}
                     className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors cursor-pointer ${
                       isVelocityMode ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-text-main)] font-semibold' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'
@@ -957,6 +972,7 @@ function inferGridStep(grid) {
                     onClick={() => {
                       playTactileClick(650);
                       useStore.getState().toggleCurtainMode();
+                      setGisToolsOpen(false);
                     }}
                     className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors cursor-pointer ${
                       showCurtainMode ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-text-main)] font-semibold' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'
@@ -974,6 +990,7 @@ function inferGridStep(grid) {
                     onClick={() => {
                       playTactileClick(750);
                       useStore.getState().toggleCompareMode();
+                      setGisToolsOpen(false);
                     }}
                     className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors cursor-pointer ${
                       compareMode ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-text-main)] font-semibold' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'
@@ -991,6 +1008,7 @@ function inferGridStep(grid) {
                     onClick={() => {
                       playTactileClick(600);
                       setIsRasterMode(!isRasterMode);
+                      setGisToolsOpen(false);
                     }}
                     className="w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] cursor-pointer"
                   >
@@ -1054,15 +1072,31 @@ function inferGridStep(grid) {
 
       {/* NASA GIBS Live Satellite Instrument Tray */}
       {showGibs && (
-        <div className="absolute top-12 sm:top-14 right-3 z-[1000] w-72 max-w-[calc(100%-1.5rem)] bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 rounded shadow-2xl backdrop-blur-md p-3 font-mono text-xs animate-in fade-in duration-200">
+        <div className={`absolute ${gisToolsOpen ? 'top-[270px]' : 'top-12 sm:top-14'} right-3 z-[1000] w-72 max-w-[calc(100%-1.5rem)] bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 rounded shadow-2xl backdrop-blur-md p-3 font-mono text-xs transition-all duration-200 animate-in fade-in`}>
           <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2 mb-2.5">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
               <span className="font-semibold text-[var(--color-text-main)] tracking-wider">NASA EOSDIS GIBS</span>
             </div>
-            <span className="text-[10px] bg-[var(--color-accent-blue)]/15 text-[var(--color-accent-blue)] px-1.5 py-0.5 rounded border border-[var(--color-accent-blue)]/30 font-bold">
-              WMTS EPSG:3857
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] bg-[var(--color-accent-blue)]/15 text-[var(--color-accent-blue)] px-1.5 py-0.5 rounded border border-[var(--color-accent-blue)]/30 font-bold">
+                WMTS EPSG:3857
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(600);
+                  useStore.getState().toggleGibs();
+                }}
+                className="p-1 -mr-1 rounded hover:bg-[var(--color-bg-hover)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors cursor-pointer"
+                title="Close NASA GIBS Layer"
+                aria-label="Close NASA GIBS Layer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2.5">
