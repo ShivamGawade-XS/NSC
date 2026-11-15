@@ -1,6 +1,32 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { playTactileClick } from '../utils/audio';
 
+// ─── Major City Lights Database [lon, lat, population-weight 1-5] ──────────
+const CITY_LIGHTS = [
+  // North America
+  [-74.0,40.7,5],[-87.6,41.9,4],[-118.2,34.0,5],[-95.4,29.8,4],[-122.4,37.8,4],
+  [-73.9,45.5,3],[-79.4,43.6,4],[-123.1,49.3,3],[-99.1,19.4,5],[-80.2,26.0,3],
+  [-77.0,38.9,4],[-84.4,33.7,4],[-71.1,42.4,3],[-96.8,32.8,4],[-112.1,33.4,3],
+  [-83.0,42.3,3],[-93.3,45.0,3],[-90.2,38.6,3],[-122.3,47.6,3],[-104.9,39.7,3],
+  // Europe
+  [-0.1,51.5,5],[2.3,48.9,5],[13.4,52.5,4],[12.5,41.9,3],[-3.7,40.4,4],
+  [23.7,38.0,3],[14.4,50.1,3],[21.0,52.2,3],[18.1,59.3,3],[24.9,60.2,2],
+  [4.9,52.4,3],[4.4,50.8,2],[16.4,48.2,3],[19.0,47.5,3],[12.6,55.7,2],
+  [10.8,59.9,2],[30.3,59.9,4],[37.6,55.8,4],
+  // Asia
+  [139.7,35.7,5],[121.5,31.2,5],[116.4,39.9,5],[126.9,37.6,5],[114.2,22.3,4],
+  [72.9,19.1,5],[77.2,28.6,4],[88.4,22.6,4],[103.8,1.3,4],[100.5,13.8,4],
+  [106.8,-6.2,4],[106.7,10.8,3],[120.9,14.6,4],[44.4,33.3,3],[51.4,35.7,4],
+  // Africa
+  [31.2,30.0,4],[36.8,-1.3,2],[28.0,-26.2,3],[3.4,6.5,4],[32.6,0.3,2],
+  [-7.6,33.6,2],[2.1,13.5,2],[38.7,9.0,2],[18.4,-34.0,2],
+  // South America
+  [-43.2,-22.9,5],[-46.6,-23.5,5],[-58.4,-34.6,4],[-70.6,-33.4,3],
+  [-77.0,-12.0,3],[-66.9,10.5,3],[-74.1,4.6,3],[-79.9,-2.2,2],
+  // Oceania
+  [151.2,-33.9,4],[144.9,-37.8,3],[174.8,-41.3,2],[172.6,-43.5,2],
+];
+
 // High-Fidelity World Coastline & Island Vectors [lon, lat] (Degrees)
 // Covers all continents, major subcontinents, peninsulas, archipelagos, and polar ice sheets
 const DETAILED_WORLD_LANDMASSES = [
@@ -221,6 +247,7 @@ export default function PlanetaryGlobe3D({
   const [globeTheme, setGlobeTheme] = useState('natural'); // 'natural' | 'night'
   const [showPillars, setShowPillars] = useState(true);
   const [showClouds, setShowClouds] = useState(true);
+  const [showBBox, setShowBBox] = useState(true);
 
   // Physics-based momentum drag refs
   const isDraggingRef = useRef(false);
@@ -229,6 +256,7 @@ export default function PlanetaryGlobe3D({
   const centerRef = useRef(center);
   const radiusRef = useRef(radius);
   const cloudOffsetRef = useRef(0);
+  const tickRef = useRef(0);
 
   useEffect(() => {
     centerRef.current = center;
@@ -271,54 +299,89 @@ export default function PlanetaryGlobe3D({
     ctx.fillStyle = '#05070b';
     ctx.fillRect(0, 0, width, height);
 
-    // Deep space realistic twinkling stars with varied magnitudes
+    const tick = tickRef.current;
+
+    // Multi-layer realistic starfield with twinkling and color temperature
     ctx.save();
-    for (let i = 0; i < 75; i++) {
+    for (let i = 0; i < 120; i++) {
       const sx = ((Math.sin(i * 127.1) * 43758.5453) % 1) * width;
       const sy = ((Math.cos(i * 311.7) * 43758.5453) % 1) * height;
-      const size = (i % 3 === 0) ? 1.6 : (i % 2 === 0 ? 1.2 : 0.8);
-      const alpha = 0.25 + ((Math.sin(i * 45) + 1) / 2) * 0.55;
-      ctx.fillStyle = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+      const mag = (i % 5 === 0) ? 2.0 : (i % 3 === 0 ? 1.4 : (i % 2 === 0 ? 1.0 : 0.6));
+      // Subtle twinkle animation
+      const twinkle = 0.3 + ((Math.sin(tick * 0.02 + i * 1.7) + 1) / 2) * 0.6;
+      // Color temperature variety: blue-white, yellow, warm white
+      const temp = i % 7;
+      const starColor = temp < 2 ? `rgba(180, 210, 255, ${twinkle.toFixed(2)})` :
+                        temp < 4 ? `rgba(255, 255, 240, ${twinkle.toFixed(2)})` :
+                                   `rgba(255, 220, 180, ${(twinkle * 0.7).toFixed(2)})`;
+      ctx.fillStyle = starColor;
       ctx.beginPath();
-      ctx.arc(Math.abs(sx), Math.abs(sy), size, 0, Math.PI * 2);
+      ctx.arc(Math.abs(sx), Math.abs(sy), mag, 0, Math.PI * 2);
       ctx.fill();
+      // Cross diffraction spikes on brightest stars
+      if (mag > 1.8) {
+        ctx.strokeStyle = `rgba(200, 220, 255, ${(twinkle * 0.3).toFixed(2)})`;
+        ctx.lineWidth = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(Math.abs(sx) - 4, Math.abs(sy));
+        ctx.lineTo(Math.abs(sx) + 4, Math.abs(sy));
+        ctx.moveTo(Math.abs(sx), Math.abs(sy) - 4);
+        ctx.lineTo(Math.abs(sx), Math.abs(sy) + 4);
+        ctx.stroke();
+      }
     }
     ctx.restore();
 
-    // ── 2. Atmospheric Rayleigh Scattering (Outer Planetary Glow) ─
-    const atmosphereRadius = r * 1.18;
-    const glowGrad = ctx.createRadialGradient(cx, cy, r * 0.94, cx, cy, atmosphereRadius);
+    // ── 2. Multi-Layer Atmospheric Rayleigh Scattering ──────────────
+    // Outer diffuse glow
+    const outerAtmo = r * 1.22;
+    const outerGrad = ctx.createRadialGradient(cx, cy, r * 0.92, cx, cy, outerAtmo);
     if (globeTheme === 'natural') {
-      glowGrad.addColorStop(0, 'rgba(56, 189, 248, 0.42)'); // Stratospheric Cyan
-      glowGrad.addColorStop(0.35, 'rgba(2, 132, 199, 0.20)');
-      glowGrad.addColorStop(0.7, 'rgba(3, 105, 161, 0.08)');
-      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      outerGrad.addColorStop(0, 'rgba(56, 189, 248, 0.50)');
+      outerGrad.addColorStop(0.25, 'rgba(14, 165, 233, 0.28)');
+      outerGrad.addColorStop(0.55, 'rgba(2, 132, 199, 0.12)');
+      outerGrad.addColorStop(0.85, 'rgba(3, 105, 161, 0.04)');
+      outerGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     } else {
-      glowGrad.addColorStop(0, 'rgba(99, 102, 241, 0.35)'); // Deep Indigo Aurora
-      glowGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.12)');
-      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      outerGrad.addColorStop(0, 'rgba(99, 102, 241, 0.40)');
+      outerGrad.addColorStop(0.3, 'rgba(129, 140, 248, 0.18)');
+      outerGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
+      outerGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     }
-    ctx.fillStyle = glowGrad;
+    ctx.fillStyle = outerGrad;
     ctx.beginPath();
-    ctx.arc(cx, cy, atmosphereRadius, 0, Math.PI * 2);
+    ctx.arc(cx, cy, outerAtmo, 0, Math.PI * 2);
     ctx.fill();
 
-    // ── 3. Ocean Body with Spherical Specular Depth ────────────────
+    // Inner limb brightening (Fresnel-like edge glow inside the sphere)
+    const limbGrad = ctx.createRadialGradient(cx, cy, r * 0.75, cx, cy, r);
+    limbGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    limbGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0)');
+    limbGrad.addColorStop(1, globeTheme === 'natural' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(99, 102, 241, 0.15)');
+
+    // ── 3. Ocean Body with Subsurface Scattering & Bathymetry ──────
     const oceanGrad = ctx.createRadialGradient(
-      cx - r * 0.38, cy - r * 0.38, r * 0.08, // Sunlit ocean specular point
+      cx - r * 0.38, cy - r * 0.38, r * 0.08,
       cx, cy, r
     );
     if (globeTheme === 'natural') {
-      oceanGrad.addColorStop(0, '#1d4ed8');   // Sunlit brilliant ocean
-      oceanGrad.addColorStop(0.35, '#1e40af'); // Deep open water
-      oceanGrad.addColorStop(0.75, '#0f172a'); // Abyssal bathymetry
-      oceanGrad.addColorStop(1, '#020617');    // Night limb
+      oceanGrad.addColorStop(0, '#2563eb');   // Sunlit brilliant ocean
+      oceanGrad.addColorStop(0.2, '#1d4ed8');  // Open water
+      oceanGrad.addColorStop(0.5, '#1e40af');  // Deep blue
+      oceanGrad.addColorStop(0.8, '#0f172a');  // Abyssal
+      oceanGrad.addColorStop(1, '#020617');     // Night limb
     } else {
       oceanGrad.addColorStop(0, '#0f172a');
       oceanGrad.addColorStop(0.65, '#090d16');
       oceanGrad.addColorStop(1, '#020408');
     }
     ctx.fillStyle = oceanGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Apply inner limb glow on top of ocean
+    ctx.fillStyle = limbGrad;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
@@ -400,17 +463,22 @@ export default function PlanetaryGlobe3D({
       ctx.stroke();
     });
 
-    // ── 7. Detailed Continental Landmasses with Biome Shading ──────
+    // ── 7. Detailed Continental Landmasses with Terrain Relief ──────
     DETAILED_WORLD_LANDMASSES.forEach((land) => {
       const colors = palette[land.biome] || palette.temperate;
-      ctx.fillStyle = colors.fill;
-      ctx.strokeStyle = colors.stroke;
+      
+      // Compute land centroid for terrain relief gradient
+      let sumX = 0, sumY = 0, visCount = 0;
+      const projPts = land.points.map(([lon, lat]) => {
+        const p = project(lon, lat, cLon, cLat, r, cx, cy);
+        if (p.visible) { sumX += p.x; sumY += p.y; visCount++; }
+        return p;
+      });
+      
       ctx.lineWidth = 1.1;
-
       ctx.beginPath();
       let started = false;
-      land.points.forEach(([lon, lat]) => {
-        const p = project(lon, lat, cLon, cLat, r, cx, cy);
+      projPts.forEach((p) => {
         if (p.visible) {
           if (!started) { ctx.moveTo(p.x, p.y); started = true; }
           else { ctx.lineTo(p.x, p.y); }
@@ -419,37 +487,72 @@ export default function PlanetaryGlobe3D({
         }
       });
       ctx.closePath();
+
+      // Terrain relief: subtle gradient from sunlit to shadow side
+      if (visCount > 2 && globeTheme === 'natural') {
+        const centX = sumX / visCount;
+        const centY = sumY / visCount;
+        const reliefGrad = ctx.createRadialGradient(
+          centX - 15, centY - 15, 2,
+          centX, centY, r * 0.35
+        );
+        reliefGrad.addColorStop(0, colors.fill);
+        reliefGrad.addColorStop(0.6, colors.fill);
+        reliefGrad.addColorStop(1, colors.stroke);
+        ctx.fillStyle = reliefGrad;
+      } else {
+        ctx.fillStyle = colors.fill;
+      }
+      ctx.strokeStyle = colors.stroke;
       ctx.fill();
       ctx.stroke();
     });
 
-    // ── 8. Night Lights on the Dark Side of Earth ──────────────────
+    // ── 8. City Lights on Dark Hemisphere (Real Metro Database) ────
     if (globeTheme === 'night') {
-      ctx.fillStyle = 'rgba(251, 191, 36, 0.75)'; // Warm sodium city lights
-      DETAILED_WORLD_LANDMASSES.forEach((land, idx) => {
-        land.points.forEach(([lon, lat], pIdx) => {
-          if (pIdx % 2 === 0) {
-            const p = project(lon + 1.2, lat - 0.8, cLon, cLat, r, cx, cy);
-            if (p.visible && p.depth < 0.6) {
-              const flicker = 0.5 + Math.sin(idx * 10 + pIdx) * 0.3;
-              ctx.fillRect(p.x, p.y, 1.4 * flicker, 1.4 * flicker);
-            }
-          }
-        });
+      CITY_LIGHTS.forEach(([lon, lat, weight]) => {
+        const p = project(lon, lat, cLon, cLat, r, cx, cy);
+        if (!p.visible) return;
+        // Brighter on limb (darker side), dimmer toward center (sunlit)
+        const limbFactor = Math.max(0, 1 - p.depth * 1.2);
+        if (limbFactor < 0.15) return;
+        const glow = limbFactor * (0.5 + weight * 0.1);
+        const sz = Math.max(1, weight * 0.7 * (0.5 + p.depth));
+        // Warm sodium core
+        ctx.fillStyle = `rgba(255, 200, 80, ${(glow * 0.9).toFixed(2)})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, sz, 0, Math.PI * 2);
+        ctx.fill();
+        // Metro light spill halo for major cities
+        if (weight >= 4) {
+          ctx.fillStyle = `rgba(255, 180, 50, ${(glow * 0.25).toFixed(2)})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, sz * 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
       });
     }
 
-    // ── 9. Semi-Transparent Dynamic Swirling Cloud Layer ───────────
+    // ── 9. Multi-Band Atmospheric Cloud System ─────────────────────
     if (showClouds) {
       ctx.save();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
       const cloudShift = cloudOffsetRef.current;
-      for (let c = -50; c <= 50; c += 25) {
+      // ITCZ tropical band, mid-latitude cyclone tracks, polar vortex wisps
+      const cloudBands = [
+        { base: -55, amp: 4, width: 6, opacity: 0.06 },   // Southern polar
+        { base: -35, amp: 8, width: 14, opacity: 0.10 },   // Southern mid-lat
+        { base: -5,  amp: 5, width: 18, opacity: 0.14 },   // ITCZ equatorial
+        { base: 15,  amp: 6, width: 10, opacity: 0.08 },   // Northern subtropical
+        { base: 42,  amp: 10, width: 16, opacity: 0.12 },  // Northern storm track
+        { base: 65,  amp: 3, width: 8, opacity: 0.07 },    // Arctic front
+      ];
+      cloudBands.forEach(({ base, amp, width, opacity }) => {
         ctx.beginPath();
         let started = false;
-        for (let lon = -180; lon <= 180; lon += 6) {
-          const lat = c + Math.sin((lon + cloudShift) * 0.06) * 6;
-          const p = project(lon, lat, cLon, cLat, r * 1.015, cx, cy);
+        for (let lon = -180; lon <= 180; lon += 4) {
+          const lat = base + Math.sin((lon + cloudShift) * 0.05) * amp
+                     + Math.cos((lon + cloudShift * 0.7) * 0.08) * (amp * 0.4);
+          const p = project(lon, lat, cLon, cLat, r * 1.012, cx, cy);
           if (p.visible) {
             if (!started) { ctx.moveTo(p.x, p.y); started = true; }
             else { ctx.lineTo(p.x, p.y); }
@@ -457,28 +560,43 @@ export default function PlanetaryGlobe3D({
             started = false;
           }
         }
-        ctx.lineWidth = 12 * (r / 200);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = width * (r / 225);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
         ctx.stroke();
-      }
+      });
       ctx.restore();
     }
 
-    // ── 10. Specular Ocean Sun Glint Reflection ───────────────────
-    const glintGrad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, 0, cx - r * 0.35, cy - r * 0.35, r * 0.45);
-    glintGrad.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
-    glintGrad.addColorStop(0.4, 'rgba(186, 230, 253, 0.12)');
+    // ── 10. Multi-Layer Specular Ocean Sun Glint ─────────────────
+    // Primary specular highlight
+    const glintGrad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, 0, cx - r * 0.35, cy - r * 0.35, r * 0.4);
+    glintGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+    glintGrad.addColorStop(0.2, 'rgba(255, 255, 255, 0.22)');
+    glintGrad.addColorStop(0.5, 'rgba(186, 230, 253, 0.08)');
     glintGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = glintGrad;
     ctx.beginPath();
-    ctx.arc(cx - r * 0.35, cy - r * 0.35, r * 0.45, 0, Math.PI * 2);
+    ctx.arc(cx - r * 0.35, cy - r * 0.35, r * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    // Secondary diffuse highlight (wider, softer)
+    const diffGrad = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.3, r * 0.05, cx - r * 0.1, cy - r * 0.1, r * 0.7);
+    diffGrad.addColorStop(0, 'rgba(186, 230, 253, 0.10)');
+    diffGrad.addColorStop(0.5, 'rgba(147, 197, 253, 0.04)');
+    diffGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = diffGrad;
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.1, cy - r * 0.1, r * 0.7, 0, Math.PI * 2);
     ctx.fill();
 
     // ── 11. 3D Extruded Climate Trend Pillars & Data Beacons ──────
-    grid.forEach((cell) => {
-      const p = project(cell.lon, cell.lat, cLon, cLat, r, cx, cy);
-      if (!p.visible) return;
+    // Sort by depth for proper painter's order (back-to-front)
+    const sortedGrid = [...grid].map(cell => ({
+      ...cell,
+      _p: project(cell.lon, cell.lat, cLon, cLat, r, cx, cy)
+    })).filter(c => c._p.visible).sort((a, b) => a._p.depth - b._p.depth);
 
+    sortedGrid.forEach((cell) => {
+      const p = cell._p;
       const slope = cell.slope ?? cell.temp_slope ?? 0;
       const isWarm = slope > 0;
       const baseRadius = Math.max(2, 4.5 * p.depth);
@@ -488,7 +606,12 @@ export default function PlanetaryGlobe3D({
       const beaconColor = isHH ? '#f59e0b' : (isWarm ? '#fbbf24' : '#38bdf8');
       const groundColor = isHH ? 'rgba(245, 158, 11, 0.75)' : (isWarm ? 'rgba(239, 68, 68, 0.65)' : 'rgba(6, 182, 212, 0.65)');
 
-      // Ground footprint disc
+      // Ground footprint disc with shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.beginPath();
+      ctx.ellipse(p.x + 1, p.y + 1, baseRadius * 1.3, baseRadius * 0.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.fillStyle = groundColor;
       ctx.beginPath();
       ctx.arc(p.x, p.y, baseRadius, 0, Math.PI * 2);
@@ -496,13 +619,22 @@ export default function PlanetaryGlobe3D({
 
       // 3D Extruded Pillar (Vertical Column along Earth Normal)
       if (showPillars && p.depth > 0.15) {
-        const pillarHeight = Math.min(32, Math.max(8, Math.abs(slope) * 45)) * p.depth;
+        const pillarHeight = Math.min(38, Math.max(8, Math.abs(slope) * 50)) * p.depth;
         
         // Pillar stem gradient
         const stemGrad = ctx.createLinearGradient(p.x, p.y, p.x, p.y - pillarHeight);
         stemGrad.addColorStop(0, groundColor);
         stemGrad.addColorStop(1, beaconColor);
         
+        // Pillar shadow
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.lineWidth = Math.max(2.5, 3.5 * p.depth);
+        ctx.beginPath();
+        ctx.moveTo(p.x + 1, p.y + 1);
+        ctx.lineTo(p.x + 1, p.y - pillarHeight + 1);
+        ctx.stroke();
+        
+        // Pillar body
         ctx.strokeStyle = stemGrad;
         ctx.lineWidth = Math.max(1.5, 2.5 * p.depth);
         ctx.beginPath();
@@ -510,58 +642,172 @@ export default function PlanetaryGlobe3D({
         ctx.lineTo(p.x, p.y - pillarHeight);
         ctx.stroke();
 
-        // Glowing Beacon Head on Top
+        // Glowing Beacon Head on Top with bloom
+        const beaconRadius = Math.max(2, 3 * p.depth);
+        // Bloom halo
+        const bloomGrad = ctx.createRadialGradient(p.x, p.y - pillarHeight, 0, p.x, p.y - pillarHeight, beaconRadius * 3);
+        bloomGrad.addColorStop(0, isWarm ? 'rgba(251, 191, 36, 0.4)' : 'rgba(56, 189, 248, 0.4)');
+        bloomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = bloomGrad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y - pillarHeight, beaconRadius * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // Core beacon
         ctx.fillStyle = beaconColor;
         ctx.beginPath();
-        ctx.arc(p.x, p.y - pillarHeight, Math.max(2, 3 * p.depth), 0, Math.PI * 2);
+        ctx.arc(p.x, p.y - pillarHeight, beaconRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // High-High Hotspot Animated Sonar Halo
-        if (cell.lisa_cluster === 'HH' || cell.is_significant_fdr) {
-          ctx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
-          ctx.lineWidth = 1;
+        // Animated Pulsing Sonar Halo for Hotspots
+        if (isHH || cell.is_significant_fdr) {
+          const pulse = (Math.sin(tick * 0.04) + 1) / 2; // 0-1 oscillation
+          const haloR = baseRadius * (2.0 + pulse * 1.2);
+          const haloAlpha = 0.55 - pulse * 0.35;
+          ctx.strokeStyle = `rgba(245, 158, 11, ${haloAlpha.toFixed(2)})`;
+          ctx.lineWidth = 1.2;
           ctx.beginPath();
-          ctx.arc(p.x, p.y, baseRadius * 2.2, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, haloR, 0, Math.PI * 2);
+          ctx.stroke();
+          // Second ripple ring
+          const haloR2 = baseRadius * (3.0 + pulse * 1.5);
+          ctx.strokeStyle = `rgba(245, 158, 11, ${(haloAlpha * 0.4).toFixed(2)})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, haloR2, 0, Math.PI * 2);
           ctx.stroke();
         }
       }
     });
 
-    // ── 12. Selected Cell Reticle Target ───────────────────────────
+    // ── 12. Analysis Bounding Box Rectangle on Globe ─────────────
+    if (showBBox && bbox && bbox.length === 4) {
+      const [lonMin, latMin, lonMax, latMax] = bbox;
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      // Draw 4 edges of the bbox
+      const drawEdge = (lonA, latA, lonB, latB, steps = 20) => {
+        ctx.beginPath();
+        let started = false;
+        for (let i = 0; i <= steps; i++) {
+          const t = i / steps;
+          const lon = lonA + (lonB - lonA) * t;
+          const lat = latA + (latB - latA) * t;
+          const p = project(lon, lat, cLon, cLat, r, cx, cy);
+          if (p.visible) {
+            if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+            else { ctx.lineTo(p.x, p.y); }
+          } else { started = false; }
+        }
+        ctx.stroke();
+      };
+      drawEdge(lonMin, latMin, lonMax, latMin); // Bottom
+      drawEdge(lonMax, latMin, lonMax, latMax); // Right
+      drawEdge(lonMax, latMax, lonMin, latMax); // Top
+      drawEdge(lonMin, latMax, lonMin, latMin); // Left
+      ctx.setLineDash([]);
+
+      // Semi-transparent fill for the bbox area
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+      ctx.beginPath();
+      let bboxStarted = false;
+      const bboxPts = [];
+      for (let lon = lonMin; lon <= lonMax; lon += 1) bboxPts.push([lon, latMin]);
+      for (let lat = latMin; lat <= latMax; lat += 1) bboxPts.push([lonMax, lat]);
+      for (let lon = lonMax; lon >= lonMin; lon -= 1) bboxPts.push([lon, latMax]);
+      for (let lat = latMax; lat >= latMin; lat -= 1) bboxPts.push([lonMin, lat]);
+      bboxPts.forEach(([lon, lat]) => {
+        const p = project(lon, lat, cLon, cLat, r, cx, cy);
+        if (p.visible) {
+          if (!bboxStarted) { ctx.moveTo(p.x, p.y); bboxStarted = true; }
+          else { ctx.lineTo(p.x, p.y); }
+        }
+      });
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // ── 13. Selected Cell Reticle Target ───────────────────────────
     if (selectedCell) {
       const sp = project(selectedCell.lon, selectedCell.lat, cLon, cLat, r, cx, cy);
       if (sp.visible) {
+        // Outer rotating reticle
+        const rotAngle = tick * 0.015;
+        ctx.save();
+        ctx.translate(sp.x, sp.y);
+        ctx.rotate(rotAngle);
+
         ctx.strokeStyle = '#38bdf8';
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(sp.x, sp.y, 9, 0, Math.PI * 2);
-        ctx.stroke();
+        // Corner brackets instead of full circle
+        const sz = 14;
+        const brk = 5;
+        [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([dx, dy]) => {
+          ctx.beginPath();
+          ctx.moveTo(dx * sz, dy * (sz - brk));
+          ctx.lineTo(dx * sz, dy * sz);
+          ctx.lineTo(dx * (sz - brk), dy * sz);
+          ctx.stroke();
+        });
+        ctx.restore();
 
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+        // Inner steady ring
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(sp.x, sp.y, 16, 0, Math.PI * 2);
+        ctx.arc(sp.x, sp.y, 8, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Cardinal crosshair lines
+        // Center dot
+        ctx.fillStyle = '#38bdf8';
         ctx.beginPath();
-        ctx.moveTo(sp.x - 20, sp.y); ctx.lineTo(sp.x - 12, sp.y);
-        ctx.moveTo(sp.x + 12, sp.y); ctx.lineTo(sp.x + 20, sp.y);
-        ctx.moveTo(sp.x, sp.y - 20); ctx.lineTo(sp.x, sp.y - 12);
-        ctx.moveTo(sp.x, sp.y + 12); ctx.lineTo(sp.x, sp.y + 20);
+        ctx.arc(sp.x, sp.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Outer pulse ring
+        const pulseR = 18 + Math.sin(tick * 0.05) * 4;
+        ctx.strokeStyle = `rgba(56, 189, 248, ${(0.3 - Math.sin(tick * 0.05) * 0.15).toFixed(2)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, pulseR, 0, Math.PI * 2);
         ctx.stroke();
       }
     }
 
     ctx.restore(); // Restore from Globe Sphere Clip
 
-    // ── 13. Outer Precision Glass Rim Highlight ────────────────────
-    ctx.strokeStyle = globeTheme === 'natural' ? 'rgba(56, 189, 248, 0.55)' : 'rgba(99, 102, 241, 0.55)';
-    ctx.lineWidth = 1.75;
+    // ── 14. Outer Precision Glass Rim with Double Stroke ───────────
+    // Inner glow ring
+    ctx.strokeStyle = globeTheme === 'natural' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(99, 102, 241, 0.25)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 0.5, 0, Math.PI * 2);
+    ctx.stroke();
+    // Sharp outer rim
+    ctx.strokeStyle = globeTheme === 'natural' ? 'rgba(56, 189, 248, 0.65)' : 'rgba(99, 102, 241, 0.6)';
+    ctx.lineWidth = 1.25;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.stroke();
-  }, [project, grid, selectedCell, globeTheme, showPillars, showClouds]);
+
+    // ── 15. Sun Position Indicator (Upper-Left Radiance) ──────────
+    if (globeTheme === 'natural') {
+      const sunX = cx - r * 1.35;
+      const sunY = cy - r * 1.35;
+      const sunGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 18);
+      sunGrad.addColorStop(0, 'rgba(253, 224, 71, 0.7)');
+      sunGrad.addColorStop(0.4, 'rgba(250, 204, 21, 0.2)');
+      sunGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = sunGrad;
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 18, 0, Math.PI * 2);
+      ctx.fill();
+      // Sun core
+      ctx.fillStyle = 'rgba(253, 224, 71, 0.9)';
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }, [project, grid, selectedCell, globeTheme, showPillars, showClouds, showBBox, bbox]);
 
   // Handle Canvas Resize
   useEffect(() => {
@@ -583,6 +829,7 @@ export default function PlanetaryGlobe3D({
     let frameId;
     const loop = () => {
       cloudOffsetRef.current = (cloudOffsetRef.current + 0.15) % 360;
+      tickRef.current += 1;
 
       if (!isDraggingRef.current) {
         if (autoRotate) {
@@ -716,6 +963,10 @@ export default function PlanetaryGlobe3D({
               <span>NASA Data Pillars:</span>
               <span className="text-cyan-400 font-bold">{grid.length} cells</span>
             </div>
+            <div className="flex justify-between">
+              <span>Zoom Level:</span>
+              <span className="text-white font-bold">{((radius / 225) * 100).toFixed(0)}%</span>
+            </div>
             <div className="text-[9px] text-slate-500 pt-1 border-t border-slate-800 flex justify-between">
               <span>Drag to spin • Scroll to zoom</span>
               <span>Inertia Active</span>
@@ -793,6 +1044,24 @@ export default function PlanetaryGlobe3D({
           >
             ☁️ Clouds
           </button>
+
+          {bbox && bbox.length === 4 && (
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(500);
+                setShowBBox(!showBBox);
+              }}
+              className={`px-2 py-1 rounded text-[11px] border backdrop-blur-md font-mono transition-all cursor-pointer ${
+                showBBox
+                  ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/40'
+                  : 'bg-slate-900/80 text-slate-400 border-slate-700'
+              }`}
+              title="Toggle Analysis Bounding Box Overlay"
+            >
+              📐 BBox
+            </button>
+          )}
         </div>
       </div>
 
