@@ -71,6 +71,10 @@ const useStore = create((set, get) => ({
 
   // Actions
   setFormField: (field, value) => {
+    if (field === 'bbox') {
+      get().setBbox(value);
+      return;
+    }
     const updates = { [field]: value };
     if (['dataset', 'variable', 'startYear', 'endYear'].includes(field)) {
       updates.comparePinA = null;
@@ -79,7 +83,29 @@ const useStore = create((set, get) => ({
     }
     set(updates);
   },
-  setBbox: (bbox) => set({ bbox }),
+  setBbox: (bbox) => {
+    if (Array.isArray(bbox) && bbox.length === 4) {
+      set({
+        bbox: {
+          minLon: String(bbox[0]),
+          minLat: String(bbox[1]),
+          maxLon: String(bbox[2]),
+          maxLat: String(bbox[3]),
+        }
+      });
+    } else if (bbox && typeof bbox === 'object') {
+      set({
+        bbox: {
+          minLon: bbox.minLon !== undefined ? String(bbox.minLon) : '',
+          minLat: bbox.minLat !== undefined ? String(bbox.minLat) : '',
+          maxLon: bbox.maxLon !== undefined ? String(bbox.maxLon) : '',
+          maxLat: bbox.maxLat !== undefined ? String(bbox.maxLat) : '',
+        }
+      });
+    } else {
+      set({ bbox });
+    }
+  },
   setCurtainSplit: (val) => set({ curtainSplit: val }),
   toggleCurtainMode: () => set((s) => ({ showCurtainMode: !s.showCurtainMode })),
   setQualityGateResult: (result) => set({ qualityGateResult: result }),

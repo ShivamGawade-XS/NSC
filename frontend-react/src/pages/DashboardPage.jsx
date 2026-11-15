@@ -78,18 +78,18 @@ export default function DashboardPage() {
 
       if (params.get('start')) {
         const parsedStart = parseInt(params.get('start'), 10);
-        if (Number.isFinite(parsedStart) && parsedStart >= 1980 && parsedStart <= 2026) {
+        if (Number.isFinite(parsedStart) && parsedStart >= 1981 && parsedStart <= 2026) {
           updates.startYear = parsedStart;
         }
       }
       if (params.get('end')) {
         const parsedEnd = parseInt(params.get('end'), 10);
-        if (Number.isFinite(parsedEnd) && parsedEnd >= 1980 && parsedEnd <= 2026) {
+        if (Number.isFinite(parsedEnd) && parsedEnd >= 1981 && parsedEnd <= 2026) {
           updates.endYear = parsedEnd;
         }
       }
       if (updates.startYear && updates.endYear && updates.startYear >= updates.endYear) {
-        updates.startYear = Math.max(1980, updates.endYear - 5);
+        updates.startYear = Math.max(1981, updates.endYear - 5);
       }
       if (params.has('fdr')) updates.useFdr = params.get('fdr') !== 'false';
 
@@ -419,18 +419,28 @@ export default function DashboardPage() {
                     Spatiotemporal Trend Discovery System
                   </span>
                   {workstationMode === 'detective' && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
-                      🎓 Detective Track
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 flex items-center gap-1">
+                      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                      </svg>
+                      <span>Detective Track</span>
                     </span>
                   )}
                   {workstationMode === 'policy' && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                      🏛️ Policy Track
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5" />
+                      </svg>
+                      <span>Policy Track</span>
                     </span>
                   )}
                   {workstationMode === 'pro' && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                      🔬 Pro Science Track
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.943A4.5 4.5 0 0115.86 17H8.14a4.5 4.5 0 01-2.37-.657L4.2 15.3" />
+                      </svg>
+                      <span>Pro Science Track</span>
                     </span>
                   )}
                 </h1>
@@ -450,7 +460,16 @@ export default function DashboardPage() {
                     title="Toggle keyboard navigation shortcuts"
                     aria-expanded={showShortcuts}
                   >
-                    <span>⌨</span>
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+                      <rect x="2" y="5" width="20" height="14" rx="2" />
+                      <line x1="6" y1="9" x2="6.01" y2="9" />
+                      <line x1="10" y1="9" x2="10.01" y2="9" />
+                      <line x1="14" y1="9" x2="14.01" y2="9" />
+                      <line x1="18" y1="9" x2="18.01" y2="9" />
+                      <line x1="6" y1="13" x2="6.01" y2="13" />
+                      <line x1="18" y1="13" x2="18.01" y2="13" />
+                      <line x1="9" y1="15" x2="15" y2="15" />
+                    </svg>
                     <span>Shortcuts</span>
                   </button>
 

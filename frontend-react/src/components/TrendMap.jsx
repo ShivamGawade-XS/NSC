@@ -360,6 +360,12 @@ function inferGridStep(grid) {
     selectionLayerRef.current = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
     setMapInstance(map);
+    setMapReady(true);
+
+    const initTimer = setTimeout(() => {
+      map.invalidateSize({ animate: false });
+    }, 150);
+
     // Attach ResizeObserver to auto-invalidate map dimensions on container resize / devtools open
     let resizeObserver = null;
     if (typeof ResizeObserver !== 'undefined' && container) {
@@ -370,6 +376,7 @@ function inferGridStep(grid) {
     }
 
     return () => {
+      clearTimeout(initTimer);
       if (resizeObserver) resizeObserver.disconnect();
       observer.disconnect();
       map.remove();

@@ -194,7 +194,9 @@ export default function DataQualityModal({ analysisId, onClose }) {
                   </div>
                 ) : (
                   <div className="p-3 rounded bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-500/35 text-emerald-700 dark:text-emerald-400 font-mono text-xs flex items-center gap-2">
-                    <span className="font-bold">✓</span>
+                    <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
                     <span>No extreme outliers detected (&gt;3.5 MAD). Observation distribution conforms to expected regional climatology.</span>
                   </div>
                 )}

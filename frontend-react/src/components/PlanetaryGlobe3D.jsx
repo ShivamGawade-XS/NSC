@@ -369,13 +369,23 @@ export default function PlanetaryGlobe3D({
               playTactileClick(600);
               setAutoRotate(!autoRotate);
             }}
-            className={`px-3 py-1.5 rounded text-xs border backdrop-blur-md font-mono transition-all ${
+            className={`px-3 py-1.5 rounded text-xs border backdrop-blur-md font-mono transition-all flex items-center gap-1.5 ${
               autoRotate
                 ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm'
                 : 'bg-slate-900/80 text-slate-300 border-slate-700 hover:text-white'
             }`}
           >
-            {autoRotate ? '⏸ Pause Orbit' : '▶ Auto Orbit'}
+            {autoRotate ? (
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
+              </svg>
+            ) : (
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            )}
+            <span>{autoRotate ? 'Pause Orbit' : 'Auto Orbit'}</span>
           </button>
 
           <button

@@ -100,7 +100,7 @@ const PERSONA_GATEWAYS = [
   {
     key: 'detective',
     badge: 'Student & Citizen Detective',
-    icon: '🎓',
+    iconKey: 'detective',
     title: 'Earth System Detective',
     tagline: 'Curiosity-Driven STEM Learning',
     description: 'Solve climate mysteries, formulate guided hypotheses, hear trajectories through audio sonification, and discover real NASA trends with zero intimidating equations.',
@@ -118,7 +118,7 @@ const PERSONA_GATEWAYS = [
   {
     key: 'policy',
     badge: 'City Planner & Policy Maker',
-    icon: '🏛️',
+    iconKey: 'policy',
     title: 'Climate Risk & Resilience',
     tagline: 'Municipal & Infrastructure Planning',
     description: 'Evaluate concurrent compound heatwave + drought risks, calculate joint Copula return periods, and track climate migration velocity for proactive municipal adaptation.',
@@ -136,7 +136,7 @@ const PERSONA_GATEWAYS = [
   {
     key: 'pro',
     badge: 'Climate Scientist & NASA Judge',
-    icon: '🔬',
+    iconKey: 'pro',
     title: 'Open-Science Research Pro',
     tagline: 'Empirical Peer-Review Rigor',
     description: 'Full uncompromised non-parametric trend battery, Anselin LISA spatial autocorrelation, Benjamini-Hochberg FDR control, and reproducible CF-1.8 NetCDF & LaTeX exports.',
@@ -344,8 +344,23 @@ export default function LandingPage() {
                       <span className={`text-xs px-2.5 py-1 rounded-md border font-mono font-medium ${p.badgeClass}`}>
                         {p.badge}
                       </span>
-                      <span className="text-2xl" role="img" aria-label={p.badge}>
-                        {p.icon}
+                      <span className="p-2 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] text-[var(--color-text-main)]" aria-label={p.badge}>
+                        {p.iconKey === 'detective' && (
+                          <svg className="w-5 h-5 text-[var(--color-accent-blue)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                          </svg>
+                        )}
+                        {p.iconKey === 'policy' && (
+                          <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5" />
+                          </svg>
+                        )}
+                        {p.iconKey === 'pro' && (
+                          <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.943A4.5 4.5 0 0115.86 17H8.14a4.5 4.5 0 01-2.37-.657L4.2 15.3" />
+                          </svg>
+                        )}
                       </span>
                     </div>
 
@@ -372,7 +387,9 @@ export default function LandingPage() {
                       <ul className="space-y-1.5 text-xs text-[var(--color-text-secondary)] font-mono">
                         {p.highlights.map((h, hIdx) => (
                           <li key={hIdx} className="flex items-center gap-2">
-                            <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                            <svg className="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
                             <span className="truncate">{h}</span>
                           </li>
                         ))}

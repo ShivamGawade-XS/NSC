@@ -56,7 +56,12 @@ export default function ThankYouPage() {
                 onClick={handleCopyCitation}
                 className="text-[10px] text-[var(--color-accent-blue)] hover:underline flex items-center gap-1 font-semibold"
               >
-                {copied ? '✓ Copied to Clipboard' : 'Copy BibTeX'}
+                {copied && (
+                  <svg className="w-3 h-3 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                )}
+                <span>{copied ? 'Copied to Clipboard' : 'Copy BibTeX'}</span>
               </button>
             </div>
             <pre className="text-[var(--color-text-secondary)] overflow-x-auto whitespace-pre leading-relaxed select-all">

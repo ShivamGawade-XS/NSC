@@ -95,8 +95,8 @@ class AnalysisRequest(BaseModel):
     """Payload to trigger a spatiotemporal trend analysis with strict boundary validation."""
     dataset_id: str = Field(default="merra2_reanalysis", min_length=2, max_length=64, description="NASA dataset identifier")
     variable_id: str = Field(default="T2M", min_length=1, max_length=64, description="Physical variable machine name")
-    start_year: int = Field(default=2000, ge=1980, le=2026, description="Start year")
-    end_year: int = Field(default=2023, ge=1980, le=2026, description="End year")
+    start_year: int = Field(default=2000, ge=1981, le=2026, description="Start year")
+    end_year: int = Field(default=2023, ge=1981, le=2026, description="End year")
     bbox: list[float] | None = Field(
         default=None,
         description="[min_lon, min_lat, max_lon, max_lat] bounding box"
@@ -451,8 +451,8 @@ class CompoundHazardRequest(BaseModel):
     dataset_id: str = Field(default="merra2_reanalysis", min_length=2, max_length=64, description="NASA dataset identifier")
     temp_variable_id: str = Field(default="T2M", min_length=1, max_length=64, description="Thermal variable machine name")
     precip_variable_id: str = Field(default="PRECTOT", min_length=1, max_length=64, description="Hydrological variable machine name")
-    start_year: int = Field(default=2000, ge=1980, le=2026, description="Start year")
-    end_year: int = Field(default=2023, ge=1980, le=2026, description="End year")
+    start_year: int = Field(default=2000, ge=1981, le=2026, description="Start year")
+    end_year: int = Field(default=2023, ge=1981, le=2026, description="End year")
     bbox: list[float] | None = Field(default=None, description="[min_lon, min_lat, max_lon, max_lat] bounding box")
     alpha: float = Field(default=settings.DEFAULT_FDR_ALPHA, ge=0.001, le=0.20, description="Significance threshold")
     prefer_live: bool = Field(default=True, description="Prefer authentic NASA observations")
@@ -565,8 +565,8 @@ class QualityGateRequest(BaseModel):
     """Pre-flight quality gate request to validate data suitability before running full analysis."""
     dataset_id: str = Field(default="nasa_power", min_length=2, max_length=64)
     variable_id: str = Field(default="T2M", min_length=1, max_length=64)
-    start_year: int = Field(default=2000, ge=1980, le=2026)
-    end_year: int = Field(default=2023, ge=1980, le=2026)
+    start_year: int = Field(default=2000, ge=1981, le=2026)
+    end_year: int = Field(default=2023, ge=1981, le=2026)
     bbox: list[float] | None = None
     alpha: float = Field(default=0.05, ge=0.001, le=0.20)
 
@@ -633,8 +633,8 @@ class RegionalComparisonRequest(BaseModel):
     """Request payload for comparing two geographic regions over a common time interval."""
     dataset_id: str = Field(default="nasa_power", min_length=2, max_length=64)
     variable_id: str = Field(default="T2M", min_length=1, max_length=64)
-    start_year: int = Field(default=2000, ge=1980, le=2026)
-    end_year: int = Field(default=2023, ge=1980, le=2026)
+    start_year: int = Field(default=2000, ge=1981, le=2026)
+    end_year: int = Field(default=2023, ge=1981, le=2026)
     region_a_bbox: list[float] = Field(description="[min_lon, min_lat, max_lon, max_lat] for Region A")
     region_a_name: str = Field(default="Region A", max_length=128)
     region_b_bbox: list[float] = Field(description="[min_lon, min_lat, max_lon, max_lat] for Region B")
@@ -681,8 +681,8 @@ class DiscoveryScanRequest(BaseModel):
     """Request payload for autonomous exploratory trend discovery across variables in a region."""
     dataset_id: str = Field(default="nasa_power", min_length=2, max_length=64)
     bbox: list[float] = Field(description="[min_lon, min_lat, max_lon, max_lat]")
-    start_year: int = Field(default=2000, ge=1980, le=2026)
-    end_year: int = Field(default=2023, ge=1980, le=2026)
+    start_year: int = Field(default=2000, ge=1981, le=2026)
+    end_year: int = Field(default=2023, ge=1981, le=2026)
     variable_ids: list[str] | None = None
     alpha: float = Field(default=0.05, ge=0.001, le=0.20)
 

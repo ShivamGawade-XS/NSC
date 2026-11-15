@@ -168,9 +168,14 @@ export default function PreprintModal() {
             <button
               type="button"
               onClick={handleCopyBibtex}
-              className="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition-colors"
+              className="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition-colors flex items-center gap-1"
             >
-              {copiedBibtex ? '✓ Copied' : 'BibTeX'}
+              {copiedBibtex && (
+                <svg className="w-3 h-3 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              )}
+              <span>{copiedBibtex ? 'Copied' : 'BibTeX'}</span>
             </button>
 
             <button

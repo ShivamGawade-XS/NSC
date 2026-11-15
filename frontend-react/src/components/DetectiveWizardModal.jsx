@@ -228,11 +228,11 @@ const STANDARD_HORIZONS = [
   },
   {
     id: 'deep',
-    start: 1980,
+    start: 1981,
     end: 2023,
-    label: 'Deep Multi-Decadal Baseline (1980–2023)',
-    years: 44,
-    desc: '44 years of continuous atmospheric reanalysis tracking long-term climate drift.',
+    label: 'Deep Multi-Decadal Baseline (1981–2023)',
+    years: 43,
+    desc: '43 years of continuous observations tracking long-term climate drift.',
   },
 ];
 

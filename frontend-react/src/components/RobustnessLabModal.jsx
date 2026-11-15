@@ -79,9 +79,9 @@ function WindowTable({ windows }) {
               </td>
               <td className="px-3 py-2">
                 {w.significant ? (
-                  <span className="text-emerald-700 dark:text-emerald-400 font-bold">✓</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/20">Sig</span>
                 ) : (
-                  <span className="text-red-400 font-bold">✗</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-500/10 text-slate-400 font-medium">NS</span>
                 )}
               </td>
               <td className={`px-3 py-2 text-[10px] ${w.direction === 'increasing' ? 'text-red-400' : 'text-blue-400'}`}>
@@ -113,7 +113,7 @@ function EstimatorTable({ estimators }) {
           {estimators.map((e, i) => (
             <tr key={i} className={`hover:bg-[var(--color-bg-elevated)] transition-colors ${i === 0 ? 'bg-emerald-50 dark:bg-emerald-500/5' : ''}`}>
               <td className="px-3 py-2 text-[var(--color-text-main)] max-w-[180px]">
-                {i === 0 && <span className="mr-1.5 text-emerald-600 dark:text-emerald-400 font-bold">★</span>}
+                {i === 0 && <span className="mr-1.5 px-1 py-0.2 rounded text-[9px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-500/30">DEFAULT</span>}
                 {e.estimator}
               </td>
               <td className={`px-3 py-2 font-semibold tabular-nums ${(e.slope || 0) > 0 ? 'text-red-400' : 'text-blue-400'}`}>
@@ -294,7 +294,7 @@ export default function RobustnessLabModal({ analysisId, onClose }) {
               {tab === 'estimator' && (
                 <div className="space-y-2.5 pt-1">
                   <p className="text-xs text-[var(--color-text-muted)] font-mono leading-relaxed">
-                    Comparison of three slope estimators on the same data. ★ Theil-Sen is the project default (29% breakdown point).
+                    Comparison of three slope estimators on the same data. Theil-Sen is the project default (29% breakdown point).
                   </p>
                   <EstimatorTable estimators={data.estimator_comparison} />
                 </div>

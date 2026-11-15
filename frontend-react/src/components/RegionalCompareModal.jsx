@@ -343,7 +343,7 @@ export default function RegionalCompareModal({ onClose }) {
                     }`}
                   >
                     {result.is_divergence_significant
-                      ? '✓ Statistically Significant Trend Divergence'
+                      ? 'Statistically Significant Trend Divergence'
                       : 'Equivalent Trend Regimes (No Divergence)'}
                   </span>
                   <span className="font-mono text-xs text-[var(--color-text-secondary)]">

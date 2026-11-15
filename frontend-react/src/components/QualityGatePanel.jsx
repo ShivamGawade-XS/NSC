@@ -14,7 +14,7 @@ const STATUS_CONFIG = {
     iconColor: 'text-emerald-600 dark:text-emerald-400',
     bgColor: 'bg-[var(--color-bg-elevated)]',
     borderColor: 'border-[var(--color-border-subtle)]',
-    icon: '✓',
+    type: 'check',
     label: 'Optimal',
   },
   SUPPORTED_WITH_LIMITATIONS: {
@@ -22,7 +22,7 @@ const STATUS_CONFIG = {
     iconColor: 'text-amber-600 dark:text-amber-400',
     bgColor: 'bg-[var(--color-bg-elevated)]',
     borderColor: 'border-amber-300/40 dark:border-amber-800/40',
-    icon: '!',
+    type: 'warn',
     label: 'Caveats',
   },
   INSUFFICIENT_DATA: {
@@ -30,7 +30,7 @@ const STATUS_CONFIG = {
     iconColor: 'text-rose-600 dark:text-rose-400',
     bgColor: 'bg-[var(--color-bg-elevated)]',
     borderColor: 'border-rose-300/40 dark:border-rose-800/40',
-    icon: '✗',
+    type: 'cross',
     label: 'Blocked',
   },
   UNSUPPORTED_FOR_THIS_METHOD: {
@@ -38,7 +38,7 @@ const STATUS_CONFIG = {
     iconColor: 'text-rose-600 dark:text-rose-400',
     bgColor: 'bg-[var(--color-bg-elevated)]',
     borderColor: 'border-rose-300/40 dark:border-rose-800/40',
-    icon: '✗',
+    type: 'cross',
     label: 'Blocked',
   },
 };
@@ -114,7 +114,23 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpand()}
       >
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className={`font-mono font-bold text-xs ${cfg.iconColor}`}>{cfg.icon}</span>
+          <span className={`flex items-center justify-center ${cfg.iconColor}`}>
+            {cfg.type === 'check' && (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            )}
+            {cfg.type === 'warn' && (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+            )}
+            {cfg.type === 'cross' && (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+          </span>
           <span className={`font-mono text-[11px] font-bold tracking-wider uppercase ${cfg.textColor}`}>
             {gate.status_label}
           </span>
@@ -122,17 +138,21 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
 
         <div className="flex items-center gap-1.5 flex-1 flex-wrap">
           <span
-            className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono font-medium"
+            className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono font-medium flex items-center gap-1"
             title="Years of continuous observation"
           >
-            ⏱ {gate.observation_count}yr
+            <svg className="w-2.5 h-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>{gate.observation_count} yr</span>
           </span>
           {gate.grid_intersection_cells > 0 && (
             <span
               className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-[var(--color-text-secondary)] font-mono font-medium"
               title="Grid cells intersecting bounding box"
             >
-              ⊞ {gate.grid_intersection_cells} cells
+              {gate.grid_intersection_cells} cells
             </span>
           )}
           {gate.meets_climatological_threshold && (
@@ -140,7 +160,10 @@ export default function QualityGatePanel({ dataset, variable, startYear, endYear
               className="text-[10px] bg-[var(--color-bg-surface)] border border-[var(--color-border-subtle)] rounded px-1.5 py-0.5 text-slate-700 dark:text-slate-300 font-mono font-semibold flex items-center gap-1"
               title="Meets 20yr climatological threshold"
             >
-              <span className="text-emerald-600 dark:text-emerald-400">✓</span> WMO
+              <svg className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              <span>WMO</span>
             </span>
           )}
         </div>

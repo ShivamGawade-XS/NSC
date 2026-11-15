@@ -9,7 +9,7 @@
  */
 
 const MODE_LABELS = {
-  // ── 🎓 Detective (Student / Citizen) ─────────────────────────
+  // -- Detective (Student / Citizen) ----------------------------
   detective: {
     // Primary metrics
     slopeLabel:     'Trend Speed',
@@ -18,8 +18,8 @@ const MODE_LABELS = {
     qValueLabel:    'Filtered Confidence',
 
     // Status badges
-    hotspotLabel:   '🔥 Warming Zone',
-    nominalLabel:   '✓ Stable',
+    hotspotLabel:   'Warming Zone',
+    nominalLabel:   'Stable',
 
     // Evidence panel tabs
     telemetryTab:   'Measurements',
@@ -51,14 +51,14 @@ const MODE_LABELS = {
     ciChartLabel:    'Confidence Band',
     anomalyTrendLabel:   'Trend Line (vs Average)',
     anomalyBaseLabel:    'Zero Reference',
-    sonifyBtnLabel:      '🔊 Listen to the Climate',
+    sonifyBtnLabel:      'Listen to the Climate',
     sonifySubLabel:      'Hear the temperature change over time',
     changepointLabel:    'Big Shift',
 
     // Signals list
-    signalsTitle:        '🔍 Top Climate Clues',
+    signalsTitle:        'Top Climate Clues',
     signalsRankedBy:     'Strongest trends first',
-    compoundTitle:       '🔥 Compound Risk Zones',
+    compoundTitle:       'Compound Risk Zones',
     compoundRankedBy:    'Highest risk first',
     discoveryTitle:      'Climate Clues',
     discoveryScanBtn:    'Find Climate Mysteries',
@@ -71,12 +71,12 @@ const MODE_LABELS = {
     variableLabel:       'What to Measure',
     wizardTitle:         'Data Detective Wizard',
     wizardDesc:          'Answer 3 questions to start your investigation.',
-    executeBtn:          '🔍 Investigate!',
-    compoundBtn:         '🔥 Multi-Variable Investigation',
+    executeBtn:          'Investigate',
+    compoundBtn:         'Multi-Variable Investigation',
 
     // Attribution
     attributionTitle:    'What Caused This?',
-    aiExplainBtn:        '🤖 Ask AI to Explain This',
+    aiExplainBtn:        'Ask AI to Explain This',
     aiExplainLoading:    'Thinking...',
 
     // Regime shift ribbon
@@ -104,15 +104,15 @@ const MODE_LABELS = {
     mapPillSpatial:      'Neighborhood Pattern',
   },
 
-  // ── 🏛️ Policy (City Planner / Risk Analyst) ─────────────────
+  // -- Policy (City Planner / Risk Analyst) --------------------
   policy: {
     slopeLabel:     'Rate of Change',
     pValueLabel:    'Statistical Confidence',
     tauLabel:       'Trend Correlation',
     qValueLabel:    'Adjusted Confidence',
 
-    hotspotLabel:   '⚠️ Risk Zone',
-    nominalLabel:   '✓ Within Baseline',
+    hotspotLabel:   'Risk Zone',
+    nominalLabel:   'Within Baseline',
 
     telemetryTab:   'Risk Metrics',
     attributionTab: 'Drivers & Attribution',
@@ -185,7 +185,7 @@ const MODE_LABELS = {
     mapPillSpatial:      'Spatial Autocorrelation',
   },
 
-  // ── 🔬 Pro (Climate Scientist / NASA Judge) ──────────────────
+  // -- Pro (Climate Scientist / NASA Judge) --------------------
   pro: {
     slopeLabel:     "Sen's Slope",
     pValueLabel:    'p-value',

@@ -171,7 +171,10 @@ export default function Header() {
               }`}
               title="Student & Citizen Detective: Simplified labels, guided clues, and audio sonification"
             >
-              <span aria-hidden="true">🎓</span>
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+              </svg>
               <span>Detective</span>
             </button>
             <button
@@ -187,7 +190,9 @@ export default function Header() {
               }`}
               title="City Planner & Policy: Compound hazards, joint return periods, and climate velocity"
             >
-              <span aria-hidden="true">🏛️</span>
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5" />
+              </svg>
               <span>Policy</span>
             </button>
             <button
@@ -203,7 +208,9 @@ export default function Header() {
               }`}
               title="Climate Scientist & NASA Judge: Full non-parametric rigor, LISA, FDR control, and NetCDF/LaTeX"
             >
-              <span aria-hidden="true">🔬</span>
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.943A4.5 4.5 0 0115.86 17H8.14a4.5 4.5 0 01-2.37-.657L4.2 15.3" />
+              </svg>
               <span>Pro</span>
             </button>
           </div>
@@ -445,7 +452,10 @@ export default function Header() {
                     : 'text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)]'
                 }`}
               >
-                <span aria-hidden="true">🎓</span>
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                </svg>
                 <span className="text-[10px]">Detective</span>
               </button>
               <button
@@ -460,7 +470,9 @@ export default function Header() {
                     : 'text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)]'
                 }`}
               >
-                <span aria-hidden="true">🏛️</span>
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.5M4.5 21V10.5" />
+                </svg>
                 <span className="text-[10px]">Policy</span>
               </button>
               <button
@@ -475,7 +487,9 @@ export default function Header() {
                     : 'text-[var(--color-text-secondary)] bg-[var(--color-bg-surface)]'
                 }`}
               >
-                <span aria-hidden="true">🔬</span>
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.943A4.5 4.5 0 0115.86 17H8.14a4.5 4.5 0 01-2.37-.657L4.2 15.3" />
+                </svg>
                 <span className="text-[10px]">Pro</span>
               </button>
             </div>
