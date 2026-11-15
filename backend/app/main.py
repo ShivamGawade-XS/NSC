@@ -154,8 +154,8 @@ DEV_CSP = (
     b"font-src 'self' https://fonts.gstatic.com data:; "
     b"img-src 'self' data: blob: https://*.arcgisonline.com https://server.arcgisonline.com "
     b"https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
-    b"connect-src 'self' http://localhost:8000 http://localhost:3000 "
-    b"http://127.0.0.1:8000 http://127.0.0.1:3000 "
+    b"connect-src 'self' http://localhost:8000 http://localhost:3000 http://localhost:3001 http://localhost:3002 http://localhost:5173 "
+    b"http://127.0.0.1:8000 http://127.0.0.1:3000 http://127.0.0.1:3001 http://127.0.0.1:3002 http://127.0.0.1:5173 "
     b"https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
     b"frame-ancestors 'none'; "
     b"base-uri 'self'; "
@@ -169,8 +169,8 @@ DEV_API_CSP = (
     b"font-src 'self' https://fonts.gstatic.com data:; "
     b"img-src 'self' data: blob: https://*.arcgisonline.com https://server.arcgisonline.com "
     b"https://*.earthdata.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
-    b"connect-src 'self' http://localhost:8000 http://localhost:3000 "
-    b"http://127.0.0.1:8000 http://127.0.0.1:3000 "
+    b"connect-src 'self' http://localhost:8000 http://localhost:3000 http://localhost:3001 http://localhost:3002 http://localhost:5173 "
+    b"http://127.0.0.1:8000 http://127.0.0.1:3000 http://127.0.0.1:3001 http://127.0.0.1:3002 http://127.0.0.1:5173 "
     b"https://power.larc.nasa.gov https://gibs.earthdata.nasa.gov https://*.basemaps.cartocdn.com; "
     b"frame-ancestors 'none'; "
     b"base-uri 'self'; "
@@ -324,8 +324,14 @@ if allowed_origins_env:
 else:
     allow_origins = [
         "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:5173",
         "http://localhost:8000",
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:3002",
+        "http://127.0.0.1:5173",
         "http://127.0.0.1:8000",
     ]
 

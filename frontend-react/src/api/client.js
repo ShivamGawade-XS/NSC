@@ -135,49 +135,72 @@ export async function apiFetch(path, options = {}) {
   }
 
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      ...fetchOptions,
-      headers,
-      signal: internalController.signal,
-    });
+    const maxAttempts = (fetchOptions.method && fetchOptions.method !== 'GET') ? 1 : 2;
 
-    if (!res.ok) {
-      const retryAfter = res.headers.get('Retry-After');
-      const err = await res.json().catch(() => null);
-      let message = err?.detail || `API error: ${res.status} ${res.statusText}`;
-      if (res.status === 503 && retryAfter) {
-        message = `Server compute capacity saturated. Retry requested in ${retryAfter}s.`;
-      } else if (res.status === 429 && retryAfter) {
-        message = `Rate quota reached. Please wait ${retryAfter}s.`;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 350 * attempt));
+          if (internalController.signal.aborted) break;
+        }
+
+        const res = await fetch(`${API_BASE}${path}`, {
+          ...fetchOptions,
+          headers,
+          signal: internalController.signal,
+        });
+
+        if (!res.ok) {
+          // Fast retry on gateway drop or backend restart
+          if ((res.status === 502 || res.status === 504) && attempt < maxAttempts - 1) {
+            continue;
+          }
+
+          const retryAfter = res.headers.get('Retry-After');
+          const err = await res.json().catch(() => null);
+          let message = err?.detail || `API error: ${res.status} ${res.statusText}`;
+          if (res.status === 503 && retryAfter) {
+            message = `Server compute capacity saturated. Retry requested in ${retryAfter}s.`;
+          } else if (res.status === 429 && retryAfter) {
+            message = `Rate quota reached. Please wait ${retryAfter}s.`;
+          } else if (res.status === 502) {
+            message = 'Tellura Scientific Engine is connecting. Please retry in a few moments.';
+          }
+          const customErr = new Error(message);
+          customErr.status = res.status;
+          customErr.retryAfter = retryAfter ? parseInt(retryAfter, 10) : null;
+          throw customErr;
+        }
+        return res;
+      } catch (err) {
+        if (timedOut) {
+          throw new Error(`Request timed out after ${timeoutMs}ms`);
+        }
+
+        const isAborted =
+          isAbortError(err) ||
+          callerSignal?.aborted ||
+          flightController?.signal?.aborted ||
+          internalController.signal.aborted;
+
+        if (isAborted) {
+          if (suppressAbort === true) {
+            return Promise.resolve(undefined);
+          }
+          const abortErr = isAbortError(err)
+            ? err
+            : new DOMException('The operation was aborted.', 'AbortError');
+          throw abortErr;
+        }
+
+        // Retry network-level failures (e.g. proxy connection dropped)
+        if (attempt < maxAttempts - 1 && err.name === 'TypeError') {
+          continue;
+        }
+
+        throw err;
       }
-      const customErr = new Error(message);
-      customErr.status = res.status;
-      customErr.retryAfter = retryAfter ? parseInt(retryAfter, 10) : null;
-      throw customErr;
     }
-    return res;
-  } catch (err) {
-    if (timedOut) {
-      throw new Error(`Request timed out after ${timeoutMs}ms`);
-    }
-
-    const isAborted =
-      isAbortError(err) ||
-      callerSignal?.aborted ||
-      flightController?.signal?.aborted ||
-      internalController.signal.aborted;
-
-    if (isAborted) {
-      if (suppressAbort === true) {
-        return Promise.resolve(undefined);
-      }
-      const abortErr = isAbortError(err)
-        ? err
-        : new DOMException('The operation was aborted.', 'AbortError');
-      throw abortErr;
-    }
-
-    throw err;
   } finally {
     if (timeoutId) {
       clearTimeout(timeoutId);

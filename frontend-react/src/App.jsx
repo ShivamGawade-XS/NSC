@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import CookieConsentBanner from './components/CookieConsentBanner';
@@ -11,6 +11,11 @@ const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const ThankYouPage = lazy(() => import('./pages/ThankYouPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+
+function RedirectWithQuery({ to }) {
+  const location = useLocation();
+  return <Navigate to={{ pathname: to, search: location.search, hash: location.hash }} replace />;
+}
 
 function PageLoader() {
   return (
@@ -31,6 +36,7 @@ export default function App() {
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>
+            {/* Primary Core Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/investigate" element={<DashboardPage forcedMode="detective" />} />
             <Route path="/policy" element={<DashboardPage forcedMode="policy" />} />
@@ -38,6 +44,29 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/thank-you" element={<ThankYouPage />} />
+
+            {/* Seamless Route Aliases & Trajectory Forwarding */}
+            <Route path="/workspace" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/workstation" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/app" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/explorer" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/analytics" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/analysis" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/map" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/pro" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/detective" element={<RedirectWithQuery to="/investigate" />} />
+            <Route path="/student" element={<RedirectWithQuery to="/investigate" />} />
+            <Route path="/overview" element={<RedirectWithQuery to="/" />} />
+            <Route path="/home" element={<RedirectWithQuery to="/" />} />
+
+            {/* Trailing Slash Aliases */}
+            <Route path="/dashboard/" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/investigate/" element={<RedirectWithQuery to="/investigate" />} />
+            <Route path="/policy/" element={<RedirectWithQuery to="/policy" />} />
+            <Route path="/workspace/" element={<RedirectWithQuery to="/dashboard" />} />
+            <Route path="/app/" element={<RedirectWithQuery to="/dashboard" />} />
+
+            {/* Scientific 404 Fallback */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

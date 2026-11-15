@@ -85,12 +85,26 @@ export default function Header() {
 
   useEffect(() => {
     let active = true;
+    let consecutiveFailures = 0;
     const checkHealth = async () => {
       try {
         const res = await fetch('/api/v1/ready', { cache: 'no-store' });
-        if (active) setBackendOffline(!res.ok);
+        if (!active) return;
+        if (res.ok) {
+          consecutiveFailures = 0;
+          setBackendOffline(false);
+        } else {
+          consecutiveFailures += 1;
+          if (consecutiveFailures >= 2) {
+            setBackendOffline(true);
+          }
+        }
       } catch {
-        if (active) setBackendOffline(true);
+        if (!active) return;
+        consecutiveFailures += 1;
+        if (consecutiveFailures >= 2) {
+          setBackendOffline(true);
+        }
       }
     };
     checkHealth();
