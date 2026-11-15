@@ -413,6 +413,16 @@ Tellura is deployed as a single Docker container on [Render](https://render.com)
 
 ---
 
+## AI Disclosure
+
+In accordance with NASA Space Apps Challenge rules:
+- **Code & Scaffolding**: AI assistants (Google Gemini, Anthropic Claude, OpenAI) were used to assist with boilerplate scaffolding, unit test coverage expansion, and documentation drafting.
+- **Scientific Engine & Data**: AI was **never** used to generate, modify, or simulate any climate data or statistics. All trend calculations (Mann-Kendall, Theil-Sen, Pettitt, Copulas) are 100% deterministic NumPy and SciPy mathematics (`backend/app/science/trend.py`). All satellite observations come from authentic NASA POWER and MERRA-2 archives.
+- **Downstream Copilot & Explainer**: In the running application, optional AI features are strictly downstream. The natural language copilot (`backend/app/science/nlq_parser.py`) and scientific explainer (`backend/app/science/explainer.py`) receive pre-computed statistics in XML boundaries and are backed by an offline deterministic template engine.
+- **Images & Media**: No NASA logos, flags, or mission identifiers were generated or modified. All brand logos are original vector artwork. Audio sonification uses native Web Audio API oscillators to generate real-time sine waves from raw numbers.
+
+---
+
 ## Contributing
 
 1. Fork the repository and create your branch from `main`.
