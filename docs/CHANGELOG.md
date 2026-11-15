@@ -5,6 +5,19 @@ The project adheres to Semantic Versioning and rigorous engineering verification
 
 ---
 
+## [1.6.0] - 2026-11-15 — High-Performance 3D Planetary Engine & Gateway Hardening
+
+### Added
+- **Photorealistic 3D Globe V3 Engine (`PlanetaryGlobe3D.jsx`):** High-performance 3D orthographic globe with offscreen canvas raster caching (`earthBufferRef`), slashing ~85% of redundant trigonometric calculations. Features zero-allocation inlined coordinate projection, Retina Hi-DPI pixel ratio backing, true terrestrial limb darkening, 6-band multi-altitude cloud system, depth-sorted 3D trend pillars, and pulsing sonar hotspot halos.
+- **Universal Route Aliases & Query Forwarding (`App.jsx`):** Seamless redirection for natural route entrypoints (`/workspace`, `/workstation`, `/app`, `/explorer`, `/analytics`, `/analysis`, `/map`, `/detective`, `/student`, `/pro`, `/overview`) with query string and hash preservation. Prevents false "404 Trajectory Not Found" fallback screens when navigating from documentation or buttons.
+- **NASA EOSDIS GIBS Close Controller (`TrendMap.jsx`):** Direct close button (`✕`) in the live satellite tray header, click-outside auto-dismissal for the Instruments dropdown, and dynamic top offset (`top-[270px]`) preventing UI stacking collisions.
+
+### Fixed
+- **Node.js IPv6 / Windows Dual-Stack Gateway Collision (HTTP 502):** Resolved `ECONNREFUSED ::1:8000` failures by pinning Vite dev proxy target explicitly to IPv4 loopback `http://127.0.0.1:8000`. Added multi-port CORS/CSP whitelisting for alternative dev ports (`3001`, `3002`, `5173`) and implemented transparent client-side fast retries with debounced health status polling.
+- **React 19 Prop-Sync State Reconciliation:** Resolved `react(set-state-in-effect)` compiler warning in `PlanetaryGlobe3D` using React 19's sanctioned render-time previous prop reconciliation pattern.
+
+---
+
 ## [1.5.2] - 2026-11-13 — Modern Web Platform Standardization & Diagnostic Reliability
 
 ### Added

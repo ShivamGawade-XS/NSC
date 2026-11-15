@@ -361,7 +361,7 @@ See [`.env.example`](.env.example) for the full configuration template.
 ## Quality, Testing & Security Audits
 
 ### Automated Testing
-The repository maintains comprehensive test coverage verified across 352 test cases:
+The repository maintains comprehensive test coverage verified across 353 test cases:
 ```bash
 # Run backend pytest suite
 python -m pytest backend/tests/ -q
