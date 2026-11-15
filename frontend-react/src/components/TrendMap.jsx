@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useStore from '../store/useStore';
@@ -71,10 +71,35 @@ export default function TrendMap() {
   const selectCell = useStore((s) => s.selectCell);
   const toggleCompareMode = useStore((s) => s.toggleCompareMode);
   const workstationMode = useStore((s) => s.workstationMode);
+  const storeBbox = useStore((s) => s.bbox);
   const L_map = getLabels(workstationMode);
   const [showGlobe3D, setShowGlobe3D] = useState(false);
   const [isLegendCollapsed, setIsLegendCollapsed] = useState(false);
   const [gisToolsOpen, setGisToolsOpen] = useState(false);
+
+  const effectiveBbox = useMemo(() => {
+    if (storeBbox?.minLon !== '' && storeBbox?.minLat !== '' && storeBbox?.maxLon !== '' && storeBbox?.maxLat !== '' &&
+        storeBbox?.minLon !== undefined && storeBbox?.minLat !== undefined) {
+      return [
+        parseFloat(storeBbox.minLon),
+        parseFloat(storeBbox.minLat),
+        parseFloat(storeBbox.maxLon),
+        parseFloat(storeBbox.maxLat),
+      ];
+    }
+    const grid = analysisData?.grid;
+    if (grid && grid.length > 0) {
+      let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+      for (const c of grid) {
+        if (c.lon < minLon) minLon = c.lon;
+        if (c.lon > maxLon) maxLon = c.lon;
+        if (c.lat < minLat) minLat = c.lat;
+        if (c.lat > maxLat) maxLat = c.lat;
+      }
+      return [minLon, minLat, maxLon, maxLat];
+    }
+    return null;
+  }, [storeBbox, analysisData]);
 
 function inferGridStep(grid) {
   if (!grid || grid.length < 2) return { dLat: 0.5, dLon: 0.5 };
@@ -579,7 +604,7 @@ function inferGridStep(grid) {
         <div className="absolute inset-0 z-[1050]">
           <PlanetaryGlobe3D
             grid={analysisData?.grid || []}
-            bbox={analysisData?.bbox}
+            bbox={effectiveBbox}
             selectedCell={selectedCell}
             onSelectCell={(lat, lon) => selectCell(lat, lon)}
             onClose={() => setShowGlobe3D(false)}

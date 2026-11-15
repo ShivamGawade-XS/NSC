@@ -105,6 +105,18 @@ export default function PlanetaryGlobe3D({
   useEffect(() => { centerRef.current = center; }, [center]);
   useEffect(() => { radiusRef.current = radius; }, [radius]);
 
+  // Sync center when bbox prop changes (React-recommended pattern: store previous props in state)
+  const [prevBbox, setPrevBbox] = useState(bbox);
+  if (bbox !== prevBbox) {
+    setPrevBbox(bbox);
+    if (bbox && bbox.length === 4) {
+      setCenter({
+        lon: (bbox[0] + bbox[2]) / 2,
+        lat: (bbox[1] + bbox[3]) / 2,
+      });
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // STATIC EARTH RENDERER — cached to offscreen canvas, redrawn only when
   // center / radius / theme changes (NOT every animation frame)
