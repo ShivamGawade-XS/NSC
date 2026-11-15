@@ -73,6 +73,8 @@ export default function TrendMap() {
   const workstationMode = useStore((s) => s.workstationMode);
   const L_map = getLabels(workstationMode);
   const [showGlobe3D, setShowGlobe3D] = useState(false);
+  const [isLegendCollapsed, setIsLegendCollapsed] = useState(false);
+  const [gisToolsOpen, setGisToolsOpen] = useState(false);
 
 function inferGridStep(grid) {
   if (!grid || grid.length < 2) return { dLat: 0.5, dLon: 0.5 };
@@ -569,8 +571,8 @@ function inferGridStep(grid) {
   };
 
   return (
-    <div className="relative w-full h-full rounded overflow-hidden border border-[var(--color-border-subtle)] bg-[var(--color-bg-deep)]">
-      <div ref={mapRef} className="w-full h-full" style={{ minHeight: '400px' }} />
+    <div className="relative isolate w-full h-full rounded overflow-hidden border border-[var(--color-border-subtle)] bg-[var(--color-bg-deep)]">
+      <div ref={mapRef} className="w-full h-full" style={{ minHeight: '100%', height: '100%' }} />
 
       {/* 3D Planetary Orthographic Globe View */}
       {showGlobe3D && (
@@ -597,14 +599,14 @@ function inferGridStep(grid) {
             backdropFilter: 'contrast(1.15) brightness(1.1)'
           }}
         >
-          <div className="absolute top-3 right-3 bg-[var(--color-bg-deep)]/90 text-[var(--color-accent-blue)] font-mono text-[9px] px-2 py-0.5 rounded border border-[var(--color-accent-blue)]/30 tracking-wider">
+          <div className="absolute top-12 left-14 bg-[var(--color-bg-deep)]/90 text-[var(--color-accent-blue)] font-mono text-[9px] px-2 py-0.5 rounded border border-[var(--color-accent-blue)]/30 tracking-wider shadow-sm">
             RIGHT: COMPUTED TREND RASTER
           </div>
         </div>
       )}
 
       {showCurtainMode && (
-        <div className="absolute top-3 left-3 z-[900] bg-[var(--color-bg-deep)]/90 text-[#f59e0b] font-mono text-[9px] px-2 py-0.5 rounded border border-[#f59e0b]/30 tracking-wider">
+        <div className="absolute top-3 left-14 z-[900] bg-[var(--color-bg-deep)]/90 text-[#f59e0b] font-mono text-[9px] px-2 py-0.5 rounded border border-[#f59e0b]/30 tracking-wider shadow-sm">
           LEFT: NASA GIBS SATELLITE TILES
         </div>
       )}
@@ -628,14 +630,14 @@ function inferGridStep(grid) {
       )}
 
       {/* Spatiotemporal 4D Timeline Scrubber Docked at Bottom-Left */}
-      <div className="absolute bottom-3 left-3 z-[1000] flex flex-wrap items-center gap-2.5 bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] px-3 py-2 rounded shadow-2xl backdrop-blur-md text-xs font-mono text-[var(--color-text-main)]">
+      <div className="absolute bottom-3 left-3 z-[1000] flex items-center gap-2 max-w-[calc(100%-1.5rem)] overflow-x-auto bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] px-2.5 py-1.5 rounded shadow-2xl backdrop-blur-md text-xs font-mono text-[var(--color-text-main)] select-none">
         <button
           type="button"
           onClick={() => {
             playTactileClick(600);
             useStore.getState().toggleTimelinePlay();
           }}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded transition-colors ${
+          className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition-colors text-[11px] ${
             isTimelinePlaying
               ? 'bg-[var(--color-accent-blue)] text-white font-bold shadow'
               : 'bg-[var(--color-accent-blue)]/15 hover:bg-[var(--color-accent-blue)]/25 text-[var(--color-accent-blue)] border border-[var(--color-accent-blue)]/30'
@@ -655,9 +657,9 @@ function inferGridStep(grid) {
           <span>{isTimelinePlaying ? 'PAUSE' : 'PLAY 4D'}</span>
         </button>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <span className="text-[10px] text-[var(--color-text-secondary)]">YEAR:</span>
-          <span className="font-bold text-[var(--color-text-main)] text-sm tracking-wider tabular-nums bg-[var(--color-bg-elevated)] px-2 py-0.5 rounded border border-[var(--color-border-subtle)]">
+          <span className="font-bold text-[var(--color-text-main)] text-xs tracking-wider tabular-nums bg-[var(--color-bg-elevated)] px-1.5 py-0.5 rounded border border-[var(--color-border-subtle)]">
             {timeScrubberYear || endYear || 2023}
           </span>
         </div>
@@ -670,211 +672,364 @@ function inferGridStep(grid) {
           max={endYear || 2023}
           value={timeScrubberYear || endYear || 2023}
           onChange={(e) => useStore.getState().setTimeScrubberYear(parseInt(e.target.value, 10))}
-          className="w-32 accent-[var(--color-accent-blue)] cursor-pointer h-1.5"
+          className="w-20 sm:w-28 md:w-32 accent-[var(--color-accent-blue)] cursor-pointer h-1.5"
           aria-label="4D Timeline Year Scrubber"
         />
 
         {/* Quick Epoch Milestone Jump Buttons */}
-        <div className="hidden sm:flex items-center gap-1 border-l border-[var(--color-border-subtle)] pl-2">
+        <div className="hidden md:flex items-center gap-1 border-l border-[var(--color-border-subtle)] pl-1.5">
           <button
             type="button"
             onClick={() => useStore.getState().setTimeScrubberYear(startYear || 2000)}
-            className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
+            className="px-1 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
           >
             {startYear || 2000}
           </button>
           <button
             type="button"
             onClick={() => useStore.getState().setTimeScrubberYear(Math.round(((startYear || 2000) + (endYear || 2023)) / 2))}
-            className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
+            className="px-1 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
           >
-            Mid ({Math.round(((startYear || 2000) + (endYear || 2023)) / 2)})
+            Mid
           </button>
           <button
             type="button"
             onClick={() => useStore.getState().setTimeScrubberYear(endYear || 2023)}
-            className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
+            className="px-1 py-0.5 rounded text-[10px] bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]"
           >
             {endYear || 2023}
           </button>
         </div>
       </div>
 
-      {/* GIS Instrument Toolstrip Docked at Top-Right */}
-      <div className="absolute top-3 right-3 z-[1000] flex flex-wrap items-center gap-1.5 bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] p-1.5 rounded shadow-lg backdrop-blur-md">
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(600);
-            useStore.getState().toggleMask();
-          }}
-          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
-            maskSigOnly
-              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
-              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
-          }`}
-        >
-          Significant Only
-        </button>
+      {/* GIS Instrument Toolstrip Docked at Top-Right (Persona Aware & Responsive) */}
+      <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1.5 bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] p-1.5 rounded shadow-lg backdrop-blur-md max-w-[calc(100%-4rem)] overflow-x-visible">
+        {workstationMode === 'detective' ? (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                useStore.getState().toggleMask();
+              }}
+              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+                maskSigOnly
+                  ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+              }`}
+            >
+              Significant Only
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(800);
+                setShowGlobe3D(!showGlobe3D);
+              }}
+              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+                showGlobe3D
+                  ? 'bg-cyan-500 text-black font-bold shadow-md'
+                  : 'bg-[var(--color-bg-elevated)] text-cyan-500 dark:text-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-300 border border-cyan-500/40'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-black' : 'bg-cyan-400'}`} />
+              <span>{showGlobe3D ? '2D Map' : '3D Globe'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(500);
+                mapInstanceRef.current?.setView([34.0, -98.0], 5);
+              }}
+              className="px-2 py-1 rounded text-[11px] font-mono bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)] transition-colors"
+            >
+              Reset View
+            </button>
+          </>
+        ) : workstationMode === 'policy' ? (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                useStore.getState().toggleLisa();
+              }}
+              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+                showLisa
+                  ? 'bg-rose-600 text-white font-semibold'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+              }`}
+            >
+              High-Risk Hotspots
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(750);
+                useStore.getState().toggleCompareMode();
+              }}
+              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+                compareMode
+                  ? 'bg-amber-500 text-slate-950 font-semibold'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+              }`}
+            >
+              Compare Jurisdictions
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                useStore.getState().toggleMask();
+              }}
+              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+                maskSigOnly
+                  ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+              }`}
+            >
+              Verified Trends
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(800);
+                setShowGlobe3D(!showGlobe3D);
+              }}
+              className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+                showGlobe3D
+                  ? 'bg-cyan-500 text-black font-bold shadow-md'
+                  : 'bg-[var(--color-bg-elevated)] text-cyan-500 dark:text-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-300 border border-cyan-500/40'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-black' : 'bg-cyan-400'}`} />
+              <span>{showGlobe3D ? '2D Map' : '3D Globe'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(500);
+                mapInstanceRef.current?.setView([34.0, -98.0], 5);
+              }}
+              className="px-2 py-1 rounded text-[11px] font-mono bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)] transition-colors"
+            >
+              Reset View
+            </button>
+          </>
+        ) : (
+          /* Pro Scientific Workstation */
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                useStore.getState().toggleMask();
+              }}
+              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+                maskSigOnly
+                  ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+              }`}
+            >
+              Significant Only
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(600);
+                useStore.getState().toggleLisa();
+              }}
+              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
+                showLisa
+                  ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
+                  : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+              }`}
+            >
+              LISA Clusters
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playTactileClick(800);
+                setShowGlobe3D(!showGlobe3D);
+              }}
+              className={`px-2 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+                showGlobe3D
+                  ? 'bg-cyan-500 text-black font-bold shadow-md'
+                  : 'bg-[var(--color-bg-elevated)] text-cyan-500 dark:text-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-300 border border-cyan-500/40'
+              }`}
+              title="Toggle 3D Planetary Orthographic Globe View"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-black' : 'bg-cyan-400'}`} />
+              <span>{showGlobe3D ? '2D GIS' : '3D Globe'}</span>
+            </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(600);
-            useStore.getState().toggleLisa();
-          }}
-          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
-            showLisa
-              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
-              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
-          }`}
-        >
-          LISA Clusters
-        </button>
+            {/* GIS Instruments Popover Menu for Pro Mode */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(500);
+                  setGisToolsOpen(!gisToolsOpen);
+                }}
+                className={`px-2 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  gisToolsOpen || showCurtainMode || showGibs || isVelocityMode || compareMode || !isRasterMode
+                    ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-accent-blue)] border border-[var(--color-accent-blue)] font-semibold'
+                    : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
+                }`}
+                title="Advanced GIS Instrumentation (NASA GIBS, Climate Velocity, Curtain Wipe, Dual Compare)"
+                aria-expanded={gisToolsOpen}
+              >
+                {(showCurtainMode || showGibs || isVelocityMode || compareMode) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-blue)] animate-pulse" />
+                )}
+                <span>Instruments</span>
+                <span className="text-[9px]">▾</span>
+              </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(650);
-            useStore.getState().toggleCurtainMode();
-          }}
-          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
-            showCurtainMode
-              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
-              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
-          }`}
-        >
-          Curtain Wipe
-        </button>
+              {gisToolsOpen && (
+                <div className="absolute right-0 top-full mt-1.5 z-[1100] w-56 bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-md shadow-2xl p-1.5 font-mono text-xs backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-2 py-1 text-[9px] uppercase font-bold text-[var(--color-text-muted)] border-b border-[var(--color-border-subtle)] tracking-wider mb-1">
+                    GIS Instrumentation Tray
+                  </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(650);
-            useStore.getState().toggleGibs();
-          }}
-          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 ${
-            showGibs
-              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
-              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
-          }`}
-          title="Toggle NASA GIBS real-time satellite imagery overlay underneath trend grid"
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${showGibs ? 'bg-white' : 'bg-emerald-600 dark:bg-emerald-400'}`} />
-          NASA GIBS Satellite
-        </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(650);
+                      useStore.getState().toggleGibs();
+                    }}
+                    className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors cursor-pointer ${
+                      showGibs ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-text-main)] font-semibold' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${showGibs ? 'bg-emerald-400' : 'bg-slate-500'}`} />
+                      NASA GIBS Satellite
+                    </span>
+                    <span className="text-[10px] text-[var(--color-text-muted)]">{showGibs ? 'ON' : 'OFF'}</span>
+                  </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(700);
-            useStore.getState().toggleVelocityMode();
-          }}
-          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
-            isVelocityMode
-              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
-              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
-          }`}
-        >
-          Climate Velocity
-        </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(700);
+                      useStore.getState().toggleVelocityMode();
+                    }}
+                    className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors cursor-pointer ${
+                      isVelocityMode ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-text-main)] font-semibold' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${isVelocityMode ? 'bg-cyan-400' : 'bg-slate-500'}`} />
+                      Climate Velocity
+                    </span>
+                    <span className="text-[10px] text-[var(--color-text-muted)]">{isVelocityMode ? 'ON' : 'OFF'}</span>
+                  </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(750);
-            useStore.getState().toggleCompareMode();
-          }}
-          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
-            compareMode
-              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
-              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
-          }`}
-        >
-          Dual Compare
-        </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(650);
+                      useStore.getState().toggleCurtainMode();
+                    }}
+                    className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors cursor-pointer ${
+                      showCurtainMode ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-text-main)] font-semibold' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${showCurtainMode ? 'bg-amber-400' : 'bg-slate-500'}`} />
+                      Curtain Wipe
+                    </span>
+                    <span className="text-[10px] text-[var(--color-text-muted)]">{showCurtainMode ? 'ON' : 'OFF'}</span>
+                  </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(600);
-            setIsRasterMode(!isRasterMode);
-          }}
-          className={`px-2 py-1 rounded text-[11px] font-mono transition-colors ${
-            isRasterMode
-              ? 'bg-[var(--color-accent-blue)] text-white font-semibold'
-              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)]'
-          }`}
-          title="Toggle between Continuous Raster Grid and Point/Stipple view"
-        >
-          {isRasterMode ? 'Continuous Raster' : 'Point / Stipple'}
-        </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(750);
+                      useStore.getState().toggleCompareMode();
+                    }}
+                    className={`w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors cursor-pointer ${
+                      compareMode ? 'bg-[var(--color-accent-blue)]/20 text-[var(--color-text-main)] font-semibold' : 'hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${compareMode ? 'bg-amber-400' : 'bg-slate-500'}`} />
+                      Dual Compare
+                    </span>
+                    <span className="text-[10px] text-[var(--color-text-muted)]">{compareMode ? 'ON' : 'OFF'}</span>
+                  </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(500);
-            mapInstanceRef.current?.setView([34.0, -98.0], 5);
-          }}
-          className="px-2 py-1 rounded text-[11px] font-mono bg-[var(--color-bg-elevated)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] border border-[var(--color-border-subtle)] transition-colors"
-          title="Reset map view to default extent"
-        >
-          Reset Extent
-        </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTactileClick(600);
+                      setIsRasterMode(!isRasterMode);
+                    }}
+                    className="w-full text-left px-2 py-1.5 rounded flex items-center justify-between transition-colors hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] cursor-pointer"
+                  >
+                    <span>Grid Style</span>
+                    <span className="text-[10px] text-[var(--color-accent-blue)] font-semibold">
+                      {isRasterMode ? 'Raster' : 'Stipple'}
+                    </span>
+                  </button>
 
-        <button
-          type="button"
-          onClick={() => {
-            playTactileClick(800);
-            setShowGlobe3D(!showGlobe3D);
-          }}
-          className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors flex items-center gap-1.5 cursor-pointer ${
-            showGlobe3D
-              ? 'bg-cyan-500 text-black font-bold shadow-md'
-              : 'bg-[var(--color-bg-elevated)] text-cyan-500 dark:text-cyan-400 hover:text-cyan-600 dark:hover:text-cyan-300 border border-cyan-500/40'
-          }`}
-          title="Toggle 3D Planetary Orthographic Globe View"
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${showGlobe3D ? 'bg-black' : 'bg-cyan-400'}`} />
-          <span>{showGlobe3D ? '2D GIS Map' : '3D Globe'}</span>
-        </button>
+                  <div className="pt-1 mt-1 border-t border-[var(--color-border-subtle)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playTactileClick(500);
+                        mapInstanceRef.current?.setView([34.0, -98.0], 5);
+                        setGisToolsOpen(false);
+                      }}
+                      className="w-full text-left px-2 py-1 rounded hover:bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] text-[11px] cursor-pointer"
+                    >
+                      Reset Map Extent
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Prominent Compare Mode HUD Banner */}
       {compareMode && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] bg-[var(--color-bg-surface)]/95 border-2 border-amber-400 text-[var(--color-text-main)] text-xs px-4 py-2 rounded-lg backdrop-blur-md font-mono flex items-center gap-3 shadow-2xl animate-in fade-in slide-in-from-top duration-200">
+        <div className="absolute top-12 sm:top-14 left-1/2 -translate-x-1/2 z-[1000] bg-[var(--color-bg-surface)]/95 border-2 border-amber-400 text-[var(--color-text-main)] text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg backdrop-blur-md font-mono flex items-center gap-2 sm:gap-3 shadow-2xl animate-in fade-in slide-in-from-top duration-200 max-w-[95%] sm:max-w-md">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
-          <div className="font-semibold tracking-wide">
+          <div className="font-semibold tracking-wide text-[11px] truncate">
             {!comparePinA ? (
-              <span>COMPARISON MODE ACTIVE: Click Pin A on map</span>
+              <span>COMPARISON MODE: Click Pin A on map</span>
             ) : !comparePinB ? (
               <span>Now click Pin B to compare regimes</span>
             ) : (
-              <span>Comparing Pin A vs Pin B. Click any cell to reset Pin A</span>
+              <span>Comparing Pin A vs Pin B (click cell to reset)</span>
             )}
           </div>
           <button
             onClick={() => toggleCompareMode()}
-            className="ml-2 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded border border-amber-500/50 transition-colors shrink-0 cursor-pointer text-[11px]"
+            className="ml-auto px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold rounded border border-amber-500/50 transition-colors shrink-0 cursor-pointer text-[10px]"
           >
-            Exit Compare Mode
+            Exit
           </button>
         </div>
       )}
 
       {/* GIBS Satellite Clamping Warning Badge */}
       {(showGibs || showCurtainMode) && (timeScrubberYear || endYear) < 2000 && (
-        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] bg-cyan-950/90 border border-cyan-500/50 text-cyan-200 px-3 py-1.5 rounded shadow-lg backdrop-blur-md text-[11px] font-mono flex items-center gap-2">
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] bg-cyan-950/90 border border-cyan-500/50 text-cyan-200 px-3 py-1.5 rounded shadow-lg backdrop-blur-md text-[11px] font-mono flex items-center gap-2 max-w-[90%]">
           <svg className="w-3.5 h-3.5 shrink-0 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
           </svg>
-          <span>MODIS Terra imagery available 2000–Present; clamping satellite overlay to 2000</span>
+          <span className="truncate">MODIS Terra imagery available 2000–Present; clamped to 2000</span>
         </div>
       )}
 
       {/* NASA GIBS Live Satellite Instrument Tray */}
       {showGibs && (
-        <div className="absolute top-14 right-3 z-[1000] w-72 bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 rounded shadow-2xl backdrop-blur-md p-3 font-mono text-xs animate-in fade-in duration-200">
+        <div className="absolute top-12 sm:top-14 right-3 z-[1000] w-72 max-w-[calc(100%-1.5rem)] bg-[var(--color-bg-surface)]/95 border border-[var(--color-accent-blue)]/50 rounded shadow-2xl backdrop-blur-md p-3 font-mono text-xs animate-in fade-in duration-200">
           <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-2 mb-2.5">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
@@ -935,13 +1090,39 @@ function inferGridStep(grid) {
 
       {/* Scientific Calibrated Colorbar Legend */}
       {analysisData && (
-        <div className="absolute bottom-3 right-3 z-[1000] bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] px-3 py-2 rounded shadow-lg backdrop-blur-md text-xs font-mono text-[var(--color-text-main)] pointer-events-auto max-w-[280px]">
-          {showLisa ? (
-            <div>
-              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1.5">
-                Spatial Regimes (Anselin LISA)
-              </div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+        isLegendCollapsed ? (
+          <button
+            type="button"
+            onClick={() => {
+              playTactileClick(500);
+              setIsLegendCollapsed(false);
+            }}
+            className="absolute bottom-[58px] right-3 sm:bottom-[54px] z-[990] bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] px-2.5 py-1 rounded shadow-md backdrop-blur-md text-[10px] font-mono text-[var(--color-text-secondary)] hover:text-[var(--color-text-main)] flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Expand Colorbar Legend"
+            aria-label="Expand Colorbar Legend"
+          >
+            <span className="w-2 h-2 rounded-full bg-[var(--color-accent-blue)]" />
+            <span>Legend ▴</span>
+          </button>
+        ) : (
+          <div className="absolute bottom-[58px] right-3 sm:bottom-[54px] z-[990] bg-[var(--color-bg-surface)]/95 border border-[var(--color-border-strong)] px-3 py-2 rounded shadow-lg backdrop-blur-md text-xs font-mono text-[var(--color-text-main)] pointer-events-auto max-w-[260px] sm:max-w-[280px]">
+            <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
+              <span>{showLisa ? 'Spatial Regimes (LISA)' : analysisData.isCompound ? 'Compound Hazard (CAI)' : (L_map.mapLegendTitle || 'Theil-Sen Trend Rate')}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  playTactileClick(500);
+                  setIsLegendCollapsed(true);
+                }}
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] px-1 -mr-1 rounded text-[11px] leading-none cursor-pointer"
+                title="Collapse Legend"
+                aria-label="Collapse Legend"
+              >
+                −
+              </button>
+            </div>
+            {showLisa ? (
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] mt-1">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-sm bg-[#ef4444] shrink-0" />
                   <span className="truncate">High-High (Hotspot)</span>
@@ -959,13 +1140,8 @@ function inferGridStep(grid) {
                   <span className="truncate">Non-Significant</span>
                 </div>
               </div>
-            </div>
-          ) : analysisData.isCompound ? (
-            <div>
-              <div className="text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1.5">
-                Compound Hazard (CAI Index)
-              </div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+            ) : analysisData.isCompound ? (
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] mt-1">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-sm bg-[#dc2626] shrink-0" />
                   <span className="truncate">Severe Aridification</span>
@@ -983,27 +1159,27 @@ function inferGridStep(grid) {
                   <span className="truncate">Neutral Baseline</span>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div>
-              <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-semibold mb-1">
-                <span>{L_map.mapLegendTitle || 'Theil-Sen Trend Rate'}</span>
-                <span>{analysisData.slope_units || '°C / dec'}</span>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between text-[9px] text-[var(--color-text-secondary)] mb-1">
+                  <span className="text-[9px] text-[var(--color-text-muted)]">{analysisData.variable || 'Variable'}</span>
+                  <span>{analysisData.slope_units || '°C / dec'}</span>
+                </div>
+                <div
+                  className="w-full h-2 rounded-sm mb-1"
+                  style={{
+                    background: 'linear-gradient(to right, #06b6d4 0%, #38bdf8 25%, #64748b 50%, #f59e0b 75%, #ef4444 100%)'
+                  }}
+                />
+                <div className="flex items-center justify-between text-[9px] text-[var(--color-text-secondary)] font-mono tabular-nums">
+                  <span>{analysisData.summary?.min_slope !== undefined ? `${analysisData.summary.min_slope > 0 ? '+' : ''}${analysisData.summary.min_slope.toFixed(2)}` : '-0.50'}</span>
+                  <span className="text-[var(--color-text-muted)]">0.00</span>
+                  <span>{analysisData.summary?.max_slope !== undefined ? `+${analysisData.summary.max_slope.toFixed(2)}` : '+0.50'}</span>
+                </div>
               </div>
-              <div
-                className="w-full h-2 rounded-sm mb-1"
-                style={{
-                  background: 'linear-gradient(to right, #06b6d4 0%, #38bdf8 25%, #64748b 50%, #f59e0b 75%, #ef4444 100%)'
-                }}
-              />
-              <div className="flex items-center justify-between text-[9px] text-[var(--color-text-secondary)] font-mono tabular-nums">
-                <span>{analysisData.summary?.min_slope !== undefined ? `${analysisData.summary.min_slope > 0 ? '+' : ''}${analysisData.summary.min_slope.toFixed(2)}` : '-0.50'}</span>
-                <span className="text-[var(--color-text-muted)]">0.00</span>
-                <span>{analysisData.summary?.max_slope !== undefined ? `+${analysisData.summary.max_slope.toFixed(2)}` : '+0.50'}</span>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )
       )}
     </div>
   );

@@ -65,7 +65,7 @@ Generated via Tellura Climate Workstation (NASA Space Apps 2026)`;
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto"
       onClick={() => setOpen(false)}
     >
       <div

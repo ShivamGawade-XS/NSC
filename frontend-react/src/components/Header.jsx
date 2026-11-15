@@ -87,7 +87,7 @@ export default function Header() {
   }, [setBackendOffline]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-bg-deep)]/90 backdrop-blur-md border-b border-[var(--color-border-subtle)] transition-colors">
+    <header className="fixed top-0 left-0 right-0 z-[100] bg-[var(--color-bg-deep)]/90 backdrop-blur-md border-b border-[var(--color-border-subtle)] transition-colors">
       {backendOffline && (
         <div
           role="status"

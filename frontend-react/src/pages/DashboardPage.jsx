@@ -668,7 +668,7 @@ export default function DashboardPage({ forcedMode }) {
           </div>
 
           {/* 3-Column Architecture — Balanced 1-Screen Viewport */}
-          <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_360px] xl:grid-cols-[340px_1fr_380px] gap-5 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[270px_1fr_290px] xl:grid-cols-[300px_1fr_340px] 2xl:grid-cols-[330px_1fr_370px] gap-4 xl:gap-5 items-start">
             {/* Left Column: Data Controls & Scientific Feasibility */}
             <div className={`space-y-3 ${mobileTab === 'controls' ? 'block' : 'hidden lg:block'}`}>
               <AnalysisPanel />
@@ -676,7 +676,7 @@ export default function DashboardPage({ forcedMode }) {
 
             {/* Center Column: GIS Map, Analytical Chart & Regional Discovery / Exports Hub */}
             <div id="map-section" className={`space-y-3 min-w-0 ${mobileTab === 'map' ? 'block' : 'hidden lg:block'}`}>
-              <div className="h-[46vh] min-h-[380px]">
+              <div className="h-[430px] sm:h-[470px] lg:h-[50vh] min-h-[400px] max-h-[620px]">
                 <TrendMap />
               </div>
               <div className="interface-card p-3.5">
